@@ -7,11 +7,11 @@ from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LassoCV, LogisticRegression, Ridge
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
-from dataoop.data_val.bagging.bagging_DV_core import (
+from dataoob.data_val.bagging.bagging_DV_core import (
     BaggingClassifierDV,
     BaggingRegressorDV,
 )
-from dataoop.data_val.ensemble.ensemble_DV_core import (
+from dataoob.data_val.ensemble.ensemble_DV_core import (
     RandomForestClassifierDV,
     RandomForestRegressorDV,
 )

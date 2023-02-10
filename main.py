@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 
-from dataoop.dataloader import data_loading
-from dataoop.dataval.dvrl.dvrl import DVRL
-from dataoop.model.logistic_regression import LogisticRegression
+from dataoob.dataloader import data_loading
+from dataoob.dataval.dvrl.dvrl import DVRL
+from dataoob.model.ann import ANN
 
-
+device = torch.device("mps")
 def cast(*args):
-    return [torch.from_numpy(arg).to(torch.float32) for arg in args]
+    return [torch.from_numpy(arg).to(dtype=torch.float32, device=device) for arg in args]
 
 
 if __name__ == "__main__":
