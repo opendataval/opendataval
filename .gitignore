@@ -63,7 +63,6 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/generated/
 
 # PyBuilder
 target/
@@ -85,12 +84,4 @@ celerybeat-schedule
 
 # Data
 data_files/
-tmp_*/
 tmp/
-csv/
-kaggle.json
-
-demo/
-demo*.ipynb
-.DS_STORE
-
