@@ -3,12 +3,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dataoob.model import Classifier
+from dataoob.model import ClassifierNN
 
 
-class ANN(nn.Module, Classifier):
+class ANN(ClassifierNN):
     def __init__(self, input_dim, num_of_classes=2):
-        """Initializes the LogisticRegression."""
+        """Initializes the Artifical Neural Network."""
 
         super(ANN, self).__init__()
 

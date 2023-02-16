@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from dataoob.model import Classifier, Model
+from dataoob.model import Model
 
 
 class Evaluator(ABC):
@@ -40,7 +40,7 @@ class Evaluator(ABC):
         :param int batch_size: Training batch size, defaults to 32
         """
         self.input_data(x_train, y_train, x_valid, y_valid)
-        self.train_data_value(
+        self.train_data_values(
             batch_size=batch_size,
             epochs=epochs,
             *args,

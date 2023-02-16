@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Data loading and preprocessing functions."""
+"""Data loading and preprocessing functions."""  # TODO Pull in Prof's paper
 
 from __future__ import absolute_import, division, print_function
 

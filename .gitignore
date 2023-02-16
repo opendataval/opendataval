@@ -86,3 +86,6 @@ celerybeat-schedule
 data_files/
 tmp_*/
 tmp/
+
+# Personal
+todo.txt

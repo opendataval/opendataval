@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import tqdm
 
-from dataoob.dataval import Classifier, Evaluator, Model
+from dataoob.dataval import Evaluator, Model
 
 
 class ShapEvaluator(Evaluator):
@@ -27,12 +27,15 @@ class ShapEvaluator(Evaluator):
     """
     # marg_contrib_dict = LRUCache(size=3) TODO
 
-    def __init__(self, pred_model: Model, metric: callable, GR_threshold: float, max_iterations=100, *args, **kwargs):
+    def __init__(self, pred_model: Model, metric: callable, GR_threshold: float=1.01, max_iterations=100, *args, **kwargs):
         self.pred_model = pred_model
         self.metric = metric
 
         self.max_iterations = max_iterations
         self.GR_threshold = GR_threshold
+
+    def compute_weight(self, *args, **kwargs):  # Overide
+        return 1
 
     @classmethod  # TODO
     def model_to_marg_contrib(cls, model: Model):
@@ -93,9 +96,7 @@ class ShapEvaluator(Evaluator):
             np.sum(self.marginal_contribution * self.compute_weight(*args, **kwargs), axis=1)
         )
 
-    @abstractmethod
-    def compute_weight(self, *args, **kwargs):
-        return 1
+
 
     def input_data(
         self,
@@ -214,8 +215,6 @@ class ShapEvaluator(Evaluator):
         :param int n_chains: _description_, defaults to 10
         :return float: Gelman-Rubin statistic
         """
-        # if len(mem) < 1000:  # Magic number
-        #     return 100
 
         # Set up
         (N, n_to_be_valued) = mem.shape

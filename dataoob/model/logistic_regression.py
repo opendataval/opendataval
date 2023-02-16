@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dataoob.model import Classifier
+from dataoob.model import ClassifierNN
 
 
-class LogisticRegression(nn.Module, Classifier):
+class LogisticRegression(ClassifierNN):
     def __init__(self, input_dim: int, num_of_classes: int = 2):
         """Initializes the LogisticRegression."""
 

@@ -13,7 +13,7 @@ from dataoob.dataval import Evaluator, Model
 
 class DVRL(Evaluator):
     """Data valuation using reinforcement learning class, implemented with PyTorch
-    Ref. https://arxiv.org/abs/1806.02426
+    Ref. https://arxiv.org/abs/1909.11671
 
     :param Model pred_model: Prediction model
     :param int x_dim: Data covariates dimension
@@ -22,10 +22,10 @@ class DVRL(Evaluator):
     to determine model performance
     :param int hidden_dim: Hidden dimensions for the RL Multilayer Perceptron
     (details in `DataValueEstimatorRL` class)
-    :param int layer_number: Number of hidden layers for the Generative Model (GM)
-    :param int comb_dim: After combining the input in the GM how many layers,
+    :param int layer_number: Number of hidden layers for the Value Estimator (VE)
+    :param int comb_dim: After combining the input in the VE how many layers,
     much less than `hidden_dim`
-    :param callable (torch.tensor -> torch.tensor) act_fn: Activation function for GM
+    :param callable (torch.tensor -> torch.tensor) act_fn: Activation function for VE
     :param str checkpoint_file_name: _description_, defaults to "checkpoint.pt"
     """
 
@@ -39,20 +39,21 @@ class DVRL(Evaluator):
         layer_number: int,
         comb_dim: int,
         act_fn: callable,
+        device: torch.device=torch.device("cpu"),
         checkpoint_file_name: str = "checkpoint.pt",
     ):
         self.problem = "classification"
         self.metric = metric
 
         self.pred_model = pred_model
-        self.generative_model = DataValueEstimatorRL(
+        self.value_estimator = DataValueEstimatorRL(  # TODO change generative_model -> value_estimator, GM->VE
             x_dim=x_dim,
             y_dim=y_dim,
             hidden_dim=hidden_dim,
             layer_number=layer_number,
             comb_dim=comb_dim,
             act_fn=act_fn,
-        ).to(torch.device("mps"))
+        ).to(device)
         self.checkpoint_file_name = checkpoint_file_name
 
     def input_data(
@@ -160,11 +161,11 @@ class DVRL(Evaluator):
 
         :param bool pre_train:  Whether to load a pretrained model from `tmp_dvrl/pred_model.pt`, defaults to False
         :param int batch_size: pred_model training batch size, defaults to 32
-        :param int rl_epochs: Number of epochs for the GM, defaults to 1
+        :param int rl_epochs: Number of epochs for the VE, defaults to 1
         :param int epochs: Number of epochs for the pred_model, per training (this will equal rl_epochs * epochs), defaults to 1
-        :param float lr: Learning rate for the GM, defaults to 0.01
-        :param float threshold: Search rate threshold, the GM may get stuck in certain bounds close to [0., 1.] because
-        it samples from a binomial, thus outside of [1-threshold, threshold] we encourage the GM to search, defaults to 0.9
+        :param float lr: Learning rate for the VE, defaults to 0.01
+        :param float threshold: Search rate threshold, the VE may get stuck in certain bounds close to [0., 1.] because
+        it samples from a binomial, thus outside of [1-threshold, threshold] we encourage the VE to search, defaults to 0.9
         """
         batch_size = min(batch_size, self.x_train.size(axis=0))
         self.evaluate_baseline_models(
@@ -172,7 +173,7 @@ class DVRL(Evaluator):
         )
 
         # Solver
-        optimizer = torch.optim.Adam(self.generative_model.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=lr)
         criterion = DveLoss(threshold=threshold)
 
         for epoch in tqdm.tqdm(range(rl_epochs)):
@@ -185,7 +186,7 @@ class DVRL(Evaluator):
             y_hat_batch = self.y_pred_diff[indices]
 
             # Generates selection probability
-            est_dv_curr = self.generative_model(x_batch, y_batch, y_hat_batch)
+            est_dv_curr = self.value_estimator(x_batch, y_batch, y_hat_batch)
 
             # Samples the selection probability
             sel_prob_curr = torch.bernoulli(est_dv_curr)
@@ -193,7 +194,7 @@ class DVRL(Evaluator):
             if torch.sum(sel_prob_curr) == 0:
                 est_dv_curr = 0.5 * torch.ones(est_dv_curr.size())
                 sel_prob_curr = torch.bernoulli(est_dv_curr)
-            sel_prob_curr_weight = sel_prob_curr.detach()
+            sel_prob_curr_weight = sel_prob_curr.detach()  # TODO look into detach
 
             # Prediction and training
             new_model = copy.deepcopy(self.pred_model)
@@ -215,7 +216,7 @@ class DVRL(Evaluator):
             y_valid_hat = new_model.predict(self.x_valid)
             dvrl_perf = self.evaluate(self.y_valid, y_valid_hat)
 
-            if self.problem == 'classification':
+            if self.problem == 'classification':  # TODO why is this the case exactly?
                 reward_curr = dvrl_perf - self.valid_perf
             else:
                 reward_curr = self.valid_perf - dvrl_perf
@@ -236,7 +237,7 @@ class DVRL(Evaluator):
         torch.save(
             {
                 "epoch": epoch,
-                "rl_model_state_dict": self.generative_model.state_dict(),
+                "rl_model_state_dict": self.value_estimator.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss": loss,
             },
@@ -245,7 +246,7 @@ class DVRL(Evaluator):
 
         # Trains DVRL predictor
         # Generate data values
-        final_data_value_weights = self.generative_model(
+        final_data_value_weights = self.value_estimator(
             self.x_train, self.y_train, self.y_pred_diff
         ).detach()
 
@@ -280,11 +281,11 @@ class DVRL(Evaluator):
         ) / torch.sum(self.y_train, axis=1, keepdim=True)
 
         # Estimates data value
-        self.generative_model.load_state_dict(
+        self.value_estimator.load_state_dict(
             torch.load(f"tmp_dvrl/{self.checkpoint_file_name}")["rl_model_state_dict"]
         )
 
-        final_data_value = self.generative_model(x, y, y_hat)[:, 0]
+        final_data_value = self.value_estimator(x, y, y_hat)[:, 0]
 
         return final_data_value
 
@@ -324,19 +325,19 @@ class DataValueEstimatorRL(nn.Module):
     ):
         super(DataValueEstimatorRL, self).__init__()
 
-        gm_layers = OrderedDict()
+        mlp_layers = OrderedDict()
 
-        gm_layers["input"] = nn.Linear(x_dim + y_dim, hidden_dim)
-        gm_layers["input_acti"] = act_fn
+        mlp_layers["input"] = nn.Linear(x_dim + y_dim, hidden_dim)
+        mlp_layers["input_acti"] = act_fn
 
         for i in range(int(layer_number - 3)):
-            gm_layers[f"{i+1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
-            gm_layers[f"{i+1}_acti"] = act_fn
+            mlp_layers[f"{i+1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
+            mlp_layers[f"{i+1}_acti"] = act_fn
 
-        gm_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, comb_dim)
-        gm_layers[f"{i+1}_out_acti"] = act_fn
+        mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, comb_dim)
+        mlp_layers[f"{i+1}_out_acti"] = act_fn
 
-        self.gm = nn.Sequential(gm_layers)
+        self.mlp = nn.Sequential(mlp_layers)
 
         yhat_combine = OrderedDict()
 
@@ -359,7 +360,7 @@ class DataValueEstimatorRL(nn.Module):
         :return torch.tensor: _description_
         """
         x = torch.concat((x, y), axis=1)
-        x = self.gm(x)
+        x = self.mlp(x)
         x = torch.cat((x, y_hat), axis=1)
         x = self.yhat_comb(x)
         return x
@@ -388,16 +389,16 @@ class DveLoss(nn.Module):
         selector_input: torch.tensor,
         reward_input: float,
     ):
-        """Computes the loss for the GM and takes in account the reward
+        """Computes the loss for the Value Estimator and takes in account the reward
 
         :param torch.tensor predicted_data_val: Predicted values from the generative model
         :param torch.tensor selector_input: `1` for selected `0` for not selected in model
         :param float reward_input: Reward/performance of model trained on `selector_input`
         sample weights. If positive, indicates better than the naive model.
         """
-        likelyhood = F.binary_cross_entropy(predicted_data_val, selector_input, reduction='sum')
+        likelihood = F.binary_cross_entropy(predicted_data_val, selector_input, reduction='sum')
 
-        reward_loss = reward_input * likelyhood
+        reward_loss = reward_input * likelihood
         search_loss = (
             F.relu(torch.mean(predicted_data_val) - self.threshold) + \
             F.relu((1 - self.threshold) - torch.mean(predicted_data_val))
