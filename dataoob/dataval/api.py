@@ -1,3 +1,4 @@
+import copy
 from abc import ABC, abstractmethod
 
 import torch
@@ -5,11 +6,11 @@ import torch
 from dataoob.model import Model
 
 
-class Evaluator(ABC):
+class DataEvaluator(ABC):
     """Abstract class of Evaluators. Provides a template of how evaluators interact with the pred_model
     """
     def __init__(self, pred_model: Model, metric: callable):
-        self.pred_model = pred_model
+        self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
     def evaluate(self, y: torch.tensor, yhat: torch.tensor, metric: callable=None):
@@ -81,16 +82,13 @@ class Evaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate_data_values(self, x: torch.tensor, y: torch.tensor, *args, **kwargs):
+    def evaluate_data_values(self) -> torch.tensor:
         """Evaluates the datavalues of the following tensors. NOTE this method may change
         due to the fact that inputs that differ from input tensors might not be allowed
-
-        :param torch.tensor x: Data covariates
-        :param torch.tensor y: Data labels
         """
         pass
 
 
-def DataEvaluator(method: Evaluator, model: Model, *args, **kwargs):
+def DE(method: DataEvaluator, model: Model, *args, **kwargs):
     # TODO Write If Else statements once it's populated with Data Evaluators
     return method(model, *args, **kwargs)

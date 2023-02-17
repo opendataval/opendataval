@@ -1,15 +1,15 @@
 import copy
-from abc import abstractmethod
 
 import numpy as np
 import torch
 import torch.nn as nn
 import tqdm
+from torch.utils.data import Subset, TensorDataset
 
-from dataoob.dataval import Evaluator, Model
+from dataoob.dataval import DataEvaluator, Model
 
 
-class ShapEvaluator(Evaluator):
+class ShapEvaluator(DataEvaluator):
     """Shap Evaluator is an abstract class for all shapley-based methods of
     computing data values. While this method is abstract, it implements much
     of the core computations for specific implementations to access. It also
@@ -25,23 +25,26 @@ class ShapEvaluator(Evaluator):
     :param int max_iterations: Max number of outer iterations of MCMC sampling, guarantees
     the training won't deadloop, defaults to 100
     """
-    # marg_contrib_dict = LRUCache(size=3) TODO
+    marg_contrib_dict = {}
 
-    def __init__(self, pred_model: Model, metric: callable, GR_threshold: float=1.01, max_iterations=100, *args, **kwargs):
-        self.pred_model = pred_model
+    def __init__(self, pred_model: Model, metric: callable, GR_threshold: float=1.01, max_iterations=100, model_name: str=None, *args, **kwargs):
+        self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
         self.max_iterations = max_iterations
         self.GR_threshold = GR_threshold
 
+        if model_name:
+            self.marginal_contribution = ShapEvaluator.model_to_marg_contrib(model_name)  # TODO figure out the cache, do i use metaclasses, no cache
+
     def compute_weight(self, *args, **kwargs):  # Overide
         return 1
 
     @classmethod  # TODO
-    def model_to_marg_contrib(cls, model: Model):
-        if model not in cls.Model_To_Marg_Contribs:
-            cls.Model_To_Marg_Contribs[model] = {}
-        return cls.Model_To_Marg_Contribs[model]
+    def model_to_marg_contrib(cls, model_name: str):
+        if model_name in cls.Model_To_Marg_Contribs:
+            return cls.Model_To_Marg_Contribs[model_name]
+        return None
 
     def train_data_values(
         self,
@@ -85,7 +88,7 @@ class ShapEvaluator(Evaluator):
         self.marginal_contribution = self.marginal_contrib_sum / (self.marginal_contrib_count)
         print(f"Done: marginal contribution computation", flush=True)
 
-    def evaluate_data_values(self, x: torch.tensor, y: torch.tensor, *args, **kwargs):
+    def evaluate_data_values(self, *args, **kwargs):
         """Multiplies the marginal contribution with their respective weights to get
 
         :param torch.tensor x: _description_
@@ -139,8 +142,7 @@ class ShapEvaluator(Evaluator):
 
         # Baseline at minimal cardinality
         prev_perf = self._evaluate_model(
-            self.x_train[coalition],
-            self.y_train_onehot[coalition],
+            indices=coalition,
             batch_size=batch_size,
             epochs=epochs
         )
@@ -149,8 +151,7 @@ class ShapEvaluator(Evaluator):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
             curr_perf = self._evaluate_model(
-                self.x_train[coalition],
-                self.y_train_onehot[coalition],
+                indices=coalition,
                 batch_size=batch_size,
                 epochs=epochs
             )
@@ -179,11 +180,10 @@ class ShapEvaluator(Evaluator):
 
         return  marginal_increment.reshape(1, -1)
 
-    def _evaluate_model(self, x_batch: torch.tensor, y_batch: torch.tensor, batch_size=32, epochs: int=1):
+    def _evaluate_model(self, indices: list, batch_size=32, epochs: int=1):
         """Trains and evaluates the performance of the model
 
-        :param torch.tensor x_batch: Data covariates
-        :param torch.tensor y_batch: Data labels
+        :param list[int] x_batch: Data covariates+labels indices
         :param int batch_size: Training batch size, defaults to 32
         :param int epochs: Number of epochs to train the pred_model, defaults to 1
         :return float: returns current performance of model given the batch
@@ -193,13 +193,13 @@ class ShapEvaluator(Evaluator):
         curr_model = copy.deepcopy(self.pred_model)
         if isinstance(curr_model, nn.Module):
             curr_model.fit(
-                x_batch,
-                y_batch,
+                Subset(self.x_train, indices=indices),
+                Subset(self.y_train, indices=indices),
                 batch_size=batch_size,
                 epochs=epochs,
             )
         else:
-            curr_model.fit(x_batch, y_batch)
+            curr_model.fit(self.x_train[indices], self.y_train[indices])
 
 
         y_valid_hat = curr_model.predict(self.x_valid)

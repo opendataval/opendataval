@@ -2,16 +2,17 @@ import copy
 import os
 from collections import OrderedDict
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import tqdm
+from torch.utils.data import DataLoader, RandomSampler
 
-from dataoob.dataval import Evaluator, Model
+from dataoob.dataval import DataEvaluator, Model
+from dataoob.util import CatDataset
 
 
-class DVRL(Evaluator):
+class DVRL(DataEvaluator):
     """Data valuation using reinforcement learning class, implemented with PyTorch
     Ref. https://arxiv.org/abs/1909.11671
 
@@ -35,17 +36,16 @@ class DVRL(Evaluator):
         metric: callable,
         x_dim: int,
         y_dim: int,
-        hidden_dim: int,
-        layer_number: int,
-        comb_dim: int,
-        act_fn: callable,
+        hidden_dim: int=100,
+        layer_number: int=5,
+        comb_dim: int=10,
+        act_fn: callable=F.relu,
         device: torch.device=torch.device("cpu"),
         checkpoint_file_name: str = "checkpoint.pt",
     ):
-        self.problem = "classification"
+        self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
-        self.pred_model = pred_model
         self.value_estimator = DataValueEstimatorRL(  # TODO change generative_model -> value_estimator, GM->VE
             x_dim=x_dim,
             y_dim=y_dim,
@@ -176,14 +176,12 @@ class DVRL(Evaluator):
         optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=lr)
         criterion = DveLoss(threshold=threshold)
 
-        for epoch in tqdm.tqdm(range(rl_epochs)):
-            indices = np.random.permutation(self.x_train.size(axis=0))[:batch_size]
-            optimizer.zero_grad()
 
-            # Set up batch
-            x_batch = self.x_train[indices]
-            y_batch = self.y_train[indices]
-            y_hat_batch = self.y_pred_diff[indices]
+        dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)  # TODO fix this
+        rs = RandomSampler(dataset, replacement=True, num_samples=(rl_epochs * batch_size))
+
+        for x_batch, y_batch, y_hat_batch in tqdm.tqdm(DataLoader(dataset, sampler=rs, batch_size=batch_size)):
+            optimizer.zero_grad()
 
             # Generates selection probability
             est_dv_curr = self.value_estimator(x_batch, y_batch, y_hat_batch)
@@ -216,27 +214,19 @@ class DVRL(Evaluator):
             y_valid_hat = new_model.predict(self.x_valid)
             dvrl_perf = self.evaluate(self.y_valid, y_valid_hat)
 
-            if self.problem == 'classification':  # TODO why is this the case exactly?
-                reward_curr = dvrl_perf - self.valid_perf
-            else:
-                reward_curr = self.valid_perf - dvrl_perf
+            # NOTE must want to maximize the metric (IE for MSE use -MSE)
+            reward_curr = dvrl_perf - self.valid_perf
 
             # Trains the generator
             loss = criterion(
                 torch.squeeze(est_dv_curr), torch.squeeze(sel_prob_curr_weight), reward_curr
             )
-            if epoch % 20 == 0:  # TODO currently for debugging
-                print(f"{dvrl_perf=}")
-                print(f"{reward_curr=}")
-                print(f"{torch.mean(sel_prob_curr)=}")
-                print(f"{loss=}")
             loss.backward(retain_graph=True)
             optimizer.step()
 
         # Saves trained model
         torch.save(
             {
-                "epoch": epoch,
                 "rl_model_state_dict": self.value_estimator.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss": loss,
@@ -266,11 +256,11 @@ class DVRL(Evaluator):
         else:
             self.final_model.fit(self.x_train, self.y_train, final_data_value_weights)
 
-    def evaluate_data_values(self, x: torch.tensor, y: torch.tensor):
+    def evaluate_data_values(self):
         """Returns data values using the data valuator model.
 
-        :param torch.tensor x: x input to find data value
-        :param torch.tensor y: y labels to find data value
+        :param torch.tensor x: Data+Test+Held-out covariates
+        :param torch.tensor y: Data+Test+Held-out labels
         :return torch.tensor: Predicted data values/selection poportions for every index of inputs
         """
         # One-hot encoded labels
@@ -285,7 +275,7 @@ class DVRL(Evaluator):
             torch.load(f"tmp_dvrl/{self.checkpoint_file_name}")["rl_model_state_dict"]
         )
 
-        final_data_value = self.value_estimator(x, y, y_hat)[:, 0]
+        final_data_value = self.value_estimator(self.x_train, self.y_train, y_hat)[:, 0]
 
         return final_data_value
 

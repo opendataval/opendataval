@@ -4,10 +4,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
 
+from dataoob.util import CatDataset
 
-def to_cpu(x):
-    return x.detach().cpu()
 
 class Model(ABC):
     @abstractmethod
@@ -22,8 +22,8 @@ class Model(ABC):
 class ClassifierNN(Model, nn.Module):
     def fit(
         self,
-        x_train,
-        y_train,
+        x_train: torch.tensor,
+        y_train: torch.tensor,
         sample_weight: torch.tensor=None,
         batch_size=32,
         epochs=1,
@@ -31,24 +31,26 @@ class ClassifierNN(Model, nn.Module):
     ):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
         criterion = F.binary_cross_entropy  # TODO update when we move from binary classification
+        dataset = CatDataset(x_train, y_train, sample_weight)
 
         for epoch in range(int(epochs)):
-            permutation = torch.randperm(x_train.size(axis=0))
-
-            for i in range(0, x_train.size(axis=0), batch_size):
-                # Consider dataloader, more idiomatic
-                indices = permutation[i : i + batch_size]
-                x_batch, y_batch = x_train[indices], y_train[indices]
-
+            # *weights helps check if we passed weights into the Dataloader
+            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size, shuffle=True):
                 optimizer.zero_grad()  # Setting our stored gradients equal to zero
                 outputs = self.__call__(x_batch)
-                if sample_weight is None:
-                   loss = criterion(outputs, y_batch)
+
+                if sample_weight is not None:
+                   loss = criterion(outputs, y_batch, weight=weights[0])
                 else:
-                    loss = criterion(outputs, y_batch, weight=sample_weight[indices])
+                    loss = criterion(outputs, y_batch)
 
                 loss.backward()  # Computes the gradient of the given tensor w.r.t. the weights/bias
                 optimizer.step()  # Updates weights and biases with the optimizer (SGD)
+
+def to_cpu(tensor: torch.tensor):
+    """Mini functioin to move tensor to CPU for SKlearn"""
+    assert isinstance(tensor, torch.tensor), "Not a valid input for Wrapper"
+    return tensor.detach().cpu()
 
 class ClassifierSkLearnWrapper(Model):
     def __init__(self, base_model, device: torch.device=torch.device('cpu')):
@@ -57,7 +59,6 @@ class ClassifierSkLearnWrapper(Model):
 
     def fit(self, x_train: torch.tensor, y_train: torch.tensor,  sample_weight: torch.tensor=None, *args, **kwargs):
         x_train, y_train = to_cpu(x_train), to_cpu(y_train)
-
         self.model.fit(
             x_train, torch.argmax(y_train, dim=1),
             None if sample_weight is None else torch.squeeze(to_cpu(sample_weight)),
