@@ -4,27 +4,27 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
 from dataoob.util import CatDataset
 
 
 class Model(ABC):
     @abstractmethod
-    def fit(self, x_train: torch.tensor, y_train: torch.tensor, *args, **kwargs):
+    def fit(self, x_train: torch.Tensor, y_train: torch.Tensor, *args, **kwargs):
         pass
 
     @abstractmethod
-    def predict(self, x: torch.tensor, *args, **kwargs):
+    def predict(self, x: torch.Tensor, *args, **kwargs):
         pass
 
 
 class ClassifierNN(Model, nn.Module):
     def fit(
         self,
-        x_train: torch.tensor,
-        y_train: torch.tensor,
-        sample_weight: torch.tensor=None,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        sample_weight: torch.Tensor=None,
         batch_size=32,
         epochs=1,
         verbose=False,
@@ -47,9 +47,9 @@ class ClassifierNN(Model, nn.Module):
                 loss.backward()  # Computes the gradient of the given tensor w.r.t. the weights/bias
                 optimizer.step()  # Updates weights and biases with the optimizer (SGD)
 
-def to_cpu(tensor: torch.tensor):
+def to_cpu(tensor: torch.Tensor):
     """Mini functioin to move tensor to CPU for SKlearn"""
-    assert isinstance(tensor, torch.tensor), "Not a valid input for Wrapper"
+    assert isinstance(tensor, torch.Tensor), "Not a valid input for Wrapper"
     return tensor.detach().cpu()
 
 class ClassifierSkLearnWrapper(Model):
@@ -57,7 +57,7 @@ class ClassifierSkLearnWrapper(Model):
         self.model = base_model
         self.device = device
 
-    def fit(self, x_train: torch.tensor, y_train: torch.tensor,  sample_weight: torch.tensor=None, *args, **kwargs):
+    def fit(self, x_train: torch.Tensor, y_train: torch.Tensor,  sample_weight: torch.Tensor=None, *args, **kwargs):
         x_train, y_train = to_cpu(x_train), to_cpu(y_train)
         self.model.fit(
             x_train, torch.argmax(y_train, dim=1),
@@ -66,13 +66,13 @@ class ClassifierSkLearnWrapper(Model):
             **kwargs
         )
 
-    def predict(self, x: torch.tensor):
+    def predict(self, x: torch.Tensor):
         x = to_cpu(x)
         output = self.model.predict_proba(x)
         return torch.from_numpy(output).to(dtype=torch.float32, device=self.device)
 
 class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
-    def fit(self, x_train: torch.tensor, y_train: torch.tensor,  sample_weight: torch.tensor=None, *args, **kwargs):
+    def fit(self, x_train: torch.Tensor, y_train: torch.Tensor,  sample_weight: torch.Tensor=None, *args, **kwargs):
         x_train, y_train  = to_cpu(x_train), to_cpu(y_train)
 
         if sample_weight is not None:

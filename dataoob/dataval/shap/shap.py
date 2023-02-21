@@ -34,16 +34,18 @@ class ShapEvaluator(DataEvaluator):
         self.max_iterations = max_iterations
         self.GR_threshold = GR_threshold
 
-        if model_name:
-            self.marginal_contribution = ShapEvaluator.model_to_marg_contrib(model_name)  # TODO figure out the cache, do i use metaclasses, no cache
+        self.model_name = model_name
 
-    def compute_weight(self, *args, **kwargs):  # Overide
-        return 1
 
-    @classmethod  # TODO
-    def model_to_marg_contrib(cls, model_name: str):
-        if model_name in cls.Model_To_Marg_Contribs:
-            return cls.Model_To_Marg_Contribs[model_name]
+    def compute_weight(self, *args, **kwargs):
+        return 1. / self.n_points
+
+    @staticmethod  # TODO
+    def marginal_cache(model_name: str, marignal_contrib: np.array=None):
+        if model_name and marignal_contrib is not None:
+            ShapEvaluator.marg_contrib_dict[model_name] = marignal_contrib
+        elif model_name:
+            return ShapEvaluator.marg_contrib_dict.get(model_name)
         return None
 
     def train_data_values(
@@ -60,6 +62,11 @@ class ShapEvaluator(DataEvaluator):
         :param int batch_size: Baseline training batch size, defaults to 32
         :param int epochs: Number of epochs for baseline training, defaults to 1
         """
+        # Checks cache if model name has been computed prior
+        if self.marginal_cache(self.model_name) is not None:
+            self.marginal_contribution = self.marginal_cache(self.model_name)
+            return
+
         print(f"Start: marginal contribution computation", flush=True)
         self.marginal_contrib_sum = np.zeros((self.n_points, self.n_points))
         self.marginal_contrib_count = np.zeros((self.n_points, self.n_points)) + 1e-8  # Prevents overflow
@@ -86,6 +93,7 @@ class ShapEvaluator(DataEvaluator):
             iteration += 1  # Update terminating conditions
 
         self.marginal_contribution = self.marginal_contrib_sum / (self.marginal_contrib_count)
+        self.marginal_cache(self.model_name, self.marginal_contribution)
         print(f"Done: marginal contribution computation", flush=True)
 
     def evaluate_data_values(self, *args, **kwargs):
@@ -103,10 +111,10 @@ class ShapEvaluator(DataEvaluator):
 
     def input_data(
         self,
-        x_train: torch.tensor,
-        y_train: torch.tensor,
-        x_valid: torch.tensor,
-        y_valid: torch.tensor,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_valid: torch.Tensor,
+        y_valid: torch.Tensor,
     ):
         """Stores and transforms input data for Shapley-based predictors
 
@@ -126,7 +134,7 @@ class ShapEvaluator(DataEvaluator):
 
 
     def _calculate_marginal_contributions(self, batch_size=32, epochs: int=1, min_cardinality: int=5):
-        """Computes marginal contribution through uniform MCMC sampling
+        """Computes marginal contribution through TMC-Shapley algorithm
 
         :param int batch_size: Baseline training batch size, defaults to 32
         :param int epochs: Number of epochs for baseline training, defaults to 1
@@ -147,7 +155,7 @@ class ShapEvaluator(DataEvaluator):
             epochs=epochs
         )
 
-        for cutoff, idx in enumerate(indices[min_cardinality:], start=min_cardinality):  # TODO consider using dataloader
+        for cutoff, idx in enumerate(indices[min_cardinality:], start=min_cardinality):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
             curr_perf = self._evaluate_model(
@@ -163,7 +171,7 @@ class ShapEvaluator(DataEvaluator):
 
             # if a new increment is not large enough, we terminate the valuation.
             distance_to_full_score = np.abs(
-                marginal_increment[idx] / (np.sum(marginal_increment))
+                (curr_perf - prev_perf) / (np.sum(marginal_increment))
             )
 
             # Update terminating conditions
@@ -178,7 +186,7 @@ class ShapEvaluator(DataEvaluator):
                 # print(f'Among {self.n_points}, {n} samples are observed!', flush=True)
                 break
 
-        return  marginal_increment.reshape(1, -1)
+        return marginal_increment.reshape(1, -1)
 
     def _evaluate_model(self, indices: list, batch_size=32, epochs: int=1):
         """Trains and evaluates the performance of the model

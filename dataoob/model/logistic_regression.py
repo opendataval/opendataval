@@ -22,7 +22,7 @@ class LogisticRegression(ClassifierNN):
         # the true feature attribution is the same for all points x
         return self.linear.weight[1, :] - self.linear.weight[0, :]
 
-    def forward(self, x: torch.tensor):
+    def forward(self, x: torch.Tensor):
         """_summary_
 
         :param torch.tensor x: _description_
@@ -32,7 +32,7 @@ class LogisticRegression(ClassifierNN):
         x = F.softmax(x, dim=1)
         return x
 
-    def predict(self, x: torch.tensor):
+    def predict(self, x: torch.Tensor):
         """_summary_
 
         :param torch.tensor x: _description_

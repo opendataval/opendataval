@@ -17,8 +17,6 @@ class DVRL(DataEvaluator):
     Ref. https://arxiv.org/abs/1909.11671
 
     :param Model pred_model: Prediction model
-    :param int x_dim: Data covariates dimension
-    :param int y_dim: Data labels dimension
     :param callable (torch.tensor, torch.tensor -> float) metric: Evaluation function
     to determine model performance
     :param int hidden_dim: Hidden dimensions for the RL Multilayer Perceptron
@@ -27,41 +25,54 @@ class DVRL(DataEvaluator):
     :param int comb_dim: After combining the input in the VE how many layers,
     much less than `hidden_dim`
     :param callable (torch.tensor -> torch.tensor) act_fn: Activation function for VE
+    :param int rl_epochs: Number of epochs for the VE, defaults to 1
+    :param float lr: Learning rate for the VE, defaults to 0.01
+    :param float threshold: Search rate threshold, the VE may get stuck in certain bounds close to [0., 1.] because
+    it samples from a binomial, thus outside of [1-threshold, threshold] we encourage the VE to search, defaults to 0.9
+    :param bool pre_train:  Whether to load a pretrained model from `tmp_dvrl/pred_model.pt`, defaults to False
     :param str checkpoint_file_name: _description_, defaults to "checkpoint.pt"
     """
 
-    def __init__(
+    def __init__(  # TODO consider inputting training parameters
         self,
         pred_model: Model,
         metric: callable,
-        x_dim: int,
-        y_dim: int,
         hidden_dim: int=100,
         layer_number: int=5,
         comb_dim: int=10,
         act_fn: callable=F.relu,
+        rl_epochs: int = 1000,
+        lr: float = 0.01,
+        threshold: float = 0.9,
         device: torch.device=torch.device("cpu"),
+        pre_train_pred: bool = False,
         checkpoint_file_name: str = "checkpoint.pt",
     ):
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
-        self.value_estimator = DataValueEstimatorRL(  # TODO change generative_model -> value_estimator, GM->VE
-            x_dim=x_dim,
-            y_dim=y_dim,
-            hidden_dim=hidden_dim,
-            layer_number=layer_number,
-            comb_dim=comb_dim,
-            act_fn=act_fn,
-        ).to(device)
+        self.pre_train_pred = pre_train_pred
         self.checkpoint_file_name = checkpoint_file_name
+
+        # MLP parameters
+        self.hidden_dim=hidden_dim
+        self.layer_number=layer_number
+        self.comb_dim=comb_dim
+        self.act_fn=act_fn
+        self.device = device
+
+        # Training parameters
+        self.rl_epochs = rl_epochs
+        self.lr = lr
+        self.threshold = threshold
+
 
     def input_data(
         self,
-        x_train: torch.tensor,
-        y_train: torch.tensor,
-        x_valid: torch.tensor,
-        y_valid: torch.tensor,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_valid: torch.Tensor,
+        y_valid: torch.Tensor,
     ):
         """Stores and transforms input data for DVRL
 
@@ -74,6 +85,15 @@ class DVRL(DataEvaluator):
         self.y_train = y_train
         self.x_valid = x_valid
         self.y_valid = y_valid
+
+        self.value_estimator = DataValueEstimatorRL(
+            x_dim=x_train.size(dim=1),
+            y_dim=y_train.size(dim=1),
+            hidden_dim=self.hidden_dim,
+            layer_number=self.layer_number,
+            comb_dim=self.comb_dim,
+            act_fn=self.act_fn,
+        ).to(self.device)
 
 
     def evaluate_baseline_models(
@@ -150,22 +170,13 @@ class DVRL(DataEvaluator):
 
     def train_data_values(
         self,
-        pre_train_pred: bool = False,
         batch_size: int = 32,
-        rl_epochs: int = 1,
         epochs: int = 1,
-        lr: float = 0.01,
-        threshold: float = 0.9,
     ):
         """Trains the DVRL model to assign probabilities of each data point being selected.
 
-        :param bool pre_train:  Whether to load a pretrained model from `tmp_dvrl/pred_model.pt`, defaults to False
         :param int batch_size: pred_model training batch size, defaults to 32
-        :param int rl_epochs: Number of epochs for the VE, defaults to 1
         :param int epochs: Number of epochs for the pred_model, per training (this will equal rl_epochs * epochs), defaults to 1
-        :param float lr: Learning rate for the VE, defaults to 0.01
-        :param float threshold: Search rate threshold, the VE may get stuck in certain bounds close to [0., 1.] because
-        it samples from a binomial, thus outside of [1-threshold, threshold] we encourage the VE to search, defaults to 0.9
         """
         batch_size = min(batch_size, self.x_train.size(axis=0))
         self.evaluate_baseline_models(
@@ -311,7 +322,7 @@ class DataValueEstimatorRL(nn.Module):
         hidden_dim: int,
         layer_number: int,
         comb_dim: int,
-        act_fn: callable,
+        act_fn: callable=F.relu,
     ):
         super(DataValueEstimatorRL, self).__init__()
 
@@ -340,7 +351,7 @@ class DataValueEstimatorRL(nn.Module):
         self.yhat_comb = nn.Sequential(yhat_combine)
 
     def forward(
-        self, x: torch.tensor, y: torch.tensor, y_hat: torch.tensor
+        self, x: torch.Tensor, y: torch.Tensor, y_hat: torch.Tensor
     ):
         """Forward pass through Dvrl
 
@@ -375,8 +386,8 @@ class DveLoss(nn.Module):
 
     def forward(
         self,
-        predicted_data_val: torch.tensor,
-        selector_input: torch.tensor,
+        predicted_data_val: torch.Tensor,
+        selector_input: torch.Tensor,
         reward_input: float,
     ):
         """Computes the loss for the Value Estimator and takes in account the reward

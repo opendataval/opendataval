@@ -9,11 +9,11 @@ from dataoob.model import Model
 class DataEvaluator(ABC):
     """Abstract class of Evaluators. Provides a template of how evaluators interact with the pred_model
     """
-    def __init__(self, pred_model: Model, metric: callable):
+    def __init__(self, pred_model: Model, metric: callable, *args, **kwargs):
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
-    def evaluate(self, y: torch.tensor, yhat: torch.tensor, metric: callable=None):
+    def evaluate(self, y: torch.Tensor, yhat: torch.Tensor, metric: callable=None):
         if metric is None:
             return self.metric(y, yhat)
         elif isinstance(metric, callable):
@@ -22,14 +22,12 @@ class DataEvaluator(ABC):
 
     def train(
         self,
-        x_train: torch.tensor,
-        y_train: torch.tensor,
-        x_valid: torch.tensor,
-        y_valid: torch.tensor,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_valid: torch.Tensor,
+        y_valid: torch.Tensor,
         epochs: int = 1,
         batch_size: int = 32,
-        *args,
-        **kwargs
     ):
         """_summary_
 
@@ -44,17 +42,15 @@ class DataEvaluator(ABC):
         self.train_data_values(
             batch_size=batch_size,
             epochs=epochs,
-            *args,
-            **kwargs
         )
 
     @abstractmethod
     def input_data(
         self,
-        x_train: torch.tensor,
-        y_train: torch.tensor,
-        x_valid: torch.tensor,
-        y_valid: torch.tensor,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_valid: torch.Tensor,
+        y_valid: torch.Tensor,
     ):
         """Stores and processes the data for the given evaluator, helps
         seperate the structure from the data
@@ -71,8 +67,6 @@ class DataEvaluator(ABC):
         self,
         batch_size: int=32,
         epochs: int=1,
-        *args,
-        **kwargs
     ):
         """Trains the evaluator to compute data values of the model
 

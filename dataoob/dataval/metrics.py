@@ -1,5 +1,3 @@
-"""TODO update these functions with correct torch implementations"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import metrics

@@ -1,7 +1,0 @@
-1. KNN shapley
-2. When moving a model, make a deepcopy of the original model
-3. Documentation for the api folder
-6. Pipeline, change up the dataloader!!!
-7. Double check the values
-8. Noisy detection core, utl evaluate, check on DVRL `utils_eval.py` line 21
-10. URGENT consider caching after the response, that way less reminder when pulling and c

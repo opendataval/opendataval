@@ -58,7 +58,7 @@ def one_hot_encode(data) -> torch.tensor:
     label_dim = int(np.max(data) + 1)
     return np.eye(label_dim)[np.squeeze(data)]
 
-def noisify(labels: torch.tensor, noise_rate: float=0.) -> tuple[torch.tensor, np.array]:
+def noisify(labels: torch.Tensor, noise_rate: float=0.) -> tuple[torch.tensor, np.array]:
     if noise_rate == 0.:
         return labels, np.array([])
     if  0 <= noise_rate <= 1.:
@@ -75,8 +75,8 @@ def noisify(labels: torch.tensor, noise_rate: float=0.) -> tuple[torch.tensor, n
 
 
 def split_dataset(
-    x: torch.tensor,
-    y: torch.tensor,
+    x: torch.Tensor,
+    y: torch.Tensor,
     train_count: int | float,
     valid_count: int | float,
     test_count: int | float,
