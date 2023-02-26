@@ -25,7 +25,7 @@ class LogisticRegression(ClassifierNN):
     def forward(self, x: torch.Tensor):
         """_summary_
 
-        :param torch.tensor x: _description_
+        :param torch.Tensor x: _description_
         :return _type_: _description_
         """
         x = self.linear(x)
@@ -35,7 +35,7 @@ class LogisticRegression(ClassifierNN):
     def predict(self, x: torch.Tensor):
         """_summary_
 
-        :param torch.tensor x: _description_
+        :param torch.Tensor x: _description_
         :return _type_: _description_
         """ """
         predict method for CFE-Models which need this method.

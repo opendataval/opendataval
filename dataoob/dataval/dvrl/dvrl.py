@@ -8,8 +8,8 @@ import torch.nn.functional as F
 import tqdm
 from torch.utils.data import DataLoader, RandomSampler
 
+from dataoob.dataloader.util import CatDataset
 from dataoob.dataval import DataEvaluator, Model
-from dataoob.util import CatDataset
 
 
 class DVRL(DataEvaluator):
@@ -17,55 +17,56 @@ class DVRL(DataEvaluator):
     Ref. https://arxiv.org/abs/1909.11671
 
     :param Model pred_model: Prediction model
-    :param callable (torch.tensor, torch.tensor -> float) metric: Evaluation function
+    :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function
     to determine model performance
     :param int hidden_dim: Hidden dimensions for the RL Multilayer Perceptron
     (details in `DataValueEstimatorRL` class)
     :param int layer_number: Number of hidden layers for the Value Estimator (VE)
     :param int comb_dim: After combining the input in the VE how many layers,
     much less than `hidden_dim`
-    :param callable (torch.tensor -> torch.tensor) act_fn: Activation function for VE
+    :param callable (torch.Tensor -> torch.Tensor) act_fn: Activation function for VE
     :param int rl_epochs: Number of epochs for the VE, defaults to 1
     :param float lr: Learning rate for the VE, defaults to 0.01
-    :param float threshold: Search rate threshold, the VE may get stuck in certain bounds close to [0., 1.] because
-    it samples from a binomial, thus outside of [1-threshold, threshold] we encourage the VE to search, defaults to 0.9
-    :param bool pre_train:  Whether to load a pretrained model from `tmp_dvrl/pred_model.pt`, defaults to False
-    :param str checkpoint_file_name: _description_, defaults to "checkpoint.pt"
+    :param float threshold: Search rate threshold, the VE may get stuck in certain
+    bounds close to [0., 1.] because it samples from a binomial, thus outside of
+    [1-threshold, threshold] we encourage the VE to search, defaults to 0.9
+    :param bool pre_train:  Whether to load a pretrained model from
+    `tmp_dvrl/{checkpoint_file}`, defaults to False
+    :param str checkpoint_file: Checkpoint file, defaults to "checkpoint.pt"
     """
 
-    def __init__(  # TODO consider inputting training parameters
+    def __init__(
         self,
         pred_model: Model,
         metric: callable,
-        hidden_dim: int=100,
-        layer_number: int=5,
-        comb_dim: int=10,
-        act_fn: callable=F.relu,
+        hidden_dim: int = 100,
+        layer_number: int = 5,
+        comb_dim: int = 10,
+        act_fn: callable = F.relu,
         rl_epochs: int = 1000,
         lr: float = 0.01,
         threshold: float = 0.9,
-        device: torch.device=torch.device("cpu"),
+        device: torch.device = torch.device("cpu"),
         pre_train_pred: bool = False,
-        checkpoint_file_name: str = "checkpoint.pt",
+        checkpoint_file: str = "checkpoint.pt",
     ):
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
         self.pre_train_pred = pre_train_pred
-        self.checkpoint_file_name = checkpoint_file_name
+        self.checkpoint_file = checkpoint_file
 
         # MLP parameters
-        self.hidden_dim=hidden_dim
-        self.layer_number=layer_number
-        self.comb_dim=comb_dim
-        self.act_fn=act_fn
+        self.hidden_dim = hidden_dim
+        self.layer_number = layer_number
+        self.comb_dim = comb_dim
+        self.act_fn = act_fn
         self.device = device
 
         # Training parameters
         self.rl_epochs = rl_epochs
         self.lr = lr
         self.threshold = threshold
-
 
     def input_data(
         self,
@@ -76,10 +77,10 @@ class DVRL(DataEvaluator):
     ):
         """Stores and transforms input data for DVRL
 
-        :param torch.tensor x_train: Data covariates
-        :param torch.tensor y_train: Data labels
-        :param torch.tensor x_valid: Test+Held-out covariates
-        :param torch.tensor y_valid: Test+Held-out labels
+        :param torch.Tensor x_train: Data covariates
+        :param torch.Tensor y_train: Data labels
+        :param torch.Tensor x_valid: Test+Held-out covariates
+        :param torch.Tensor y_valid: Test+Held-out labels
         """
         self.x_train = x_train
         self.y_train = y_train
@@ -95,14 +96,14 @@ class DVRL(DataEvaluator):
             act_fn=self.act_fn,
         ).to(self.device)
 
-
     def evaluate_baseline_models(
         self, pre_train: bool = False, batch_size: int = 32, epochs: int = 1
     ):
         """Loads and trains baseline models. Baseline performance information
         is necessary to compute the reward.
 
-        :param bool pre_train:  Whether to load a pretrained model from `tmp_dvrl/pred_model.pt`, defaults to False
+        :param bool pre_train: Whether to load a pretrained model from
+        `tmp_dvrl/{self.checkpoint_file}`, defaults to False
         :param int batch_size: Baseline training batch size, defaults to 32
         :param int epochs: Number of epochs for baseline training, defaults to 1
         """
@@ -118,9 +119,9 @@ class DVRL(DataEvaluator):
                 epochs=0,
             )
             # Saves initial randomization
-            torch.save(self.pred_model.state_dict(), "tmp_dvrl/pred_model.pt")
+            torch.save(self.pred_model.state_dict(), f"tmp_dvrl/{self.checkpoint_file}")
             # With pre-trained model, pre-trained model should be saved as
-            # 'tmp_dvrl/pred_model.pt'
+            # 'tmp_dvrl/{self.checkpoint_file}.pt'
 
         # Final model
         self.final_model = copy.deepcopy(self.pred_model)
@@ -154,44 +155,47 @@ class DVRL(DataEvaluator):
         else:
             self.val_model.fit(self.x_valid, self.y_valid)
 
-
         # Eval performance
         # Baseline performance
         y_valid_hat = self.ori_model.predict(self.x_valid)
         self.valid_perf = self.evaluate(self.y_valid, y_valid_hat)
 
-
         # Compute diff
         y_train_valid_pred = self.val_model.predict(self.x_train)
 
-        self.y_pred_diff = torch.abs(
-            self.y_train - y_train_valid_pred
-        ) / torch.sum(self.y_train, axis=1, keepdim=True)
+        self.y_pred_diff = torch.abs(self.y_train - y_train_valid_pred) / torch.sum(
+            self.y_train, axis=1, keepdim=True
+        )
 
     def train_data_values(
         self,
         batch_size: int = 32,
         epochs: int = 1,
     ):
-        """Trains the DVRL model to assign probabilities of each data point being selected.
+        """Trains the DVRL model to assign probabilities of each data point
+        being selected.
 
         :param int batch_size: pred_model training batch size, defaults to 32
-        :param int epochs: Number of epochs for the pred_model, per training (this will equal rl_epochs * epochs), defaults to 1
+        :param int epochs: Number of epochs for the pred_model, per training
+        (this will equal rl_epochs * epochs), defaults to 1
         """
         batch_size = min(batch_size, self.x_train.size(axis=0))
         self.evaluate_baseline_models(
-            pre_train_pred, batch_size=batch_size, epochs=epochs
+            self.pre_train_pred, batch_size=batch_size, epochs=epochs
         )
 
         # Solver
-        optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=lr)
-        criterion = DveLoss(threshold=threshold)
+        optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=self.lr)
+        criterion = DveLoss(threshold=self.threshold)
 
+        dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
+        rs = RandomSampler(
+            dataset, replacement=True, num_samples=(self.rl_epochs * batch_size)
+        )
 
-        dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)  # TODO fix this
-        rs = RandomSampler(dataset, replacement=True, num_samples=(rl_epochs * batch_size))
-
-        for x_batch, y_batch, y_hat_batch in tqdm.tqdm(DataLoader(dataset, sampler=rs, batch_size=batch_size)):
+        for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
+            DataLoader(dataset, sampler=rs, batch_size=batch_size)
+        ):
             optimizer.zero_grad()
 
             # Generates selection probability
@@ -203,7 +207,7 @@ class DVRL(DataEvaluator):
             if torch.sum(sel_prob_curr) == 0:
                 est_dv_curr = 0.5 * torch.ones(est_dv_curr.size())
                 sel_prob_curr = torch.bernoulli(est_dv_curr)
-            sel_prob_curr_weight = sel_prob_curr.detach()  # TODO look into detach
+            sel_prob_curr_weight = sel_prob_curr.detach()
 
             # Prediction and training
             new_model = copy.deepcopy(self.pred_model)
@@ -230,7 +234,9 @@ class DVRL(DataEvaluator):
 
             # Trains the generator
             loss = criterion(
-                torch.squeeze(est_dv_curr), torch.squeeze(sel_prob_curr_weight), reward_curr
+                torch.squeeze(est_dv_curr),
+                torch.squeeze(sel_prob_curr_weight),
+                reward_curr,
             )
             loss.backward(retain_graph=True)
             optimizer.step()
@@ -252,7 +258,6 @@ class DVRL(DataEvaluator):
         ).detach()
 
         # Trains final model
-        # If the final model is neural network
         if isinstance(self.final_model, nn.Module):
             self.final_model.load_state_dict(torch.load("tmp_dvrl/pred_model.pt"))
             # Train the model
@@ -270,16 +275,14 @@ class DVRL(DataEvaluator):
     def evaluate_data_values(self):
         """Returns data values using the data valuator model.
 
-        :param torch.tensor x: Data+Test+Held-out covariates
-        :param torch.tensor y: Data+Test+Held-out labels
-        :return torch.tensor: Predicted data values/selection poportions for every index of inputs
+        :return torch.Tensor: Predicted data values/selection for every input data point
         """
         # One-hot encoded labels
         # Generates y_train_hat
         y_valid_pred = self.final_model.predict(self.x_train)
-        y_hat = torch.abs(
-            self.y_train - y_valid_pred
-        ) / torch.sum(self.y_train, axis=1, keepdim=True)
+        y_hat = torch.abs(self.y_train - y_valid_pred) / torch.sum(
+            self.y_train, axis=1, keepdim=True
+        )
 
         # Estimates data value
         self.value_estimator.load_state_dict(
@@ -312,7 +315,8 @@ class DataValueEstimatorRL(nn.Module):
     :param int hidden_dim: number of dims per hidden layer
     :param int layer_number: number of hidden layers
     :param int comb_dim: number of layers after combining with y_hat_pred
-    :param callable (torch.tensor -> torch.tensor) act_fn: activation function between hidden layers
+    :param callable (torch.Tensor -> torch.Tensor) act_fn: activation function
+    between hidden layers
     """
 
     def __init__(
@@ -322,7 +326,7 @@ class DataValueEstimatorRL(nn.Module):
         hidden_dim: int,
         layer_number: int,
         comb_dim: int,
-        act_fn: callable=F.relu,
+        act_fn: callable = F.relu,
     ):
         super(DataValueEstimatorRL, self).__init__()
 
@@ -350,15 +354,13 @@ class DataValueEstimatorRL(nn.Module):
         yhat_combine["out_acti"] = nn.Sigmoid()  # Sigmoid because binary selection
         self.yhat_comb = nn.Sequential(yhat_combine)
 
-    def forward(
-        self, x: torch.Tensor, y: torch.Tensor, y_hat: torch.Tensor
-    ):
+    def forward(self, x: torch.Tensor, y: torch.Tensor, y_hat: torch.Tensor):
         """Forward pass through Dvrl
 
-        :param torch.tensor x: Data covariates
-        :param torch.tensor y: Data labels
-        :param torch.tensor y_hat: Data label predictions (from another model)
-        :return torch.tensor: _description_
+        :param torch.Tensor x: Data covariates
+        :param torch.Tensor y: Data labels
+        :param torch.Tensor y_hat: Data label predictions (from another model)
+        :return torch.Tensor: Predicted selection probabilities per datapoint
         """
         x = torch.concat((x, y), axis=1)
         x = self.mlp(x)
@@ -377,9 +379,7 @@ class DveLoss(nn.Module):
     :param float exploration_weight: Weight used in loss computation for exploration.
     """
 
-    def __init__(
-        self, threshold: float = 0.9, exploration_weight: float = 1e3
-    ):
+    def __init__(self, threshold: float = 0.9, exploration_weight: float = 1e3):
         super(DveLoss, self).__init__()
         self.threshold = threshold
         self.exploration_weight = exploration_weight
@@ -392,16 +392,17 @@ class DveLoss(nn.Module):
     ):
         """Computes the loss for the Value Estimator and takes in account the reward
 
-        :param torch.tensor predicted_data_val: Predicted values from the generative model
-        :param torch.tensor selector_input: `1` for selected `0` for not selected in model
-        :param float reward_input: Reward/performance of model trained on `selector_input`
-        sample weights. If positive, indicates better than the naive model.
+        :param torch.Tensor predicted_data_val: Predicted values from value estimator
+        :param torch.Tensor selector_input: `1` for selected `0` for not selected
+        :param float reward_input: Reward/performance of model trained on
+        `selector_input` sample weights. If positive, indicates better than naive model.
         """
-        likelihood = F.binary_cross_entropy(predicted_data_val, selector_input, reduction='sum')
+        likelihood = F.binary_cross_entropy(
+            predicted_data_val, selector_input, reduction="sum"
+        )
 
         reward_loss = reward_input * likelihood
-        search_loss = (
-            F.relu(torch.mean(predicted_data_val) - self.threshold) + \
-            F.relu((1 - self.threshold) - torch.mean(predicted_data_val))
+        search_loss = F.relu(torch.mean(predicted_data_val) - self.threshold) + F.relu(
+            (1 - self.threshold) - torch.mean(predicted_data_val)
         )
         return reward_loss + (self.exploration_weight * search_loss)

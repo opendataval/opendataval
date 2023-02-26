@@ -4,13 +4,15 @@ from dataoob.dataval import Evaluator, Model
 
 
 class DataShap(Evaluator):
-    def __init__(self, pred_model: Model, metric: callable, GR_threshold=1.05, max_iters=50):
+    def __init__(
+        self, pred_model: Model, metric: callable, GR_threshold=1.05, max_iters=50
+    ):
         self.pred_model = pred_model
         self.metric = metric
 
         self.GR_threshold = GR_threshold
         self.max_iters = max_iters
-         # create placeholders  TODO evaluate and decide if we need this
+        # create placeholders  TODO evaluate and decide if we need this
         self.data_value_dict = defaultdict(list)
         self.time_dict = defaultdict(list)
         self.noisy_detect_dict = defaultdict(list)
@@ -18,10 +20,10 @@ class DataShap(Evaluator):
 
     def input_data(
         self,
-        x_train: torch.tensor,
-        y_train: torch.tensor,
-        x_valid: torch.tensor,
-        y_valid: torch.tensor,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_valid: torch.Tensor,
+        y_valid: torch.Tensor,
     ):
         self.x_train = x_train
         self.y_train = y_train

@@ -7,7 +7,8 @@ from dataoob.model import Model
 
 
 class DataEvaluator(ABC):
-    """Abstract class of Evaluators. Provides a template of how evaluators interact with the pred_model
+    """Abstract class of Evaluators. Provides a template of how evaluators interact
+    with the pred_model and specific methods each evaluator should implement
     """
     def __init__(self, pred_model: Model, metric: callable, *args, **kwargs):
         self.pred_model = copy.deepcopy(pred_model)
@@ -26,23 +27,21 @@ class DataEvaluator(ABC):
         y_train: torch.Tensor,
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
-        epochs: int = 1,
         batch_size: int = 32,
+        epochs: int = 1
     ):
-        """_summary_
+        """Trains the Data Evaluator and the underlying prediction model. Wrapper for
+       `self.input_data` and `self.train_data_values` under one method
 
-        :param torch.tensor x_train: Data covariates
-        :param torch.tensor y_train: Data labels
-        :param torch.tensor x_valid: Test+Held-out covariates
-        :param torch.tensor y_valid: Test+Held-out labels
+        :param torch.Tensor x_train: Data covariates
+        :param torch.Tensor y_train: Data labels
+        :param torch.Tensor x_valid: Test+Held-out covariates
+        :param torch.Tensor y_valid: Test+Held-out labels
         :param int epochs: Number of epochs to train the pred_model, defaults to 1
         :param int batch_size: Training batch size, defaults to 32
         """
         self.input_data(x_train, y_train, x_valid, y_valid)
-        self.train_data_values(
-            batch_size=batch_size,
-            epochs=epochs,
-        )
+        self.train_data_values(batch_size=batch_size, epochs=epochs)
 
     @abstractmethod
     def input_data(
@@ -55,19 +54,15 @@ class DataEvaluator(ABC):
         """Stores and processes the data for the given evaluator, helps
         seperate the structure from the data
 
-        :param torch.tensor x_train: Data covariates
-        :param torch.tensor y_train: Data labels
-        :param torch.tensor x_valid: Test+Held-out covariates
-        :param torch.tensor y_valid: Test+Held-out labels
+        :param torch.Tensor x_train: Data covariates
+        :param torch.Tensor y_train: Data labels
+        :param torch.Tensor x_valid: Test+Held-out covariates
+        :param torch.Tensor y_valid: Test+Held-out labels
         """
         pass
 
     @abstractmethod
-    def train_data_values(
-        self,
-        batch_size: int=32,
-        epochs: int=1,
-    ):
+    def train_data_values(self, batch_size: int=32, epochs: int=1):
         """Trains the evaluator to compute data values of the model
 
         :param int batch_size: Training batch size, defaults to 32
@@ -76,7 +71,7 @@ class DataEvaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate_data_values(self) -> torch.tensor:
+    def evaluate_data_values(self) -> torch.Tensor:
         """Evaluates the datavalues of the following tensors. NOTE this method may change
         due to the fact that inputs that differ from input tensors might not be allowed
         """
