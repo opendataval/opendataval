@@ -2,6 +2,8 @@ import copy
 from abc import ABC, abstractmethod
 
 import torch
+import torch.nn as nn
+from torch.utils.data import Subset
 
 from dataoob.model import Model
 
@@ -14,11 +16,11 @@ class DataEvaluator(ABC):
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
-    def evaluate(self, y: torch.Tensor, yhat: torch.Tensor, metric: callable=None):
+    def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor, metric: callable=None):
         if metric is None:
-            return self.metric(y, yhat)
+            return self.metric(y, y_hat)
         elif isinstance(metric, callable):
-            return metric(y, yhat)
+            return metric(y, y_hat)
         raise Exception("Metric not specified")
 
     def train(
@@ -43,6 +45,7 @@ class DataEvaluator(ABC):
         self.input_data(x_train, y_train, x_valid, y_valid)
         self.train_data_values(batch_size=batch_size, epochs=epochs)
 
+
     @abstractmethod
     def input_data(
         self,
@@ -60,6 +63,9 @@ class DataEvaluator(ABC):
         :param torch.Tensor y_valid: Test+Held-out labels
         """
         pass
+
+    def get_data_points(self):
+        return (self.x_train, self.y_train), (self.x_valid, self.y_valid)
 
     @abstractmethod
     def train_data_values(self, batch_size: int=32, epochs: int=1):

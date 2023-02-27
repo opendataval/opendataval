@@ -17,11 +17,6 @@ class LogisticRegression(ClassifierNN):
 
         self.linear = nn.Linear(self.input_dim, self.num_of_classes)
 
-    def return_ground_truth_importance(self, x):
-        """Returns a vector containing the ground truth feature attributions for input x."""
-        # the true feature attribution is the same for all points x
-        return self.linear.weight[1, :] - self.linear.weight[0, :]
-
     def forward(self, x: torch.Tensor):
         """_summary_
 

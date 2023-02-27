@@ -16,7 +16,7 @@ class KNNShapley(DataEvaluator):
     def __init__(
         self,
         pred_model: Model,
-        use_prediction: bool = True,
+        use_prediction: bool = False,
         k_neighbors: int = 10,
     ):
         self.pred_model = copy.deepcopy(pred_model) if use_prediction else None
@@ -58,8 +58,7 @@ class KNNShapley(DataEvaluator):
             y_hat_train = self.pred_model.predict(self.x_train)
             y_hat_valid = self.pred_model.predict(self.x_valid)
         else:
-            y_hat_train = self.pred_model.predict(self.x_train)
-            y_hat_valid = self.pred_model.predict(self.x_valid)
+            y_hat_train, y_hat_valid = self.x_train, self.x_valid
 
         self.data_values = self._knn_shap(
             y_hat_train, self.y_train, y_hat_valid, self.y_valid
@@ -108,10 +107,10 @@ class KNNShapley(DataEvaluator):
         )
 
         for i in range(N - 2, -1, -1):
-            score[sort_indices[i], range(M)] = score[
-                sort_indices[i + 1], range(M)
-            ] + min(self.k_neighbors, i + 1) / (self.k_neighbors * (i + 1)) * (
-                self.match(i, y_valid) - self.match(y_train_sorted[i + 1], y_valid)
+            score[sort_indices[i], range(M)] = (
+                score[sort_indices[i + 1], range(M)] +
+                min(self.k_neighbors, i + 1) / (self.k_neighbors * (i + 1)) *
+                (self.match(i, y_valid) - self.match(y_train_sorted[i + 1], y_valid))
             )
 
         return score.mean(axis=1)

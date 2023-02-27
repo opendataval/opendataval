@@ -19,6 +19,8 @@ class Model(ABC):
         x_train: torch.Tensor,
         y_train: torch.Tensor,
         sample_weights: torch.Tensor=None,
+        batch_size=32,
+        epochs=1,
         *args,
         **kwargs
     ):
@@ -87,6 +89,8 @@ class ClassifierSkLearnWrapper(Model):
         x_train: torch.Tensor,
         y_train: torch.Tensor,
         sample_weight: torch.Tensor=None,
+        batch_size=32,
+        epochs=1,
         *args,
         **kwargs
     ):
@@ -107,13 +111,15 @@ class ClassifierSkLearnWrapper(Model):
 
 class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
     def fit(
-            self,
-            x_train: torch.Tensor,
-            y_train: torch.Tensor,
-            sample_weight: torch.Tensor=None,
-            *args,
-            **kwargs
-        ):
+        self,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        sample_weight: torch.Tensor=None,
+        batch_size=32,
+        epochs=1,
+        *args,
+        **kwargs
+    ):
         """Fits the sk-learn model without the sample_weights parameter, instead
         fits by sampling from the model with those weights"""
         x_train, y_train  = to_cpu(x_train), to_cpu(y_train)
