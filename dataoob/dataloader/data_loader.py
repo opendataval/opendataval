@@ -2,7 +2,9 @@ from itertools import accumulate
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from sklearn.preprocessing import StandardScaler
+from torch.utils.data import Dataset, Subset
 
 from dataoob.dataloader import datasets
 
@@ -13,8 +15,8 @@ def DataLoader(
     train_count: int | float = 0,
     valid_count: int | float = 0,
     test_count: int | float = 0,
-    categorical=False,
-    scaler: str = StandardScaler().fit_transform,
+    categorical: bool = False,
+    scaler: str = None,
     noise_rate: float = 0.0,
     device: int = torch.device("cpu"),
 ):
@@ -32,25 +34,29 @@ def DataLoader(
     defaults to StandardScaler().fit_transform
     :param float noise_rate: Ratio of noise to add to the data TODO think
     of other ways to add noise to the data, defaults to 0.
-    :param torch.device device: Tensor device for accelearation, defaults to
+    :param torch.device device: Tensor device for acceleration, defaults to
     torch.device("cpu")
-    :return torch.Tensor, torch.Tensor: Training Covariates, Training Labels
-    :return torch.Tensor, torch.Tensor: Validation Covariates, Validation Labels
-    :return torch.Tensor, torch.Tensor: Test Covariates, Test Labels
+
+    :return torch.Tensor | Dataset, torch.Tensor: Training Covariates, Training Labels
+    :return torch.Tensor | Dataset, torch.Tensor: Validation Covariates, Valid Labels
+    :return torch.Tensor | Dataset, torch.Tensor: Test Covariates, Test Labels
     :return np.ndarray: Indices of noisified Training labels
     """
-    x, y = datasets.download_dataset(
-        dataset_name=dataset_name, force_redownload=force_redownload
+    x, y = datasets.load_dataset(  # TODO pass in device, download and load functions are necessary
+        dataset_name=dataset_name, device=device
     )
 
     # Scale the data
-    x, y = scaler(x), one_hot_encode(y) if categorical else scaler(y)
-    x = torch.tensor(x).to(dtype=torch.float32, device=device)
-    y = torch.tensor(y).to(dtype=torch.float32, device=device)
+    if scaler:  # TODO API unification, maybe wrap in a class idk
+        if isinstance(x, Dataset):
+            x.transform = scaler
+        else:
+            x = scaler(x)
+    y = one_hot_encode(y, device) if categorical else scaler(y)
 
     (x_train, y_train), (x_valid, y_valid), (x_test, y_test) = split_dataset(
         x, y, train_count=train_count, valid_count=valid_count, test_count=test_count
-    )  # TODO consider loading images, will have to change the apis
+    )
 
     # Noisify the data
     y_train, noisy_indices = noisify(y_train, noise_rate)
@@ -58,15 +64,14 @@ def DataLoader(
     return (x_train, y_train), (x_valid, y_valid), (x_test, y_test), noisy_indices
 
 
-def one_hot_encode(data) -> torch.Tensor:
-    data = data.to_numpy()
-    label_dim = int(np.max(data) + 1)
-    return np.eye(label_dim)[np.squeeze(data)]
+def one_hot_encode(data: torch.Tensor, device: int=torch.device("cpu")) -> torch.Tensor:
+    num_classes = int(torch.max(data).item())+1
+    return F.one_hot(data.long(), num_classes).to(dtype=torch.float32, device=device)
 
 
 def noisify(
     labels: torch.Tensor, noise_rate: float = 0.0
-) -> tuple[torch.Tensor, np.ndarray]:
+) -> tuple[torch.Tensor, np.ndarray]:  # TODO leave for now change later
     if noise_rate == 0.0:
         return labels, np.array([])
     if 0 <= noise_rate <= 1.0:
@@ -83,7 +88,7 @@ def noisify(
 
 
 def split_dataset(
-    x: torch.Tensor,
+    x: torch.Tensor | Dataset,
     y: torch.Tensor,
     train_count: int | float,
     valid_count: int | float,
@@ -91,7 +96,7 @@ def split_dataset(
 ) -> torch.Tensor:
     """Splits the Covariates and labels according to the specified counts/proportions
 
-    :param torch.Tensor x: Data+Test+Held-out covariates
+    :param torch.Tensor | Dataset x: Data+Test+Held-out covariates
     :param torch.Tensor y: Data+Test+Held-out labels
     :param int | float train_count: Number/proportion training points, defaults to 0
     :param int | float valid_count: Number/proportion validation points, defaults to 0
@@ -119,7 +124,13 @@ def split_dataset(
     train_idx, valid_idx, test_idx, _ = np.split(indices, list(splits))
 
     # TODO consider using torch subsets to make the split a little easier/generalizable
-    x_train, y_train = x[train_idx], y[train_idx]
-    x_valid, y_valid = x[valid_idx], y[valid_idx]
-    x_test, y_test = x[test_idx], y[test_idx]
+    if isinstance(x, Dataset):
+        x_train, y_train = Subset(x, train_idx), y[train_idx]
+        x_valid, y_valid = Subset(x, valid_idx), y[valid_idx]
+        x_test, y_test = Subset(x, test_idx), y[test_idx]
+    else:
+        x_train, y_train = x[train_idx], y[train_idx]
+        x_valid, y_valid = x[valid_idx], y[valid_idx]
+        x_test, y_test = x[test_idx], y[test_idx]
+
     return (x_train, y_train), (x_valid, y_valid), (x_test, y_test)

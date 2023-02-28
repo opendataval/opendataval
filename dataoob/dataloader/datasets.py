@@ -21,7 +21,7 @@ def load_dataset(
 
     covariates, labels =  dataset_directory[dataset_name]()  # Pass in force download and device
 
-    if not isinstance(covariates, Dataset)
+    if not isinstance(covariates, Dataset):
         covariates = torch.tensor(covariates).to(dtype=torch.float32, device=device)
     labels = torch.tensor(labels).to(dtype=torch.float32, device=device)
 
@@ -30,12 +30,12 @@ def load_dataset(
 
 def register_dataset(dataset_name: str, register_type="both"):
     def cache_download(func: callable):
-        if entry_type=="both":
+        if register_type=="both":
             dataset_directory[dataset_name] = func
         else:
-            if dataset not in dataset_directory:
+            if dataset_name not in dataset_directory:
                 dataset_directory[dataset_name] = CovLabelWrapper()
-            dataset_directory[dataset_name].add_func(func, both)
+            dataset_directory[dataset_name].add_func(func, register_type)
         return func
     return cache_download
 
@@ -58,9 +58,9 @@ class CovLabelWrapper:
 def gaussian_classifier(n=10000, input_dim=10):
     covariates = np.random.normal(size=(n, input_dim))
     beta_true = np.random.normal(size=input_dim).reshape(input_dim,1)
-    p_true = np.exp(self.data.dot(beta_true))/(1.+np.exp(self.data.dot(beta_true)))
+    p_true = np.exp(covariates.dot(beta_true))/(1.+np.exp(covariates.dot(beta_true)))
     labels = np.random.binomial(n=1, p=p_true).reshape(-1)
-    return Transformable(covariates, labels)
+    return covariates, labels
 
 @register_dataset(dataset_name="adult", register_type="both")
 def download_adult():
@@ -128,3 +128,13 @@ def download_adult():
     df = df.reset_index()
     df = df.drop(columns=["index"])
     return df.drop("Income", axis=1), df["Income"]
+
+@register_dataset("imagsset", register_type="covariates")
+class imageset(Dataset):
+    def __init__(self):
+        self.lables
+    def __getitem__(self, index):
+        return self.covariate[index]
+@register_dataset("imagsset", register_type="labels")
+def imagesetlabels():
+    return ...

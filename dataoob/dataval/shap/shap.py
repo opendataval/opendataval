@@ -96,7 +96,7 @@ class ShapEvaluator(DataEvaluator):
             gr_stat = self._compute_gr_statistics(self.marginal_increment_array_stack)
             iteration += 1  # Update terminating conditions
 
-        self.marginal_contribution = self.marginal_contrib_sum / self.marginal_counts
+        self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
         self.marginal_cache(self.model_name, self.marginal_contribution)
         print(f"Done: marginal contribution computation", flush=True)
 
@@ -160,8 +160,8 @@ class ShapEvaluator(DataEvaluator):
             marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
-            self.marginal_contrib_sum[cutoff, idx] += curr_perf - prev_perf
-            self.marginal_counts[cutoff, idx] += 1
+            self.marginal_contrib_sum[cutoff, idx] += (curr_perf - prev_perf)
+            self.marginal_count[cutoff, idx] += 1
 
             # if a new increment is not large enough, we terminate the valuation.
             distance = np.abs(curr_perf - prev_perf) / np.sum(marginal_increment)
@@ -209,6 +209,9 @@ class ShapEvaluator(DataEvaluator):
     def _compute_gr_statistics(self, mem: np.ndarray, n_chains: int=10):
         """Comoputes Gelman-Rubin statistic of the marginal contributions
         Ref. https://arxiv.org/pdf/1812.09384.pdf (p.7, Eq.4)
+
+        TODO we need at least an initial sample of 1000
+        TODO better naming
 
         :param np.ndarray mem: Marginal incremental stack, used to calculate values for
         the n_chains variances

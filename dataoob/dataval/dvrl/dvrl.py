@@ -130,7 +130,7 @@ class DVRL(DataEvaluator):
         self.ori_model = copy.deepcopy(self.pred_model)
         if isinstance(self.ori_model, nn.Module):
             # Trains the model
-            self.ori_model.load_state_dict(torch.load("tmp_dvrl/pred_model.pt"))
+            self.ori_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
             self.ori_model.fit(
                 self.x_train,
                 self.y_train,
@@ -144,7 +144,7 @@ class DVRL(DataEvaluator):
         # Trains validation model
         self.val_model = copy.deepcopy(self.ori_model)
         if isinstance(self.val_model, nn.Module):
-            self.val_model.load_state_dict(torch.load("tmp_dvrl/pred_model.pt"))
+            self.val_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
             self.val_model.fit(
                 self.x_valid,
                 self.y_valid,
@@ -209,7 +209,7 @@ class DVRL(DataEvaluator):
             new_model = copy.deepcopy(self.pred_model)
 
             if isinstance(self.pred_model, nn.Module):
-                new_model.load_state_dict(torch.load("tmp_dvrl/pred_model.pt"))
+                new_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
                 new_model.fit(
                     x_batch,
                     y_batch,
@@ -244,7 +244,7 @@ class DVRL(DataEvaluator):
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss": loss,
             },
-            f"tmp_dvrl/{self.checkpoint_file_name}",
+            f"tmp_dvrl/{self.checkpoint_file}_rl",
         )
 
         # Trains DVRL predictor
@@ -255,7 +255,7 @@ class DVRL(DataEvaluator):
 
         # Trains final model
         if isinstance(self.final_model, nn.Module):
-            self.final_model.load_state_dict(torch.load("tmp_dvrl/pred_model.pt"))
+            self.final_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
             # Train the model
             self.final_model.fit(
                 self.x_train,
@@ -282,7 +282,7 @@ class DVRL(DataEvaluator):
 
         # Estimates data value
         self.value_estimator.load_state_dict(
-            torch.load(f"tmp_dvrl/{self.checkpoint_file_name}")["rl_model_state_dict"]
+            torch.load(f"tmp_dvrl/{self.checkpoint_file}_rl")["rl_model_state_dict"]
         )
 
         final_data_value = self.value_estimator(self.x_train, self.y_train, y_hat)[:, 0]
