@@ -88,7 +88,7 @@ class DVRL(DataEvaluator):
         self.y_valid = y_valid
 
         self.value_estimator = DataValueEstimatorRL(
-            x_dim=x_train.size(dim=1),
+            x_dim=len(x_train[0]),  # Incase x_train is a dataset
             y_dim=y_train.size(dim=1),
             hidden_dim=self.hidden_dim,
             layer_number=self.layer_number,
@@ -115,7 +115,7 @@ class DVRL(DataEvaluator):
             self.pred_model.fit(
                 self.x_train,
                 self.y_train,
-                batch_size=self.x_train.size(axis=0),
+                batch_size=len(self.x_train),
                 epochs=0,
             )
             # Saves initial randomization
@@ -167,11 +167,7 @@ class DVRL(DataEvaluator):
             self.y_train, axis=1, keepdim=True
         )
 
-    def train_data_values(
-        self,
-        batch_size: int = 32,
-        epochs: int = 1,
-    ):
+    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
         """Trains the DVRL model to assign probabilities of each data point
         being selected.
 
@@ -179,7 +175,7 @@ class DVRL(DataEvaluator):
         :param int epochs: Number of epochs for the pred_model, per training
         (this will equal rl_epochs * epochs), defaults to 1
         """
-        batch_size = min(batch_size, self.x_train.size(axis=0))
+        batch_size = min(batch_size, len(self.x_train))
         self.evaluate_baseline_models(
             self.pre_train_pred, batch_size=batch_size, epochs=epochs
         )

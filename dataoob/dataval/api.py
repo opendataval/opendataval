@@ -2,7 +2,6 @@ import copy
 from abc import ABC, abstractmethod
 
 import torch
-import torch.nn as nn
 from torch.utils.data import Subset
 
 from dataoob.model import Model

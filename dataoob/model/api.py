@@ -125,7 +125,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         x_train, y_train  = to_cpu(x_train), to_cpu(y_train)
 
         if sample_weight is not None:
-            n_samples = x_train.size(dim=0)
+            n_samples = len(x_train)
             weights = torch.squeeze(sample_weight)
             weights = weights/weights.sum()
             idx = np.random.choice(n_samples, size=(n_samples), replace=True, p=weights)

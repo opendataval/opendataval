@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import tqdm
-from torch.utils.data import Subset
+from torch.utils.data import Dataset, Subset
 
 from dataoob.dataval import DataEvaluator, Model
 
@@ -113,9 +113,9 @@ class ShapEvaluator(DataEvaluator):
 
     def input_data(
         self,
-        x_train: torch.Tensor,
+        x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
-        x_valid: torch.Tensor,
+        x_valid: torch.Tensor | Dataset,
         y_valid: torch.Tensor,
     ):
         """Stores and transforms input data for Shapley-based predictors
@@ -131,7 +131,7 @@ class ShapEvaluator(DataEvaluator):
         self.y_valid = y_valid
 
         # Additional paramters
-        self.n_points = x_train.size(dim=0)
+        self.n_points = len(x_train)
 
     def _calculate_marginal_contributions(
         self, batch_size=32, epochs: int = 1, min_cardinality: int = 5
@@ -180,7 +180,7 @@ class ShapEvaluator(DataEvaluator):
 
         return marginal_increment.reshape(1, -1)
 
-    def _evaluate_model(self, indices: list, batch_size=32, epochs: int = 1):
+    def _evaluate_model(self, indices: list[int], batch_size=32, epochs: int = 1):
         """Trains and evaluates the performance of the model
 
         :param list[int] x_batch: Data covariates+labels indices
@@ -206,7 +206,7 @@ class ShapEvaluator(DataEvaluator):
 
         return curr_perf
 
-    def _compute_gr_statistics(self, mem: np.array, n_chains: int=10):
+    def _compute_gr_statistics(self, mem: np.ndarray, n_chains: int=10):
         """Comoputes Gelman-Rubin statistic of the marginal contributions
         Ref. https://arxiv.org/pdf/1812.09384.pdf (p.7, Eq.4)
 

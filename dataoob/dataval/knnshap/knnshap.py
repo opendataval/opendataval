@@ -31,7 +31,7 @@ class KNNShapley(DataEvaluator):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """_Stores and transforms input data for KNNShapley
+        """Stores and transforms input data for KNNShapley
 
         :param torch.Tensor x_train: Data covariates
         :param torch.Tensor y_train: Data labels
@@ -91,8 +91,8 @@ class KNNShapley(DataEvaluator):
         :param torch.Tensor y_valid: Test+Held-out labels
         :return torch.Tensor: KNN shapley values for each datapoint
         """
-        N = y_hat_train.size(dim=0)
-        M = y_hat_valid.size(dim=0)
+        N = len(y_hat_train)
+        M = len(y_hat_valid)
 
         # Computes Euclidean distance
         dist = torch.cdist(y_hat_train.view(N, -1), y_hat_valid.view(M, -1))

@@ -1,72 +1,68 @@
-import os
+from abc import abstractmethod
 
 import numpy as np
 import pandas as pd
+import torch
+from torch.utils.data import Dataset
+
+from collections import namedtuple
 
 CACHE_DIR = "data_files"
 
 dataset_directory = {}
 """Creates a directory for all registred/downloadable datset functions"""
 
+def load_dataset(
+    dataset_name: str,
+    device: int = torch.device("cpu")
+) -> tuple[torch.Tensor | Dataset, torch.Tensor]:
+    if dataset_name not in dataset_directory:
+        raise Exception("Must register Dataset in register_dataset")
 
-def download_dataset(dataset_name: str, force_redownload: bool):
-    if dataset_name in dataset_directory:
-        x_raw, y_raw = dataset_directory[dataset_name](force_redownload)
-        return x_raw, y_raw
-    else:
-        raise KeyError(
-            f"`{dataset_name}` dataset not supported yet. \n"
-            "Please include and register a function with the format\n"
-            f"`def download_{dataset_name}()`"
-        )
+    covariates, labels =  dataset_directory[dataset_name]()  # Pass in force download and device
+
+    if not isinstance(covariates, Dataset)
+        covariates = torch.tensor(covariates).to(dtype=torch.float32, device=device)
+    labels = torch.tensor(labels).to(dtype=torch.float32, device=device)
+
+    return covariates, labels
 
 
-def register_dataset(func: callable):
-    """Registers a function in the datset directory,
-    must have the following format
-    ```def download_{dataset_name}()```
-
-    :param callable func: A function that will download a dataset
-    :return callable: Modified function that appends a data_files path
-    to the registered function
-    """
-    dataset_name = func.__name__.replace("download_", "")
-
-    def check_cache(force_redownload: bool = False):
-        if not os.path.exists(f"{CACHE_DIR}"):
-            os.makedirs(f"{CACHE_DIR}")
-
-        if not os.path.exists(f"{CACHE_DIR}/{dataset_name}.csv") or force_redownload:
-            x_raw, y_raw = func()
-
-            if isinstance(x_raw, pd.DataFrame) and isinstance(y_raw, pd.DataFrame):
-                y_raw = y_raw.rename(columns=lambda name: f"Y_{name}")
-                pd.concat((x_raw, y_raw), axis=1).to_csv(
-                    f"{CACHE_DIR}/{dataset_name}.csv", index=False
-                )
-
-            return x_raw, y_raw
+def register_dataset(dataset_name: str, register_type="both"):
+    def cache_download(func: callable):
+        if entry_type=="both":
+            dataset_directory[dataset_name] = func
         else:
-            # Loads dataset from cache, seperates the response variables
-            dataset = pd.read_csv(f"{CACHE_DIR}/{dataset_name}.csv")
-            y_col = dataset.columns.str.startswith("Y_")
-            return dataset.loc[:, ~y_col], dataset.loc[:, y_col]
+            if dataset not in dataset_directory:
+                dataset_directory[dataset_name] = CovLabelWrapper()
+            dataset_directory[dataset_name].add_func(func, both)
+        return func
+    return cache_download
 
-    dataset_directory[dataset_name] = check_cache
-    return check_cache
+class CovLabelWrapper:
+    def __init__(self):
+        self.cov_func, self.label_func = None, None
+    def add_func(self, func: callable, register_type: str):
+        if register_type == "label":
+            self.cov_func = func
+        elif register_type == "label":
+            self.label_func = func
+        else:
+            raise Exception()
+    def __call__(self):
+        assert self.cov_func is not None and self.label_func is not None
+        return self.cov_func(), self.label_func()
 
 
-@register_dataset
-def download_gaussian():
-    n, input_dim = 10000, 10
-    X_raw = np.random.normal(size=(n, input_dim))
-    beta = np.random.normal(size=(input_dim, 1))
-    error_raw = np.random.normal(size=(n, 1))
-    Y_raw = X_raw.dot(beta) + error_raw
-    return X_raw, Y_raw
+@register_dataset(dataset_name="gaussian_classifier", register_type="both")
+def gaussian_classifier(n=10000, input_dim=10):
+    covariates = np.random.normal(size=(n, input_dim))
+    beta_true = np.random.normal(size=input_dim).reshape(input_dim,1)
+    p_true = np.exp(self.data.dot(beta_true))/(1.+np.exp(self.data.dot(beta_true)))
+    labels = np.random.binomial(n=1, p=p_true).reshape(-1)
+    return Transformable(covariates, labels)
 
-
-@register_dataset
+@register_dataset(dataset_name="adult", register_type="both")
 def download_adult():
     uci_base_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/"
     train_url = uci_base_url + "adult/adult.data"
