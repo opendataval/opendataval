@@ -3,7 +3,6 @@ from itertools import accumulate
 import numpy as np
 import torch
 import torch.nn.functional as F
-from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset, Subset
 
 from dataoob.dataloader import datasets
@@ -11,7 +10,6 @@ from dataoob.dataloader import datasets
 
 def DataLoader(
     dataset_name: str,
-    force_redownload: bool = False,
     train_count: int | float = 0,
     valid_count: int | float = 0,
     test_count: int | float = 0,
@@ -21,7 +19,9 @@ def DataLoader(
     device: int = torch.device("cpu"),
 ):
     """Dataloader for dataoob, input the dataset name and some additional parameters
-    receive a dataset compatible for Data-oob.
+    receive a dataset compatible for Data-oob.  TODO i don't love the api i built
+    revisit when it comes time to rebuild. Ways to improve would be adding a numpy like
+    modifications to it
 
     :param str dataset_name: Name of the dataset, can be registered in `datasets.py`
     :param bool force_redownload: Forces redownload from source URL, defaults to False
@@ -74,7 +74,7 @@ def noisify(
 ) -> tuple[torch.Tensor, np.ndarray]:  # TODO leave for now change later
     if noise_rate == 0.0:
         return labels, np.array([])
-    if 0 <= noise_rate <= 1.0:
+    elif 0 <= noise_rate <= 1.0:
         n_points = labels.size(dim=0)
 
         noise_count = round(n_points * noise_rate)
@@ -94,14 +94,14 @@ def split_dataset(
     valid_count: int | float,
     test_count: int | float,
 ) -> torch.Tensor:
-    """Splits the Covariates and labels according to the specified counts/proportions
+    """Splits the covariates and labels according to the specified counts/proportions
 
     :param torch.Tensor | Dataset x: Data+Test+Held-out covariates
     :param torch.Tensor y: Data+Test+Held-out labels
     :param int | float train_count: Number/proportion training points, defaults to 0
     :param int | float valid_count: Number/proportion validation points, defaults to 0
     :param int | float test_count: Number/proportion testing points, defaults to 0
-    :raises Exception: Raises exception when there's an invalid splitting of the datset,
+    :raises Exception: Raises exception when there's an invalid splitting of the dataset,
     ie, more datapoints than the total dataset requested.
     :return torch.Tensor, torch.Tensor: Training Covariates, Training Labels
     :return torch.Tensor, torch.Tensor: Validation Covariates, Validation Labels

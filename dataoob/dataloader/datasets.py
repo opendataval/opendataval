@@ -5,7 +5,6 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-from collections import namedtuple
 
 CACHE_DIR = "data_files"
 
@@ -129,12 +128,12 @@ def download_adult():
     df = df.drop(columns=["index"])
     return df.drop("Income", axis=1), df["Income"]
 
-@register_dataset("imagsset", register_type="covariates")
+@register_dataset("imageset", register_type="covariates")
 class imageset(Dataset):
     def __init__(self):
         self.lables
     def __getitem__(self, index):
         return self.covariate[index]
-@register_dataset("imagsset", register_type="labels")
+@register_dataset("imageset", register_type="labels")
 def imagesetlabels():
     return ...
