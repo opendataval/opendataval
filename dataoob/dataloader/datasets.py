@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 CACHE_DIR = "data_files"
 
 dataset_directory = {}
-"""Creates a directory for all registred/downloadable datset functions"""
+"""Creates a directory for all registered/downloadable dataset functions"""
 
 def load_dataset(
     dataset_name: str,
@@ -128,12 +128,12 @@ def download_adult():
     df = df.drop(columns=["index"])
     return df.drop("Income", axis=1), df["Income"]
 
-@register_dataset("imageset", register_type="covariates")
-class imageset(Dataset):
-    def __init__(self):
-        self.lables
-    def __getitem__(self, index):
-        return self.covariate[index]
-@register_dataset("imageset", register_type="labels")
-def imagesetlabels():
-    return ...
+# @register_dataset("imageset", register_type="covariates")
+# class imageset(Dataset):
+#     def __init__(self):
+#         self.lables
+#     def __getitem__(self, index):
+#         return self.covariate[index]
+# @register_dataset("imageset", register_type="labels")
+# def imagesetlabels():
+#     return ...

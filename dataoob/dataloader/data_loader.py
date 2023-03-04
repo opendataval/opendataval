@@ -31,7 +31,7 @@ def DataLoader(
     :param bool categorical: Whether the data is categorical, defaults to False
     :param callable (np.ndarray(m x n) -> np.ndarray(m x n)) scaler: Scaler that
     normalizes the data. NOTE This likely will change as the underlying datasets change,
-    defaults to StandardScaler().fit_transform
+    defaults to None
     :param float noise_rate: Ratio of noise to add to the data TODO think
     of other ways to add noise to the data, defaults to 0.
     :param torch.device device: Tensor device for acceleration, defaults to

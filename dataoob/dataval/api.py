@@ -2,7 +2,6 @@ import copy
 from abc import ABC, abstractmethod
 
 import torch
-from torch.utils.data import Subset
 
 from dataoob.model import Model
 
@@ -54,7 +53,7 @@ class DataEvaluator(ABC):
         y_valid: torch.Tensor,
     ):
         """Stores and processes the data for the given evaluator, helps
-        seperate the structure from the data
+        separate the structure from the data
 
         :param torch.Tensor x_train: Data covariates
         :param torch.Tensor y_train: Data labels
@@ -77,7 +76,7 @@ class DataEvaluator(ABC):
 
     @abstractmethod
     def evaluate_data_values(self) -> torch.Tensor:
-        """Evaluates the datavalues of the following tensors. NOTE this method may change
+        """Evaluates the data values of the following tensors. NOTE this method may change
         due to the fact that inputs that differ from input tensors might not be allowed
         """
         pass

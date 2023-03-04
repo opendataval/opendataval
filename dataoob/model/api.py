@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from dataoob.dataloader.util import CatDataset
 
@@ -46,7 +46,7 @@ class ClassifierNN(Model, nn.Module):
     """Classifier for Torch Neural Networks"""
     def fit(
         self,
-        x_train: torch.Tensor,
+        x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
         sample_weight: torch.Tensor=None,
         batch_size=32,
