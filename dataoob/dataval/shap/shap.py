@@ -12,9 +12,7 @@ from dataoob.model import Model
 
 class ShapEvaluator(DataEvaluator, ABC):
     """ShapEvaluator is an abstract class for all shapley-based methods of
-    computing data values. While this method is abstract, it implements much
-    of the core computations for specific implementations to access. It also
-    caches the marginal contributions per model.
+    computing data values. Implements core computations of marginal contribution.
     Ref. https://arxiv.org/abs/1904.02868
     Ref. https://arxiv.org/abs/2110.14049 for TMC
 
@@ -72,9 +70,36 @@ class ShapEvaluator(DataEvaluator, ABC):
             return ShapEvaluator.marg_contrib_dict.get(model_name)
         return None
 
+
+    def input_data(
+        self,
+        x_train: torch.Tensor | Dataset,
+        y_train: torch.Tensor,
+        x_valid: torch.Tensor | Dataset,
+        y_valid: torch.Tensor,
+    ):
+        """Stores and transforms input data for Shapley-based predictors
+
+        :param torch.Tensor x_train: Data covariates
+        :param torch.Tensor y_train: Data labels
+        :param torch.Tensor x_valid: Test+Held-out covariates
+        :param torch.Tensor y_valid: Test+Held-out labels
+        """
+        self.x_train = x_train
+        self.y_train = y_train
+        self.x_valid = x_valid
+        self.y_valid = y_valid
+
+        # Additional parameters
+        self.n_points = len(x_train)
+
+
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
         """Computes the marginal contributions for Shapley values. Additionally checks
         termination conditions.
+
+        TODO consider updating with Prof's Beta shapley algorithm, efficient computation,
+        pros: more efficient, cons: may affect further sampling, redundant, consider cache
 
         marginal_increment_array_stack np.ndarray: Marginal increments when one data
         point is added. Average is Shapley as we consider a random permutation.
@@ -115,27 +140,6 @@ class ShapEvaluator(DataEvaluator, ABC):
         self.marginal_cache(self.model_name, self.marginal_contribution)
         print(f"Done: marginal contribution computation", flush=True)
 
-    def input_data(
-        self,
-        x_train: torch.Tensor | Dataset,
-        y_train: torch.Tensor,
-        x_valid: torch.Tensor | Dataset,
-        y_valid: torch.Tensor,
-    ):
-        """Stores and transforms input data for Shapley-based predictors
-
-        :param torch.Tensor x_train: Data covariates
-        :param torch.Tensor y_train: Data labels
-        :param torch.Tensor x_valid: Test+Held-out covariates
-        :param torch.Tensor y_valid: Test+Held-out labels
-        """
-        self.x_train = x_train
-        self.y_train = y_train
-        self.x_valid = x_valid
-        self.y_valid = y_valid
-
-        # Additional parameters
-        self.n_points = len(x_train)
 
     def _calculate_marginal_contributions(
         self, batch_size=32, epochs: int = 1, min_cardinality: int = 5
@@ -195,15 +199,12 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         # Trains the model
         curr_model = copy.deepcopy(self.pred_model)
-        if isinstance(curr_model, nn.Module):
-            curr_model.fit(
-                Subset(self.x_train, indices=indices),
-                Subset(self.y_train, indices=indices),
-                batch_size=batch_size,
-                epochs=epochs,
-            )
-        else:
-            curr_model.fit(self.x_train[indices], self.y_train[indices])
+        curr_model.fit(
+            Subset(self.x_train, indices=indices),
+            Subset(self.y_train, indices=indices),
+            batch_size=batch_size,
+            epochs=epochs,
+        )
 
         y_valid_hat = curr_model.predict(self.x_valid)
         curr_perf = self.evaluate(self.y_valid, y_valid_hat)
@@ -212,7 +213,7 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     def _compute_gr_statistics(self, samples: np.ndarray, num_chains: int=10):
         """Computes Gelman-Rubin statistic of the marginal contributions
-        Ref. https://arxiv.org/pdf/1812.09384.pdf
+        Ref. https://arxiv.org/pdf/1812.09384
 
         :param np.ndarray mem: Marginal incremental stack, used to calculate values for
         the n_chains variances
@@ -242,5 +243,5 @@ class ShapEvaluator(DataEvaluator, ABC):
         gr_stats = np.sqrt(
             (num_samples_per_chain - 1) / num_samples_per_chain +
             (b_term / (s_term * num_samples_per_chain))
-        )  # Ref. https://arxiv.org/pdf/1812.09384.pdf (p.7, Eq.4)
+        )  # Ref. https://arxiv.org/pdf/1812.09384 (p.7, Eq.4)
         return np.max(gr_stats)
