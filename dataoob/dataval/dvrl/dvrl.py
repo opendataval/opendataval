@@ -2,6 +2,7 @@ import copy
 import os
 from collections import OrderedDict
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,9 +31,6 @@ class DVRL(DataEvaluator):
     :param float threshold: Search rate threshold, the VE may get stuck in certain
     bounds close to [0., 1.] because it samples from a binomial, thus outside of
     [1-threshold, threshold] we encourage the VE to search, defaults to 0.9
-    :param bool pre_train:  Whether to load a pretrained model from
-    `tmp_dvrl/{checkpoint_file}`, defaults to False
-    :param str checkpoint_file: Checkpoint file, defaults to "checkpoint.pt"
     """
 
     def __init__(
@@ -42,19 +40,14 @@ class DVRL(DataEvaluator):
         hidden_dim: int = 100,
         layer_number: int = 5,
         comb_dim: int = 10,
-        act_fn: callable = F.relu,
+        act_fn: callable = nn.ReLU(),
         rl_epochs: int = 1000,
         lr: float = 0.01,
         threshold: float = 0.9,
         device: torch.device = torch.device("cpu"),
-        pre_train_pred: bool = False,
-        checkpoint_file: str = "checkpoint.pt",
     ):
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
-
-        self.pre_train_pred = pre_train_pred
-        self.checkpoint_file = checkpoint_file
 
         # MLP parameters
         self.hidden_dim = hidden_dim
@@ -96,64 +89,33 @@ class DVRL(DataEvaluator):
             act_fn=self.act_fn,
         ).to(self.device)
 
-    def evaluate_baseline_models(
-        self, pre_train: bool = False, batch_size: int = 32, epochs: int = 1
-    ):
+    def evaluate_baseline_models(self, batch_size: int = 32, epochs: int = 1):
         """Loads and trains baseline models. Baseline performance information
         is necessary to compute the reward.
 
-        :param bool pre_train: Whether to load a pretrained model from
-        `tmp_dvrl/{self.checkpoint_file}`, defaults to False
         :param int batch_size: Baseline training batch size, defaults to 32
         :param int epochs: Number of epochs for baseline training, defaults to 1
         """
-        # With randomly initialized predictor
-        if not os.path.exists("tmp_dvrl"):
-            os.makedirs("tmp_dvrl")
-
-        if (not pre_train) and isinstance(self.pred_model, nn.Module):
-            self.pred_model.fit(
-                self.x_train,
-                self.y_train,
-                batch_size=len(self.x_train),
-                epochs=0,
-            )
-            # Saves initial randomization
-            torch.save(self.pred_model.state_dict(), f"tmp_dvrl/{self.checkpoint_file}")
-            # With pre-trained model, pre-trained model should be saved as
-            # 'tmp_dvrl/{self.checkpoint_file}.pt'
-
         # Final model
         self.final_model = copy.deepcopy(self.pred_model)
 
         # Train baseline model with input data
         self.ori_model = copy.deepcopy(self.pred_model)
-        if isinstance(self.ori_model, nn.Module):
-            # Trains the model
-            self.ori_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
-            self.ori_model.fit(
-                self.x_train,
-                self.y_train,
-                batch_size=batch_size,
-                epochs=epochs,
-                verbose=False,
-            )
-        else:
-            self.ori_model.fit(self.x_train, self.y_train)
+        self.ori_model.fit(
+            self.x_train,
+            self.y_train,
+            batch_size=batch_size,
+            epochs=epochs,
+        )
 
         # Trains validation model
         self.val_model = copy.deepcopy(self.ori_model)
-        if isinstance(self.val_model, nn.Module):
-            self.val_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
-            self.val_model.fit(
-                self.x_valid,
-                self.y_valid,
-                batch_size=batch_size,
-                epochs=epochs,
-                verbose=False,
-            )
-        else:
-            self.val_model.fit(self.x_valid, self.y_valid)
+        self.val_model.fit(
+            self.x_valid,
+            self.y_valid,
+            batch_size=batch_size,
+            epochs=epochs,
+        )
 
         # Eval performance
         # Baseline performance
@@ -163,8 +125,9 @@ class DVRL(DataEvaluator):
         # Compute diff
         y_train_valid_pred = self.val_model.predict(self.x_train)
 
-        self.y_pred_diff = torch.abs(self.y_train - y_train_valid_pred) / torch.sum(
-            self.y_train, axis=1, keepdim=True
+        self.y_pred_diff = (
+            torch.abs(self.y_train - y_train_valid_pred) /
+            torch.sum(self.y_train, axis=1, keepdim=True)
         )
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
@@ -176,9 +139,7 @@ class DVRL(DataEvaluator):
         (this will equal rl_epochs * epochs), defaults to 1
         """
         batch_size = min(batch_size, len(self.x_train))
-        self.evaluate_baseline_models(
-            self.pre_train_pred, batch_size=batch_size, epochs=epochs
-        )
+        self.evaluate_baseline_models(batch_size=batch_size, epochs=epochs)
 
         # Solver
         optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=self.lr)
@@ -207,19 +168,13 @@ class DVRL(DataEvaluator):
 
             # Prediction and training
             new_model = copy.deepcopy(self.pred_model)
-
-            if isinstance(self.pred_model, nn.Module):
-                new_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
-                new_model.fit(
-                    x_batch,
-                    y_batch,
-                    sample_weight=sel_prob_curr_weight,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                )
-
-            else:
-                new_model.fit(x_batch, y_batch, sel_prob_curr_weight)
+            new_model.fit(
+                x_batch,
+                y_batch,
+                sample_weight=sel_prob_curr_weight,
+                batch_size=batch_size,
+                epochs=epochs,
+            )
 
             # Reward computation
             y_valid_hat = new_model.predict(self.x_valid)
@@ -237,15 +192,6 @@ class DVRL(DataEvaluator):
             loss.backward(retain_graph=True)
             optimizer.step()
 
-        # Saves trained model
-        torch.save(
-            {
-                "rl_model_state_dict": self.value_estimator.state_dict(),
-                "optimizer_state_dict": optimizer.state_dict(),
-                "loss": loss,
-            },
-            f"tmp_dvrl/{self.checkpoint_file}_rl",
-        )
 
         # Trains DVRL predictor
         # Generate data values
@@ -254,21 +200,17 @@ class DVRL(DataEvaluator):
         ).detach()
 
         # Trains final model
-        if isinstance(self.final_model, nn.Module):
-            self.final_model.load_state_dict(torch.load(f"tmp_dvrl/{self.checkpoint_file}"))
-            # Train the model
-            self.final_model.fit(
-                self.x_train,
-                self.y_train,
-                sample_weight=final_data_value_weights,
-                batch_size=batch_size,
-                epochs=epochs,
-                verbose=False,
-            )
-        else:
-            self.final_model.fit(self.x_train, self.y_train, final_data_value_weights)
+        self.final_model.fit(
+            self.x_train,
+            self.y_train,
+            sample_weight=final_data_value_weights,
+            batch_size=batch_size,
+            epochs=epochs,
+            verbose=False,
+        )
 
-    def evaluate_data_values(self):
+
+    def evaluate_data_values(self) -> np.ndarray:
         """Returns data values using the data valuator model.
 
         :return torch.Tensor: Predicted data values/selection for every input data point
@@ -276,18 +218,15 @@ class DVRL(DataEvaluator):
         # One-hot encoded labels
         # Generates y_train_hat
         y_valid_pred = self.final_model.predict(self.x_train)
-        y_hat = torch.abs(self.y_train - y_valid_pred) / torch.sum(
-            self.y_train, axis=1, keepdim=True
+        y_hat = (
+            torch.abs(self.y_train - y_valid_pred) /
+            torch.sum(self.y_train, axis=1, keepdim=True)
         )
 
         # Estimates data value
-        self.value_estimator.load_state_dict(
-            torch.load(f"tmp_dvrl/{self.checkpoint_file}_rl")["rl_model_state_dict"]
-        )
+        final_data_value = torch.squeeze(self.value_estimator(self.x_train, self.y_train, y_hat))
 
-        final_data_value = self.value_estimator(self.x_train, self.y_train, y_hat)[:, 0]
-
-        return final_data_value
+        return np.array(final_data_value.detach().cpu())
 
 
 class DataValueEstimatorRL(nn.Module):
@@ -347,7 +286,7 @@ class DataValueEstimatorRL(nn.Module):
         yhat_combine["reduce_acti"] = act_fn
 
         yhat_combine["out_lin"] = nn.Linear(comb_dim, 1)
-        yhat_combine["out_acti"] = nn.Sigmoid()  # Sigmoid because binary selection
+        yhat_combine["out_acti"] = nn.Sigmoid()  # Sigmoid for binary selection
         self.yhat_comb = nn.Sequential(yhat_combine)
 
     def forward(self, x: torch.Tensor, y: torch.Tensor, y_hat: torch.Tensor):

@@ -2,7 +2,6 @@ import copy
 from abc import abstractmethod, ABC
 import numpy as np
 import torch
-import torch.nn as nn
 import tqdm
 from torch.utils.data import Dataset, Subset
 
@@ -53,14 +52,11 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     def evaluate_data_values(self) -> torch.Tensor:
         """Multiplies the marginal contribution with their respective weights to get
-        NOTE torch has GPU support so if we get into a situation where computing the
-        gr_threshold is a bottleneck I can swap the underlying array -> Tensor
+        data values for semivalue-based estimators
 
-        :return torch.Tensor: Predicted data values/selection for every input data point
+        :return np.ndarray: Predicted data values/selection for every input data point
         """
-        return torch.tensor(np.sum(
-            self.marginal_contribution * self.compute_weight(), axis=1
-        ))
+        return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)
 
     @staticmethod
     def marginal_cache(model_name: str, marginal_contrib: np.ndarray = None):
@@ -114,7 +110,7 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         print(f"Start: marginal contribution computation", flush=True)
         self.marginal_contrib_sum = np.zeros((self.n_points, self.n_points))
-        self.marginal_count = np.zeros((self.n_points, self.n_points)) + 1e-8  #Overflow
+        self.marginal_count = np.zeros((self.n_points, self.n_points)) + 1e-8  # Overflow
         self.marginal_increment_array_stack = np.zeros((0, self.n_points))
 
         gr_stat = ShapEvaluator.GR_MAX  # Converges when < gr_threshold
@@ -222,13 +218,13 @@ class ShapEvaluator(DataEvaluator, ABC):
         :return float: Gelman-Rubin statistic
         """
 
-        if len(mem) < self.min_samples:
+        if len(samples) < self.min_samples:
             return ShapEvaluator.GR_MAX  # If not enough samples, return a high GR value
 
         # Set up
         num_samples, num_datapoints = samples.shape
         num_samples_per_chain, offset = divmod(num_samples, num_chains)
-        mem = mem[offset:]  # Remove remainders from initial
+        samples = samples[offset:]  # Remove remainders from initial
 
         # Divides total sample into num_chains parallel chains
         mcmc_chains = samples.reshape(num_chains, num_samples_per_chain, num_datapoints)

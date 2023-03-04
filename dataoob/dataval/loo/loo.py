@@ -79,7 +79,11 @@ class LeaveOneOut(DataEvaluator):
             loo_score = self.evaluate(self.y_valid, y_hat)
             self.data_values[indices[i]] = baseline_score - loo_score
 
-    def evaluate_data_values(self) -> torch.Tensor:
+    def evaluate_data_values(self) -> np.ndarray:
+        """Returns data values using the LOO data valuator.
+
+        :return np.ndarray: predicted data values/selection for every input data point
+        """
         return self.data_values
 
 

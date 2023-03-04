@@ -2,6 +2,7 @@ import copy
 from abc import ABC, abstractmethod
 
 import torch
+import numpy as np
 
 from dataoob.model import Model
 
@@ -75,9 +76,12 @@ class DataEvaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate_data_values(self) -> torch.Tensor:
-        """Evaluates the data values of the following tensors. NOTE this method may change
-        due to the fact that inputs that differ from input tensors might not be allowed
+    def evaluate_data_values(self) -> np.ndarray:
+        """Evaluates the data values of the input training dataset. Outputs the
+        data values as an array
+
+        :return np.ndarray: Data values computed by the data valuator. Outputs a
+        np.ndarray because many metrics expect an np.ndarray.
         """
         pass
 

@@ -2,10 +2,10 @@ import torch
 import numpy as np
 from scipy.special import beta
 
-from dataoob.dataval.shap.shap import DataShapley
+from dataoob.dataval.shap.shap import ShapEvaluator
 from dataoob.model import Model
 
-class BetaShapley(DataShapley):
+class BetaShapley(ShapEvaluator):
     """Beta Shapley implementation. Must specify alpha/beta values for beta function
     Ref. https://arxiv.org/pdf/2110.14049
 
@@ -42,7 +42,7 @@ class BetaShapley(DataShapley):
         )
         self.alpha, self.beta = alpha, beta  # Beta distribution parameters
 
-    def compute_weight(self):
+    def compute_weight(self) -> np.ndarray:
         """_summary_
         Ref. https://arxiv.org/pdf/2110.14049Equation (3) and (5)
 
@@ -53,21 +53,20 @@ class BetaShapley(DataShapley):
         = Constant*Beta(j+beta_param-1, n_points-j+alpha_param)/Beta(j, n_points-j+1)
         where $Constant = 1/(n_points*Beta(alpha_param, beta_param))$.
 
-        :return _type_: _description_
+        :return np.ndarray: _description_
         """
-        weight_list = np.array(
+        weight_list = np.array([
             beta(j + self.beta, self.n_points - (j + 1) + self.alpha) /
-            beta(j, self.n_points - j)
+            beta(j + 1, self.n_points - j)
             for j in range(self.n_points)
-        )
+        ])
         return weight_list / np.sum(weight_list)
 
 
-    def evaluate_data_values(self) -> torch.Tensor:
+    def evaluate_data_values(self) -> np.ndarray:
         """Multiplies the marginal contribution with their respective weights to get
+        Beta Shapley data values
 
-        :return torch.Tensor: Predicted data values/selection for every input data point
+        :return np.ndarray: Predicted data values/selection for every input data point
         """
-        return torch.tensor(np.sum(
-            self.marginal_contribution * self.compute_weight(), axis=1
-        ))
+        return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)

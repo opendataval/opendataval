@@ -1,5 +1,6 @@
 from dataoob.dataval.shap.shap import ShapEvaluator
 from dataoob.model import Model
+import numpy as np
 
 class DataShapley(ShapEvaluator):
     """Data Shapley implementation.
@@ -38,6 +39,14 @@ class DataShapley(ShapEvaluator):
         cardinality. It can be seen as sampling uniformly from the set of all
         combinations of datapoints
 
-        :return float: _description_
+        :return float: Marginal contribution weight
         """
         return 1 / len(self.n_points)
+
+    def evaluate_data_values(self) -> np.ndarray:
+        """Multiplies the marginal contribution with their respective weights to get
+        Data Shapley data values
+
+        :return np.ndarray: Predicted data values/selection for every input data point
+        """
+        return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)
