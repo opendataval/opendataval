@@ -1,5 +1,3 @@
-from abc import abstractmethod
-
 import numpy as np
 import pandas as pd
 import torch
@@ -28,7 +26,7 @@ def load_dataset(
 
 
 def register_dataset(dataset_name: str, register_type="both"):
-    def cache_download(func: callable):
+    def wrap_func_outputs(func: callable):
         if register_type=="both":
             dataset_directory[dataset_name] = func
         else:
@@ -36,7 +34,7 @@ def register_dataset(dataset_name: str, register_type="both"):
                 dataset_directory[dataset_name] = CovLabelWrapper()
             dataset_directory[dataset_name].add_func(func, register_type)
         return func
-    return cache_download
+    return wrap_func_outputs
 
 class CovLabelWrapper:
     def __init__(self):
