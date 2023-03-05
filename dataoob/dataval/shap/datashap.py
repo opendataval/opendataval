@@ -35,9 +35,9 @@ class DataShapley(ShapEvaluator):
         )
 
     def compute_weight(self) -> float:
-        """Shapley values evaluate the average marginal contribution for each
-        cardinality. It can be seen as sampling uniformly from the set of all
-        combinations of datapoints
+        """Computes weight function for each cardinality.
+        It can be seen as sampling uniformly from the set of all combinations of
+        data points because Shapley values take a mean.
 
         :return float: Marginal contribution weight
         """

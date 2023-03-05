@@ -17,8 +17,10 @@ class BetaShapley(ShapEvaluator):
     :param int max_iterations: Max number of outer iterations of MCMC sampling,
     guarantees the training won't deadloop, defaults to 100
     :param int min_samples: Minimum samples before checking MCMC convergence
-    :param float alpha: _description_, defaults to 16
-    :param float beta: _description_, defaults to 1
+    :param float alpha: Alpha (shape) parameter for the beta distribution
+    used to compute the weight function, defaults to 16
+    :param float beta: Beta (shape) parameter for the beta distribution
+    used to compute the weight function, defaults to 1
     """
 
     def __init__(
@@ -43,22 +45,23 @@ class BetaShapley(ShapEvaluator):
         self.alpha, self.beta = alpha, beta  # Beta distribution parameters
 
     def compute_weight(self) -> np.ndarray:
-        """_summary_
+        """Computes weights for each cardinality of training set. Uses self.alpha,
+        self.beta as parameters for the Beta distribution used to compute the weights
         Ref. https://arxiv.org/pdf/2110.14049Equation (3) and (5)
 
         Since
-        w^{n_points}(j)*binom{n_points-1}{j-1}/n_points
-        = Beta(j+beta_param-1, n_points-j+alpha_param)*binom{n_points-1}{j-1}/
+        w^{num_points}(j)*binom{num_points-1}{j-1}/num_points
+        = Beta(j+beta_param-1, num_points-j+alpha_param)*binom{num_points-1}{j-1}/
         Beta(alpha_param, beta_param)
-        = Constant*Beta(j+beta_param-1, n_points-j+alpha_param)/Beta(j, n_points-j+1)
-        where $Constant = 1/(n_points*Beta(alpha_param, beta_param))$.
+        = Constant*Beta(j+beta_param-1, num_points-j+alpha_param)/Beta(j, num_points-j+1)
+        where $Constant = 1/(num_points*Beta(alpha_param, beta_param))$.
 
-        :return np.ndarray: _description_
+        :return np.ndarray: Weights by cardinality of set
         """
         weight_list = np.array([
             beta(j + self.beta, self.n_points - (j + 1) + self.alpha) /
-            beta(j + 1, self.n_points - j)
-            for j in range(self.n_points)
+            beta(j + 1, self.num_points - j)
+            for j in range(self.num_points)
         ])
         return weight_list / np.sum(weight_list)
 

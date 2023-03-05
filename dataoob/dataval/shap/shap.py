@@ -37,7 +37,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         min_samples: int = 1000,
         model_name: str = None,
     ):
-        self.pred_model = copy.deepcopy(pred_model)
+        self.pred_model = copy.copy(pred_model)
         self.metric = metric
 
         self.max_iterations = max_iterations
@@ -48,6 +48,7 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     @abstractmethod
     def compute_weight(self):
+        """Computes the weights applied to the marginal contributions"""
         pass
 
     def evaluate_data_values(self) -> torch.Tensor:
@@ -194,7 +195,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         """
 
         # Trains the model
-        curr_model = copy.deepcopy(self.pred_model)
+        curr_model = copy.copy(self.pred_model)
         curr_model.fit(
             Subset(self.x_train, indices=indices),
             Subset(self.y_train, indices=indices),
@@ -212,8 +213,8 @@ class ShapEvaluator(DataEvaluator, ABC):
         Ref. https://arxiv.org/pdf/1812.09384
 
         :param np.ndarray mem: Marginal incremental stack, used to calculate values for
-        the n_chains variances
-        :param int n_chains: Number of chains to be made from the incremental stack,
+        the num_chains variances
+        :param int num_chains: Number of chains to be made from the incremental stack,
         defaults to 10
         :return float: Gelman-Rubin statistic
         """

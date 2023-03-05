@@ -95,15 +95,14 @@ class ClassifierSkLearnWrapper(Model):
         # Using a dataset and dataloader (despite loading all the data) for better
         # API consistency, such as passing datasets to a sk-learn  model
         dataset = CatDataset(x_train, y_train, sample_weight)
-        n_samples = len(dataset)
+        num_samples = len(dataset)
+        dataloader = DataLoader(dataset, batch_size=num_samples, collate_fn=to_cpu)
         # *weights helps check if we passed weights into the Dataloader
-        x_train, y_train, *weights = DataLoader(
-            dataset=dataset, batch_size=n_samples, shuffle=True, collate_fn=to_cpu
-        )
+        x_train, y_train, *weights = next(iter(dataloader))
 
         self.model.fit(
             x_train, torch.argmax(y_train, dim=1),
-            None if sample_weight is None else weights[0],
+            None if sample_weight is None else torch.squeeze(weights[0]),
             *args,
             **kwargs
         )
@@ -131,15 +130,14 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         # Using a dataset and dataloader (despite loading all the data) for better
         # API consistency, such as passing datasets to a sk-learn  model
         dataset = CatDataset(x_train, y_train, sample_weight)
-        n_samples = len(dataset)
+        num_samples = len(dataset)
+        dataloader = DataLoader(dataset, batch_size=num_samples, collate_fn=to_cpu)
         # *weights helps check if we passed weights into the Dataloader
-        x_train, y_train, *weights = DataLoader(
-            dataset=dataset, batch_size=n_samples, shuffle=True, collate_fn=to_cpu
-        )
+        x_train, y_train, *weights = next(iter(dataloader))
 
         if sample_weight is not None:
             weights = torch.squeeze(sample_weight)/sample_weight.sum()
-            idx = np.random.choice(n_samples, size=(n_samples), replace=True, p=weights)
+            idx = np.random.choice(num_samples, size=(num_samples), replace=True, p=weights)
 
             self.model.fit(
                 x_train[idx], torch.argmax(y_train[idx], dim=1), *args, **kwargs

@@ -108,19 +108,19 @@ def split_dataset(
     :return torch.Tensor, torch.Tensor: Test Covariates, Test Labels
     """
     assert len(x) == len(y)
-    n_points = len(x)
+    num_points = len(x)
 
     match (train_count, valid_count, test_count):
-        case int(tr), int(val), int(tst) if sum((tr, val, tst)) <= n_points:
+        case int(tr), int(val), int(tst) if sum((tr, val, tst)) <= num_points:
             splits = accumulate((tr, val, tst))
         case float(tr), float(val), float(tst) if sum((tr, val, tst)) <= 1.0:
-            splits = (round(n_points * p) for p in (tr, val, tst))
+            splits = (round(num_points * p) for p in (tr, val, tst))
             splits = accumulate(splits)
         case _:
             raise Exception()  # TODO
 
     # Extra underscore to unpack any remainders
-    indices = np.random.permutation(n_points)
+    indices = np.random.permutation(num_points)
     train_idx, valid_idx, test_idx, _ = np.split(indices, list(splits))
 
     # TODO consider using torch subsets to make the split a little easier/generalizable

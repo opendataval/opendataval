@@ -8,11 +8,11 @@ from dataoob.model import Model
 
 
 class DataEvaluator(ABC):
-    """Abstract class of Evaluators. Provides a template of how evaluators interact
+    """Abstract class of Data Evaluators. Provides a template of how evaluators interact
     with the pred_model and specific methods each evaluator should implement
     """
     def __init__(self, pred_model: Model, metric: callable, *args, **kwargs):
-        self.pred_model = copy.deepcopy(pred_model)
+        self.pred_model = copy.copy(pred_model)
         self.metric = metric
 
     def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor, metric: callable=None):
