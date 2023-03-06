@@ -19,7 +19,7 @@ class LeaveOneOut(DataEvaluator):
         pred_model: Model,
         metric: callable,
     ):
-        self.pred_model = copy.copy(pred_model)
+        self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
     def input_data(
@@ -58,7 +58,7 @@ class LeaveOneOut(DataEvaluator):
         self.data_values = np.zeros((self.n_points,))
         indices = np.random.permutation(self.n_points)
 
-        curr_model = copy.copy(self.pred_model)
+        curr_model = copy.deepcopy(self.pred_model)
 
         curr_model.fit(self.x_train, self.y_train, batch_size=batch_size, epochs=epochs)
         y_valid_hat = self.pred_model.predict(self.x_valid)
@@ -67,7 +67,7 @@ class LeaveOneOut(DataEvaluator):
         for i in tqdm.tqdm(range(self.n_points)):
             loo_coalition = np.delete(indices, i)  # Deletes random point
 
-            curr_model = copy.copy(self.pred_model)
+            curr_model = copy.deepcopy(self.pred_model)
             curr_model.fit(
                 Subset(self.x_train, indices=loo_coalition),
                 Subset(self.y_train, indices=loo_coalition),

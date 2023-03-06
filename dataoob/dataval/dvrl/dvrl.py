@@ -46,7 +46,7 @@ class DVRL(DataEvaluator):
         threshold: float = 0.9,
         device: torch.device = torch.device("cpu"),
     ):
-        self.pred_model = copy.copy(pred_model)
+        self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
         # MLP parameters
@@ -97,10 +97,10 @@ class DVRL(DataEvaluator):
         :param int epochs: Number of epochs for baseline training, defaults to 1
         """
         # Final model
-        self.final_model = copy.copy(self.pred_model)
+        self.final_model = copy.deepcopy(self.pred_model)
 
         # Train baseline model with input data
-        self.ori_model = copy.copy(self.pred_model)
+        self.ori_model = copy.deepcopy(self.pred_model)
         self.ori_model.fit(
             self.x_train,
             self.y_train,
@@ -109,7 +109,7 @@ class DVRL(DataEvaluator):
         )
 
         # Trains validation model
-        self.val_model = copy.copy(self.ori_model)
+        self.val_model = copy.deepcopy(self.ori_model)
         self.val_model.fit(
             self.x_valid,
             self.y_valid,
@@ -167,7 +167,7 @@ class DVRL(DataEvaluator):
             sel_prob_curr_weight = sel_prob_curr.detach()
 
             # Prediction and training
-            new_model = copy.copy(self.pred_model)
+            new_model = copy.deepcopy(self.pred_model)
             new_model.fit(
                 x_batch,
                 y_batch,
@@ -241,7 +241,7 @@ class DataValueEstimatorRL(nn.Module):
     the multi-layer perceptron on top of it. The encoded representations can
     simply come from a pre-trained predictor model using the entire dataset.
     (ii) Modify the data value evaluator model definition below to have the
-    appropriate inductive bias (e.g. using convolutional layers for images,
+    appropriate inductive bias (e.g. using convolutions layers for images,
     or attention layers text).
 
     :param int x_dim: Data covariates dimension
@@ -304,11 +304,11 @@ class DataValueEstimatorRL(nn.Module):
 
 
 class DveLoss(nn.Module):
-    """Custom loss function for the Genearive RL Model. Computes a BCE Loss
+    """Custom loss function for the value estimator RL Model. Computes a BCE Loss
     with the binomial values as the target and multiplies by the reward. Encourages
     searching with a exploration loss.
 
-    :param float threshold: Threshold porportion which encourages exploration,
+    :param float threshold: Threshold proportion which encourages exploration,
     gradient might get stuck above `threshold` or below `1-threshold`, defaults to .9
     :param float exploration_weight: Weight used in loss computation for exploration.
     """

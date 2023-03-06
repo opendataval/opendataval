@@ -10,7 +10,7 @@ from dataoob.dataloader.util import CatDataset
 
 class Model(ABC):
     """Abstract class of Models. Provides a template of how build models should be
-    designed and methods to be implemented
+    designed and methods to be implemented # TODO consider building mixins to make api better
     """
     @abstractmethod
     def fit(
@@ -42,7 +42,7 @@ class Model(ABC):
 
 
 class ClassifierNN(Model, nn.Module):
-    """Classifier for Torch Neural Networks"""
+    """Classifier Mixin for Torch Neural Networks"""
     def fit(
         self,
         x_train: torch.Tensor | Dataset,

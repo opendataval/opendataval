@@ -60,7 +60,7 @@ def point_removal(  # TODO consider just passing in the x_values
     """
     (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
     data_values = evaluator.evaluate_data_values()
-    curr_model = copy.copy(evaluator.pred_model)
+    curr_model = copy.deepcopy(evaluator.pred_model)
 
     num_sample = len(data_values)
     num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
@@ -80,7 +80,7 @@ def point_removal(  # TODO consider just passing in the x_values
 
         sorted_value_coalition = sorted_value_list[:bin_index]
 
-        new_model = copy.copy(curr_model)
+        new_model = copy.deepcopy(curr_model)
         new_model.fit(
             Subset(x_train, sorted_value_coalition),
             Subset(y_train, sorted_value_coalition),
@@ -133,7 +133,7 @@ def remove_high_low(
     """
     (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
     data_values = evaluator.evaluate_data_values()
-    curr_model = copy.copy(evaluator.pred_model)
+    curr_model = copy.deepcopy(evaluator.pred_model)
 
     num_sample = len(x_train)
     num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
@@ -148,7 +148,7 @@ def remove_high_low(
         most_valuable_indices = sorted_value_list[bin_index:]
 
         # Fitting on valuable subset
-        valuable_model = copy.copy(curr_model)
+        valuable_model = copy.deepcopy(curr_model)
         valuable_model.fit(
             Subset(x_train, most_valuable_indices),
             Subset(y_train, most_valuable_indices),
@@ -163,7 +163,7 @@ def remove_high_low(
         least_valuable_indices = sorted_value_list[: max(num_sample-bin_index, 0)]
 
         # Fitting on unvaluable subset
-        unvaluable_model = copy.copy(curr_model)
+        unvaluable_model = copy.deepcopy(curr_model)
         unvaluable_model.fit(
             Subset(x_train, least_valuable_indices),
             Subset(y_train, least_valuable_indices),

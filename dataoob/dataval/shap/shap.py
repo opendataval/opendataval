@@ -37,7 +37,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         min_samples: int = 1000,
         model_name: str = None,
     ):
-        self.pred_model = copy.copy(pred_model)
+        self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
         self.max_iterations = max_iterations
@@ -195,7 +195,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         """
 
         # Trains the model
-        curr_model = copy.copy(self.pred_model)
+        curr_model = copy.deepcopy(self.pred_model)
         curr_model.fit(
             Subset(self.x_train, indices=indices),
             Subset(self.y_train, indices=indices),
