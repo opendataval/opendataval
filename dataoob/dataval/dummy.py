@@ -1,20 +1,11 @@
-import copy
-from abc import ABC, abstractmethod
-
 import torch
+import copy
 import numpy as np
-
-from dataoob.model import Model
-
-
-class DataEvaluator(ABC):
+class DummyEvaluator:
     """Abstract class of Data Evaluators. Provides a template of how evaluators interact
     with the pred_model and specific methods each evaluator should implement
-    # TODO consider injecting the pred model and metric in a later function
-    # TODO alternatively consider
     """
-
-    def __init__(self, pred_model: Model, metric: callable, *args, **kwargs):
+    def __init__(self, pred_model, metric: callable, *args, **kwargs):
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
@@ -47,8 +38,6 @@ class DataEvaluator(ABC):
         self.input_data(x_train, y_train, x_valid, y_valid)
         self.train_data_values(batch_size=batch_size, epochs=epochs)
 
-
-    @abstractmethod
     def input_data(
         self,
         x_train: torch.Tensor,
@@ -64,12 +53,12 @@ class DataEvaluator(ABC):
         :param torch.Tensor x_valid: Test+Held-out covariates
         :param torch.Tensor y_valid: Test+Held-out labels
         """
-        pass
+        (self.x_train, self.y_train) = (x_train, y_train)
+        (self.x_valid, self.y_valid) = (x_valid, y_valid)
 
     def get_data_points(self):
         return (self.x_train, self.y_train), (self.x_valid, self.y_valid)
 
-    @abstractmethod
     def train_data_values(self, batch_size: int=32, epochs: int=1):
         """Trains the evaluator to compute data values of the model
 
@@ -78,7 +67,6 @@ class DataEvaluator(ABC):
         """
         pass
 
-    @abstractmethod
     def evaluate_data_values(self) -> np.ndarray:
         """Evaluates the data values of the input training dataset. Outputs the
         data values as an array
@@ -86,9 +74,4 @@ class DataEvaluator(ABC):
         :return np.ndarray: Data values computed by the data valuator. Outputs a
         np.ndarray because many metrics expect an np.ndarray.
         """
-        pass
-
-
-def DE(method: DataEvaluator, model: Model, *args, **kwargs):
-    # TODO Write If Else statements once it's populated with Data Evaluators
-    return method(model, *args, **kwargs)
+        return np.ones((len(self.x_train),))

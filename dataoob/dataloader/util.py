@@ -12,6 +12,7 @@ class CatDataset(Dataset[Tuple[Dataset, ...]]):
     which is explicitly useful when we take a subset of a larger dataset such as images.
     I'm not entirely sure why this wasn't in torch
     """
+
     def __init__(self, *datasets: Dataset):
         self.datasets = [ds for ds in datasets if ds is not None]
         if not all(len(datasets[0]) == len(ds) for ds in self.datasets):

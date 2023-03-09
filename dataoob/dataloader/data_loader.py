@@ -3,9 +3,8 @@ from itertools import accumulate
 import numpy as np
 import torch
 import torch.nn.functional as F
+from dataoob.dataloader.datasets import DatasetDirectory
 from torch.utils.data import Dataset, Subset
-
-from dataoob.dataloader import datasets
 
 
 def DataLoader(
@@ -42,9 +41,8 @@ def DataLoader(
     :return torch.Tensor | Dataset, torch.Tensor: Test Covariates, Test Labels
     :return np.ndarray: Indices of noisified Training labels
     """
-    x, y = datasets.load_dataset(  # TODO pass in device, download and load functions are necessary
-        dataset_name=dataset_name, device=device
-    )
+    x, y = load_dataset(dataset_name=dataset_name, device=device)
+    # TODO pass in device, download and load functions are necessary
 
     # Scale the data
     if scaler:  # TODO API unification, maybe wrap in a class idk
@@ -64,8 +62,27 @@ def DataLoader(
     return (x_train, y_train), (x_valid, y_valid), (x_test, y_test), noisy_indices
 
 
-def one_hot_encode(data: torch.Tensor, device: int=torch.device("cpu")) -> torch.Tensor:
-    num_classes = int(torch.max(data).item())+1
+def load_dataset(
+    dataset_name: str, device: int = torch.device("cpu")
+) -> tuple[torch.Tensor | Dataset, torch.Tensor]:
+    if dataset_name not in DatasetDirectory:
+        raise Exception("Must register Dataset in register_dataset")
+
+    covariates, labels = DatasetDirectory[dataset_name](
+        False
+    )  # Pass in force download and device
+
+    if not isinstance(covariates, Dataset):
+        covariates = torch.tensor(covariates).to(dtype=torch.float32, device=device)
+    labels = torch.tensor(labels).to(dtype=torch.float32, device=device)
+
+    return covariates, labels
+
+
+def one_hot_encode(
+    data: torch.Tensor, device: int = torch.device("cpu")
+) -> torch.Tensor:
+    num_classes = int(torch.max(data).item()) + 1
     return F.one_hot(data.long(), num_classes).to(dtype=torch.float32, device=device)
 
 
@@ -75,11 +92,11 @@ def noisify(
     if noise_rate == 0.0:
         return labels, np.array([])
     elif 0 <= noise_rate <= 1.0:
-        n_points = labels.size(dim=0)
+        num_points = labels.size(dim=0)
 
-        noise_count = round(n_points * noise_rate)
-        replace = np.random.choice(n_points, noise_count, replace=False)
-        target = np.random.choice(n_points, noise_count, replace=False)
+        noise_count = round(num_points * noise_rate)
+        replace = np.random.choice(num_points, noise_count, replace=False)
+        target = np.random.choice(num_points, noise_count, replace=False)
         labels[replace] = labels[target]
 
         return labels, replace

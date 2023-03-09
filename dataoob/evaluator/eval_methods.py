@@ -10,9 +10,7 @@ from matplotlib import pyplot as plt
 
 def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[float, float]:
     """Computes recall and F1 score of the performance of the data evaluator.
-    F1 score is computed by using a KMeans(k=2) classifier where the higher data values
-    are labeled as 1 (greater value) and lower are labeled as zero, we then compare
-    against input noisy indices.
+    F1 score is computed by using a KMeans(k=2).
 
     :param DataEvaluator evaluator: Data Evaluator.
     :param np.ndarray noisy_index: Indices with noise added to them from DataLoader.
@@ -28,8 +26,11 @@ def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[
 
     # Computes F1 of a KMeans(k=2) classifier of the data values
     kmeans = KMeans(n_clusters=2).fit(data_values.reshape(-1, 1))
-    validation = np.ones((num_points,))
-    validation[noisy_index] = 0
+
+    # Something stupid willl have to happen here LOL
+    validation = np.empty((num_points,)).fill()
+    validation[noisy_index] = kmeans.labels_[index_of_small_values[0]]
+
     f1_kmeans_label = f1_score(kmeans.labels_, validation)
 
     return recall, f1_kmeans_label

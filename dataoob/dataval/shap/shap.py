@@ -1,12 +1,12 @@
 import copy
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+
 import numpy as np
 import torch
 import tqdm
-from torch.utils.data import Dataset, Subset
-
 from dataoob.dataval import DataEvaluator
 from dataoob.model import Model
+from torch.utils.data import Dataset, Subset
 
 
 class ShapEvaluator(DataEvaluator, ABC):
@@ -67,7 +67,6 @@ class ShapEvaluator(DataEvaluator, ABC):
             return ShapEvaluator.marg_contrib_dict.get(model_name)
         return None
 
-
     def input_data(
         self,
         x_train: torch.Tensor | Dataset,
@@ -88,8 +87,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         self.y_valid = y_valid
 
         # Additional parameters
-        self.n_points = len(x_train)
-
+        self.num_points = len(x_train)
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
         """Computes the marginal contributions for Shapley values. Additionally checks
@@ -110,25 +108,24 @@ class ShapEvaluator(DataEvaluator, ABC):
             return
 
         print(f"Start: marginal contribution computation", flush=True)
-        self.marginal_contrib_sum = np.zeros((self.n_points, self.n_points))
-        self.marginal_count = np.zeros((self.n_points, self.n_points)) + 1e-8  # Overflow
-        self.marginal_increment_array_stack = np.zeros((0, self.n_points))
+        self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
+        self.marginal_count = np.zeros((self.num_points, self.num_points)) + 1e-8
+        self.marginal_increment_array_stack = np.zeros((0, self.num_points))
 
         gr_stat = ShapEvaluator.GR_MAX  # Converges when < gr_threshold
         iteration = 0  # Iteration wise terminator, in case MCMC goes on for too long
 
         while iteration < self.max_iterations and gr_stat > self.gr_threshold:
-            # we check the convergence every 100 random sets.
+            # we check the convergence every 100 random samples.
             # we terminate iteration if Shapley value is converged.
-
-            for _ in tqdm.tqdm(range(100)):
-                marginal_increment_array = self._calculate_marginal_contributions(
-                    batch_size=batch_size, epochs=epochs
-                )
-                self.marginal_increment_array_stack = np.concatenate(
-                    [self.marginal_increment_array_stack, marginal_increment_array],
-                    axis=0,
-                )
+            samples_array = [
+                self._calculate_marginal_contributions(batch_size, epochs)
+                for _ in tqdm.tqdm(range(100))  # 100 random samples
+            ]
+            self.marginal_increment_array_stack = np.concatenate(
+                [self.marginal_increment_array_stack] + samples_array,
+                axis=0,
+            )
 
             gr_stat = self._compute_gr_statistics(self.marginal_increment_array_stack)
             iteration += 1  # Update terminating conditions
@@ -136,7 +133,6 @@ class ShapEvaluator(DataEvaluator, ABC):
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
         self.marginal_cache(self.model_name, self.marginal_contribution)
         print(f"Done: marginal contribution computation", flush=True)
-
 
     def _calculate_marginal_contributions(
         self, batch_size=32, epochs: int = 1, min_cardinality: int = 5
@@ -150,8 +146,8 @@ class ShapEvaluator(DataEvaluator, ABC):
         Average of this value is Shapley as we consider a random permutation.
         """
         # for each iteration, we use random permutation for our MCMC
-        indices = np.random.permutation(self.n_points)
-        marginal_increment = np.zeros(self.n_points) + 1e-12  # Prevents overflow
+        indices = np.random.permutation(self.num_points)
+        marginal_increment = np.zeros(self.num_points) + 1e-12  # Prevents overflow
         coalition = list(indices[:min_cardinality])
         truncation_counter = 0
 
@@ -165,7 +161,7 @@ class ShapEvaluator(DataEvaluator, ABC):
             marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
-            self.marginal_contrib_sum[cutoff, idx] += (curr_perf - prev_perf)
+            self.marginal_contrib_sum[cutoff, idx] += curr_perf - prev_perf
             self.marginal_count[cutoff, idx] += 1
 
             # if a new increment is not large enough, we terminate the valuation.
@@ -180,12 +176,14 @@ class ShapEvaluator(DataEvaluator, ABC):
                 truncation_counter = 0
 
             if truncation_counter == 10:  # If enter space without changes to model
-                # print(f'Among {self.n_points}, {n} samples are observed!', flush=True)
+                # print(f'Among {self.num_points}, {n} samples are observed!',flush=True)
                 break
 
         return marginal_increment.reshape(1, -1)
 
-    def _evaluate_model(self, indices: list[int], batch_size: int = 32, epochs: int = 1):
+    def _evaluate_model(
+        self, indices: list[int], batch_size: int = 32, epochs: int = 1
+    ):
         """Trains and evaluates the performance of the model
 
         :param list[int] x_batch: Data covariates+labels indices
@@ -194,21 +192,25 @@ class ShapEvaluator(DataEvaluator, ABC):
         :return float: returns current performance of model given the batch
         """
 
-        # Trains the model
-        curr_model = copy.deepcopy(self.pred_model)
-        curr_model.fit(
-            Subset(self.x_train, indices=indices),
-            Subset(self.y_train, indices=indices),
-            batch_size=batch_size,
-            epochs=epochs,
-        )
+        # Checks if subset is all of one label
+        if all(torch.equal(self.y_train[indices[0]], self.y_train[i]) for i in indices):
+            y_valid_hat = self.y_train[indices[0]].expand(len(self.y_valid), -1)
 
-        y_valid_hat = curr_model.predict(self.x_valid)
+        else:
+            curr_model = copy.deepcopy(self.pred_model)
+            curr_model.fit(
+                Subset(self.x_train, indices=indices),
+                Subset(self.y_train, indices=indices),
+                batch_size=batch_size,
+                epochs=epochs,
+            )
+            y_valid_hat = curr_model.predict(self.x_valid)
+
         curr_perf = self.evaluate(self.y_valid, y_valid_hat)
 
         return curr_perf
 
-    def _compute_gr_statistics(self, samples: np.ndarray, num_chains: int=10):
+    def _compute_gr_statistics(self, samples: np.ndarray, num_chains: int = 10):
         """Computes Gelman-Rubin statistic of the marginal contributions
         Ref. https://arxiv.org/pdf/1812.09384
 
@@ -238,7 +240,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         b_term = num_samples_per_chain * np.var(sampling_mean, axis=0, ddof=1)
 
         gr_stats = np.sqrt(
-            (num_samples_per_chain - 1) / num_samples_per_chain +
-            (b_term / (s_term * num_samples_per_chain))
+            (num_samples_per_chain - 1) / num_samples_per_chain
+            + (b_term / (s_term * num_samples_per_chain))
         )  # Ref. https://arxiv.org/pdf/1812.09384 (p.7, Eq.4)
         return np.max(gr_stats)

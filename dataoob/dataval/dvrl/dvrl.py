@@ -1,5 +1,4 @@
 import copy
-import os
 from collections import OrderedDict
 
 import numpy as np
@@ -7,10 +6,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import tqdm
-from torch.utils.data import DataLoader, RandomSampler
-
 from dataoob.dataloader.util import CatDataset
 from dataoob.dataval import DataEvaluator, Model
+from torch.utils.data import DataLoader, RandomSampler
 
 
 class DVRL(DataEvaluator):
@@ -49,7 +47,7 @@ class DVRL(DataEvaluator):
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
 
-        # MLP parameters
+        # Value estimator parameters
         self.hidden_dim = hidden_dim
         self.layer_number = layer_number
         self.comb_dim = comb_dim
@@ -192,7 +190,6 @@ class DVRL(DataEvaluator):
             loss.backward(retain_graph=True)
             optimizer.step()
 
-
         # Trains DVRL predictor
         # Generate data values
         final_data_value_weights = self.value_estimator(
@@ -208,7 +205,6 @@ class DVRL(DataEvaluator):
             epochs=epochs,
         )
 
-
     def evaluate_data_values(self) -> np.ndarray:
         """Returns data values using the data valuator model.
 
@@ -223,7 +219,9 @@ class DVRL(DataEvaluator):
         )
 
         # Estimates data value
-        final_data_value = torch.squeeze(self.value_estimator(self.x_train, self.y_train, y_hat))
+        final_data_value = torch.squeeze(
+            self.value_estimator(self.x_train, self.y_train, y_hat)
+        )
 
         return np.array(final_data_value.detach().cpu())
 
@@ -336,7 +334,8 @@ class DveLoss(nn.Module):
         )
 
         reward_loss = reward_input * likelihood
-        search_loss = F.relu(torch.mean(predicted_data_val) - self.threshold) + F.relu(
-            (1 - self.threshold) - torch.mean(predicted_data_val)
+        search_loss = (
+            F.relu(torch.mean(predicted_data_val) - self.threshold) +
+            F.relu((1 - self.threshold) - torch.mean(predicted_data_val))
         )
         return reward_loss + (self.exploration_weight * search_loss)

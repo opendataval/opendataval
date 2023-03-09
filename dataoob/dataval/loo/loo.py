@@ -1,10 +1,12 @@
-from dataoob.model import Model
 import copy
+
 import numpy as np
-from dataoob.dataval import DataEvaluator
-from torch.utils.data import Subset, Dataset
 import torch
 import tqdm
+from dataoob.dataval import DataEvaluator
+from dataoob.model import Model
+from torch.utils.data import Dataset, Subset
+
 
 class LeaveOneOut(DataEvaluator):
     """Leave One Out data valuation.
@@ -14,6 +16,7 @@ class LeaveOneOut(DataEvaluator):
     :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function
     to determine model performance
     """
+
     def __init__(
         self,
         pred_model: Model,
@@ -42,7 +45,7 @@ class LeaveOneOut(DataEvaluator):
         self.y_valid = y_valid
 
         # Additional parameters
-        self.n_points = len(x_train)
+        self.num_points = len(x_train)
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
         """Computes the data values using the Leave-One-Out data valuation.
@@ -55,8 +58,8 @@ class LeaveOneOut(DataEvaluator):
         :param int epochs: Number of epochs for baseline training, defaults to 1
         """
 
-        self.data_values = np.zeros((self.n_points,))
-        indices = np.random.permutation(self.n_points)
+        self.data_values = np.zeros((self.num_points,))
+        indices = np.random.permutation(self.num_points)
 
         curr_model = copy.deepcopy(self.pred_model)
 
@@ -64,7 +67,7 @@ class LeaveOneOut(DataEvaluator):
         y_valid_hat = self.pred_model.predict(self.x_valid)
         baseline_score = self.evaluate(self.y_valid, y_valid_hat)
 
-        for i in tqdm.tqdm(range(self.n_points)):
+        for i in tqdm.tqdm(range(self.num_points)):
             loo_coalition = np.delete(indices, i)  # Deletes random point
 
             curr_model = copy.deepcopy(self.pred_model)
@@ -85,6 +88,3 @@ class LeaveOneOut(DataEvaluator):
         :return np.ndarray: predicted data values/selection for every input data point
         """
         return self.data_values
-
-
-

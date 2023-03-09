@@ -1,9 +1,9 @@
-import torch
 import numpy as np
-from scipy.special import beta
-
+import torch
 from dataoob.dataval.shap.shap import ShapEvaluator
 from dataoob.model import Model
+from scipy.special import beta
+
 
 class BetaShapley(ShapEvaluator):
     """Beta Shapley implementation. Must specify alpha/beta values for beta function
@@ -32,15 +32,10 @@ class BetaShapley(ShapEvaluator):
         min_samples: int = 1000,
         model_name: str = None,
         alpha: int = 16,
-        beta: int = 1
+        beta: int = 1,
     ):
         super(BetaShapley, self).__init__(
-            pred_model,
-            metric,
-            gr_threshold,
-            max_iterations,
-            min_samples,
-            model_name
+            pred_model, metric, gr_threshold, max_iterations, min_samples, model_name
         )
         self.alpha, self.beta = alpha, beta  # Beta distribution parameters
 
@@ -58,13 +53,14 @@ class BetaShapley(ShapEvaluator):
 
         :return np.ndarray: Weights by cardinality of set
         """
-        weight_list = np.array([
-            beta(j + self.beta, self.n_points - (j + 1) + self.alpha) /
-            beta(j + 1, self.num_points - j)
-            for j in range(self.num_points)
-        ])
+        weight_list = np.array(
+            [
+                beta(j + self.beta, self.num_points - (j + 1) + self.alpha)
+                / beta(j + 1, self.num_points - j)
+                for j in range(self.num_points)
+            ]
+        )
         return weight_list / np.sum(weight_list)
-
 
     def evaluate_data_values(self) -> np.ndarray:
         """Multiplies the marginal contribution with their respective weights to get

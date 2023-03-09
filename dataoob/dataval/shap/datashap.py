@@ -1,6 +1,7 @@
+import numpy as np
 from dataoob.dataval.shap.shap import ShapEvaluator
 from dataoob.model import Model
-import numpy as np
+
 
 class DataShapley(ShapEvaluator):
     """Data Shapley implementation.
@@ -26,12 +27,7 @@ class DataShapley(ShapEvaluator):
         model_name: str = None,
     ):
         super(DataShapley, self).__init__(
-            pred_model,
-            metric,
-            gr_threshold,
-            max_iterations,
-            min_samples,
-            model_name
+            pred_model, metric, gr_threshold, max_iterations, min_samples, model_name
         )
 
     def compute_weight(self) -> float:
@@ -41,7 +37,7 @@ class DataShapley(ShapEvaluator):
 
         :return float: Marginal contribution weight
         """
-        return 1 / len(self.n_points)
+        return 1 / len(self.num_points)
 
     def evaluate_data_values(self) -> np.ndarray:
         """Multiplies the marginal contribution with their respective weights to get
