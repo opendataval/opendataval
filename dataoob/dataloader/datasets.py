@@ -3,73 +3,108 @@ from urllib.request import urlretrieve
 
 import numpy as np
 import pandas as pd
-import torch
 from torch.utils.data import Dataset
-
-CACHE_DIR = "data_files"
-
-DatasetDirectory = {}
-"""Creates a directory for all registered/downloadable dataset functions"""
+import sklearn.datasets as ds
 
 
-def register_dataset(dataset_name: str, register_type="both"):
-    # TODO clean up this decorator, I'm not entirely happy with this API that exists
-    def wrap_func_outputs(func: callable):
-        if dataset_name not in DatasetDirectory:
-            DatasetDirectory[dataset_name] = CovLabelWrapper(dataset_name)
-        DatasetDirectory[dataset_name].add_func(func, register_type)
-        return func
-
-    return wrap_func_outputs
+from typing import Any
 
 
-class CovLabelWrapper:
-    def __init__(self, dataset_name, categorical: bool = False):
-        self.dataset_name = dataset_name
-        self.func = None
-        self.cov_func, self.label_func = None, None
-
-    def add_func(self, func: callable, register_type: str):
-        if register_type == "label":
-            self.cov_func = func
-        elif register_type == "label":
-            self.label_func = func
-        elif register_type == "both":
-            self.func = func
-        else:
-            raise Exception()
-
-    def __call__(self, force_download: bool):
-        if self.func is not None:
-            covariates, labels = self.func(self.dataset_name)
-        elif self.cov_func is not None and self.label_func is not None:
-            covariates, labels = self.cov_func(self.dataset_name), self.label_func(
-                self.dataset_name
-            )
-        else:
-            raise Exception()
-        # TODO APPLY TRANSFORMS HERE
-        return covariates, labels
+def one_hot_encode(data: np.ndarray) -> np.ndarray:
+    num_values = np.max(data) + 1
+    return np.eye(num_values)[data]
 
 
-def cache(url: str, dataset_name: str, file_name: str = None):
+def cache(
+    url: str, cache_dir: str, file_name: str = "", force_redownload: bool = False
+):
     """Loads a file from the URL and caches it locally."""
     if file_name is None:
         file_name = os.path.basename(url)
 
-    data_dir = os.path.join(os.getcwd(), f"{CACHE_DIR}/{dataset_name}")
-    if not os.path.isdir(data_dir):
-        os.mkdir(data_dir)
+    if not os.path.isdir(cache_dir):
+        os.mkdir(cache_dir)
 
-    file_path = os.path.join(data_dir, file_name)
-    if not os.path.isfile(file_path):
+    file_path = os.path.join(cache_dir, file_name)
+    if not os.path.isfile(file_path) or force_redownload:
         urlretrieve(url, file_path)
 
     return file_path
 
 
-@register_dataset(dataset_name="gaussian_classifier", register_type="both")
-def gaussian_classifier(dataset_name: str, n=10000, input_dim=10):
+class Register:
+    CACHE_DIR = "data_files"
+
+    Datasets = {}
+    """Creates a directory for all registered/downloadable dataset functions"""
+
+    def __init__(
+        self,
+        dataset_name: str,
+        categorical: bool = False,
+        cacheable: bool = False,
+        dataset_kwargs: dict[str, Any] = None,
+    ):
+        self.dataset_name = dataset_name
+        self.dataset_kwargs = dataset_kwargs if dataset_kwargs else {}
+
+        self.covariate_transform = None
+        self.label_transform = None
+        if categorical:
+            self.label_transform = one_hot_encode
+
+        if cacheable:
+            self.download_dir = os.path.join(
+                os.getcwd(), f"{Register.CACHE_DIR}/{dataset_name}"
+            )
+
+        Register.Datasets[dataset_name] = self
+
+    def add_both(self, func: callable) -> callable:
+        self.cov_label_func = func
+        return func
+
+    def add_covariates(self, func: callable) -> callable:
+        self.cov_func = func
+        return func
+
+    def add_labels(self, func: callable) -> callable:
+        self.label_func = func
+        return func
+
+    def add_covariate_transform(self, transform: callable):
+        self.covariate_transform = transform
+        return self
+
+    def add_label_transform(self, transform: callable):
+        self.label_transform = transform
+        return self
+
+    def load_data(self, force_redownload=False):  # Consider caching higher up the chain
+        if hasattr(self, "download_dir"):
+            self.dataset_kwargs["cache_dir"] = self.download_dir
+            self.dataset_kwargs["force_redownload"] = force_redownload
+
+        if hasattr(self, "cov_label_func"):
+            covariates, labels = self.cov_label_func(**self.dataset_kwargs)
+        else:
+            covariates = self.cov_func(**self.dataset_kwargs)
+            labels = self.label_func(**self.dataset_kwargs)
+
+        if self.covariate_transform:
+            if isinstance(covariates, Dataset):
+                covariates.transform = self.covariate_transform
+            else:
+                covariates = self.covariate_transform(covariates)
+
+        if self.label_transform:
+            labels = self.label_transform(labels)
+
+        return covariates, labels
+
+
+@Register("gaussian_classifier", categorical=True).add_both
+def gaussian_classifier(n=10000, input_dim=10):
     covar = np.random.normal(size=(n, input_dim))
 
     beta_true = np.random.normal(size=input_dim).reshape(input_dim, 1)
@@ -80,11 +115,16 @@ def gaussian_classifier(dataset_name: str, n=10000, input_dim=10):
     return covar, labels
 
 
-@register_dataset(dataset_name="adult", register_type="both")
-def download_adult(dataset_name: str):
-    uci_base_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/"
-    train_url = cache(uci_base_url + "adult/adult.data", dataset_name, "train.csv")
-    test_url = cache(uci_base_url + "adult/adult.test", dataset_name, "test.csv")
+Register(  # Register different versions of datasets
+    "gaussian_classifier_high_dim", categorical=True, dataset_kwargs={"input_dim": 100}
+).add_both(gaussian_classifier)
+
+
+@Register("adult", categorical=True, cacheable=True).add_both
+def download_adult(cache_dir: str, force_redownload=False):
+    uci_base_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
+    train_url = cache(uci_base_url + "/adult.data", cache_dir, "train.csv", force_redownload)
+    test_url = cache(uci_base_url + "/adult.test", cache_dir, "test.csv", force_redownload)
 
     data_train = pd.read_csv(train_url, header=None)
     data_test = pd.read_csv(test_url, skiprows=1, header=None)
@@ -145,15 +185,23 @@ def download_adult(dataset_name: str):
     # Resets index
     df = df.reset_index()
     df = df.drop(columns=["index"])
-    return df.drop("Income", axis=1), df["Income"]
+    return df.drop("Income", axis=1).values, df["Income"].values
+
+@Register("iris", categorical=True).add_both
+def download_iris():
+    return ds.load_iris(return_X_y=True)
 
 
-# @register_dataset("imageset", register_type="covariates")
-# class imageset(Dataset):
-#     def __init__(self):
-#         self.lables
-#     def __getitem__(self, index):
-#         return self.covariate[index]
-# @register_dataset("imageset", register_type="labels")
-# def imagesetlabels():
-#     return ...
+@Register("diabetes", categorical=True).add_both
+def download_iris():
+    return ds.load_diabetes(return_X_y=True)
+
+
+@Register("digits", categorical=True).add_both
+def download_iris():
+    return ds.load_digits(return_X_y=True)
+
+
+@Register("breast_cancer", categorical=True).add_both
+def download_iris():
+    return ds.load_breast_cancer(return_X_y=True)

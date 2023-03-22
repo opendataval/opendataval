@@ -2,8 +2,7 @@ from itertools import accumulate
 
 import numpy as np
 import torch
-import torch.nn.functional as F
-from dataoob.dataloader.datasets import DatasetDirectory
+from dataoob.dataloader.datasets import Register
 from torch.utils.data import Dataset, Subset
 
 
@@ -12,8 +11,7 @@ def DataLoader(
     train_count: int | float = 0,
     valid_count: int | float = 0,
     test_count: int | float = 0,
-    categorical: bool = False,
-    scaler: str = None,
+    force_redownload: bool = False,
     noise_rate: float = 0.0,
     device: int = torch.device("cpu"),
 ):
@@ -41,19 +39,11 @@ def DataLoader(
     :return torch.Tensor | Dataset, torch.Tensor: Test Covariates, Test Labels
     :return np.ndarray: Indices of noisified Training labels
     """
-    x, y = load_dataset(dataset_name=dataset_name, device=device)
+    x, y = load_dataset(dataset_name, device, force_redownload)
     # TODO pass in device, download and load functions are necessary
 
-    # Scale the data
-    if scaler:  # TODO API unification, maybe wrap in a class idk
-        if isinstance(x, Dataset):
-            x.transform = scaler
-        else:
-            x = scaler(x)
-    y = one_hot_encode(y, device) if categorical else scaler(y)
-
     (x_train, y_train), (x_valid, y_valid), (x_test, y_test) = split_dataset(
-        x, y, train_count=train_count, valid_count=valid_count, test_count=test_count
+        x, y, train_count, valid_count, test_count
     )
 
     # Noisify the data
@@ -63,27 +53,18 @@ def DataLoader(
 
 
 def load_dataset(
-    dataset_name: str, device: int = torch.device("cpu")
+    dataset_name: str, device: int = torch.device("cpu"), force_redownload: bool = False
 ) -> tuple[torch.Tensor | Dataset, torch.Tensor]:
-    if dataset_name not in DatasetDirectory:
+    if dataset_name not in Register.Datasets:
         raise Exception("Must register Dataset in register_dataset")
 
-    covariates, labels = DatasetDirectory[dataset_name](
-        False
-    )  # Pass in force download and device
+    covariates, labels = Register.Datasets[dataset_name].load_data(force_redownload)
 
     if not isinstance(covariates, Dataset):
         covariates = torch.tensor(covariates).to(dtype=torch.float32, device=device)
     labels = torch.tensor(labels).to(dtype=torch.float32, device=device)
 
     return covariates, labels
-
-
-def one_hot_encode(
-    data: torch.Tensor, device: int = torch.device("cpu")
-) -> torch.Tensor:
-    num_classes = int(torch.max(data).item()) + 1
-    return F.one_hot(data.long(), num_classes).to(dtype=torch.float32, device=device)
 
 
 def noisify(
@@ -134,7 +115,7 @@ def split_dataset(
             splits = (round(num_points * p) for p in (tr, val, tst))
             splits = accumulate(splits)
         case _:
-            raise Exception()  # TODO
+            raise Exception("Invalid split")  # TODO
 
     # Extra underscore to unpack any remainders
     indices = np.random.permutation(num_points)
