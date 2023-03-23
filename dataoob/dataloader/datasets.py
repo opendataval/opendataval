@@ -6,19 +6,26 @@ import pandas as pd
 from torch.utils.data import Dataset
 import sklearn.datasets as ds
 
-
-from typing import Any
+from typing import Any, Callable
 
 
 def one_hot_encode(data: np.ndarray) -> np.ndarray:
+    """One hot encodes a 1D numpy array"""
     num_values = np.max(data) + 1
     return np.eye(num_values)[data]
 
 
 def cache(
     url: str, cache_dir: str, file_name: str = "", force_redownload: bool = False
-):
-    """Loads a file from the URL and caches it locally."""
+) -> str:
+    """Downloads a file if it it is not present and returns the file_path
+
+    :param str url: URL of the file to be downloaded
+    :param str cache_dir: Directory to cache downloaded files
+    :param str file_name: File name within the cache directory of the downloaded file, defaults to ""
+    :param bool force_redownload: Forces a download regardless if file is present, defaults to False
+    :return str: File path of the downloaded file
+    """
     if file_name is None:
         file_name = os.path.basename(url)
 
@@ -31,6 +38,16 @@ def cache(
 
     return file_path
 
+
+def _read_csv(file_path: str, label_columns: str | list):
+    """Creates dataset from csv file path, nested functions for api consistency"""
+    return lambda: _from_pandas(pd.read_csv(file_path), label_columns)()
+
+def _from_pandas(df: pd.DataFrame, label_columns: str | list):
+    """Creates dataset from pandas dataframe, nested functions for api consistency"""
+    if all(isinstance(col, int) for col in label_columns):
+        label_columns = df.columns[label_columns]
+    return lambda: (df.drop(label_columns, axis=1).values, df[label_columns].values)
 
 class Register:
     CACHE_DIR = "data_files"
@@ -45,6 +62,15 @@ class Register:
         cacheable: bool = False,
         dataset_kwargs: dict[str, Any] = None,
     ):
+        """Registers datasets to be loaded by the DataLoader. This is useful to be able to catalog datasets in use
+        Also can store transformations to be applied on a specific dataset. The reasoning to create this class is
+        that every variation of a dataset should be its own object that can be queried
+
+        :param str dataset_name: Dataset name
+        :param bool categorical: Whether the dataset is categorically labeled, defaults to False
+        :param bool cacheable: Whether dataset can be downloaded and cached, defaults to False
+        :param dict[str, Any] dataset_kwargs: Additional keyword arguments to pass to the dataset functions, defaults to None
+        """
         self.dataset_name = dataset_name
         self.dataset_kwargs = dataset_kwargs if dataset_kwargs else {}
 
@@ -60,23 +86,31 @@ class Register:
 
         Register.Datasets[dataset_name] = self
 
-    def add_both(self, func: callable) -> callable:
+    def from_csv(self, file_path: str, label_columns: str | list):
+        self.cov_label_func = _read_csv(file_path, label_columns)
+        return self
+
+    def from_pandas(self, df: pd.DataFrame, label_columns: str | list):
+        self.cov_label_func = _from_pandas(df, label_columns)
+        return self
+
+    def add_both(self, func: Callable) -> Callable:
         self.cov_label_func = func
         return func
 
-    def add_covariates(self, func: callable) -> callable:
+    def add_covariates(self, func: Callable) -> Callable:
         self.cov_func = func
         return func
 
-    def add_labels(self, func: callable) -> callable:
+    def add_labels(self, func: Callable) -> Callable:
         self.label_func = func
         return func
 
-    def add_covariate_transform(self, transform: callable):
+    def add_covariate_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
         self.covariate_transform = transform
         return self
 
-    def add_label_transform(self, transform: callable):
+    def add_label_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
         self.label_transform = transform
         return self
 
@@ -115,13 +149,8 @@ def gaussian_classifier(n=10000, input_dim=10):
     return covar, labels
 
 
-Register(  # Register different versions of datasets
-    "gaussian_classifier_high_dim", categorical=True, dataset_kwargs={"input_dim": 100}
-).add_both(gaussian_classifier)
-
-
 @Register("adult", categorical=True, cacheable=True).add_both
-def download_adult(cache_dir: str, force_redownload=False):
+def download_adult(cache_dir: str, force_redownload: bool = False):
     uci_base_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
     train_url = cache(uci_base_url + "/adult.data", cache_dir, "train.csv", force_redownload)
     test_url = cache(uci_base_url + "/adult.test", cache_dir, "test.csv", force_redownload)
@@ -187,21 +216,32 @@ def download_adult(cache_dir: str, force_redownload=False):
     df = df.drop(columns=["index"])
     return df.drop("Income", axis=1).values, df["Income"].values
 
-@Register("iris", categorical=True).add_both
+@Register("iris").add_label_transform(one_hot_encode).add_both
 def download_iris():
     return ds.load_iris(return_X_y=True)
 
 
 @Register("diabetes", categorical=True).add_both
-def download_iris():
+def download_diabetes():
     return ds.load_diabetes(return_X_y=True)
 
 
 @Register("digits", categorical=True).add_both
-def download_iris():
+def download_digits():
     return ds.load_digits(return_X_y=True)
 
 
 @Register("breast_cancer", categorical=True).add_both
-def download_iris():
+def download_breast_cancer():
     return ds.load_breast_cancer(return_X_y=True)
+
+# Alternative registration methods
+Register(
+    "gaussian_classifier_high_dim", categorical=True, dataset_kwargs={"input_dim": 100}
+).add_both(gaussian_classifier)
+Register(
+    "gaussian_only_zeroes", categorical=True, dataset_kwargs={"input_dim": 100}
+).add_label_transform(lambda label: np.zeros_like(label)).add_both(gaussian_classifier)
+# NOTE below, data is not cleaned
+Register("adult_csv", True).from_csv(Register.CACHE_DIR + "/adult/train.csv", [-1, -2])
+

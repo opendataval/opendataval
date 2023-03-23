@@ -8,32 +8,23 @@ from torch.utils.data import Dataset, Subset
 
 def DataLoader(
     dataset_name: str,
+    force_redownload: bool = False,
     train_count: int | float = 0,
     valid_count: int | float = 0,
     test_count: int | float = 0,
-    force_redownload: bool = False,
     noise_rate: float = 0.0,
     device: int = torch.device("cpu"),
 ):
     """Dataloader for dataoob, input the dataset name and some additional parameters
-    receive a dataset compatible for Data-oob.  TODO i don't love the api i built
-    revisit when it comes time to rebuild. Ways to improve would be adding a numpy like
-    modifications to it
+    receive a dataset compatible for Data-oob.
 
     :param str dataset_name: Name of the dataset, can be registered in `datasets.py`
     :param bool force_redownload: Forces redownload from source URL, defaults to False
     :param int | float train_count: Number/proportion training points, defaults to 0
     :param int | float valid_count: Number/proportion validation points, defaults to 0
     :param int | float test_count: Number/proportion testing points, defaults to 0
-    :param bool categorical: Whether the data is categorical, defaults to False
-    :param callable (np.ndarray(m x n) -> np.ndarray(m x n)) scaler: Scaler that
-    normalizes the data. NOTE This likely will change as the underlying datasets change,
-    defaults to None
-    :param float noise_rate: Ratio of noise to add to the data TODO think
-    of other ways to add noise to the data, defaults to 0.
-    :param torch.device device: Tensor device for acceleration, defaults to
-    torch.device("cpu")
-
+    :param float noise_rate: Ratio of noise to add to the data, defaults to 0.
+    :param torch.device device: Tensor device for acceleration, defaults to torch.device("cpu")
     :return torch.Tensor | Dataset, torch.Tensor: Training Covariates, Training Labels
     :return torch.Tensor | Dataset, torch.Tensor: Validation Covariates, Valid Labels
     :return torch.Tensor | Dataset, torch.Tensor: Test Covariates, Test Labels
@@ -55,6 +46,14 @@ def DataLoader(
 def load_dataset(
     dataset_name: str, device: int = torch.device("cpu"), force_redownload: bool = False
 ) -> tuple[torch.Tensor | Dataset, torch.Tensor]:
+    """Loads the dataset from the dataset registry and loads as tensor on specified device
+
+    :param str dataset_name: Name of a registered datset
+    :param int device: Device to load tensor, defaults to torch.device("cpu")
+    :param bool force_redownload: Forces redownload from URL, defaults to False
+    :raises Exception: _description_  TODO
+    :return tuple[torch.Tensor | Dataset, torch.Tensor]: covariates and labels of the dataset
+    """
     if dataset_name not in Register.Datasets:
         raise Exception("Must register Dataset in register_dataset")
 
@@ -121,7 +120,6 @@ def split_dataset(
     indices = np.random.permutation(num_points)
     train_idx, valid_idx, test_idx, _ = np.split(indices, list(splits))
 
-    # TODO consider using torch subsets to make the split a little easier/generalizable
     if isinstance(x, Dataset):
         x_train, y_train = Subset(x, train_idx), y[train_idx]
         x_valid, y_valid = Subset(x, valid_idx), y[valid_idx]
