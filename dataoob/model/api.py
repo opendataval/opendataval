@@ -136,15 +136,17 @@ class ClassifierSkLearnWrapper(Model):
         # API consistency, such as passing datasets to a sk-learn  model
         dataset = CatDataset(x_train, y_train, sample_weight)
         num_samples = len(dataset)
+        if num_samples == 0:
+            self.model = DummyClassifier(strategy="constant", constant=0).fit([0], [0])
+            return
         dataloader = DataLoader(dataset, batch_size=num_samples, collate_fn=to_cpu)
 
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train, *weights = next(iter(dataloader))
-
         y_train = torch.argmax(y_train, dim=1)
         y_train_unique = torch.unique(y_train, sorted=True)
 
-        if len(y_train_unique) == self.num_classes:  # All labels must be in sample
+        if len(y_train_unique) != self.num_classes:  # All labels must be in sample
             self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
         elif sample_weight is not None:
             self.model.fit(x_train, y_train, torch.squeeze(weights[0]), *args, **kwargs)
@@ -177,6 +179,9 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         # API consistency, such as passing datasets to a sk-learn  model
         dataset = CatDataset(x_train, y_train, sample_weight)
         num_samples = len(dataset)
+        if num_samples == 0:
+            self.model = DummyClassifier(strategy="constant", constant=0).fit([0], [0])
+            return
         ws = None  # Weighted sampler, if it's None, uses all samples
 
         if sample_weight is not None:

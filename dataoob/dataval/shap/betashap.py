@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 from dataoob.dataval.shap.shap import ShapEvaluator
 from dataoob.model import Model
 from scipy.special import beta
