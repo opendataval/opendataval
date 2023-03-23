@@ -14,10 +14,10 @@ class ShapEvaluator(DataEvaluator, ABC):
     computing data values. Implements core computations of marginal contribution.
     Ref. https://arxiv.org/abs/1904.02868
     Ref. https://arxiv.org/abs/2110.14049 for TMC
+    # TODO fix the overhang on callable
 
     :param Model pred_model: Prediction model
-    :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function
-    to determine model performance
+    :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function to determine model performance
     :param float GR_threshold: Convergence threshold for the Gelman-Rubin statistic.
     Shapley values are NP-hard this is the approximation criteria
     :param int max_iterations: Max number of outer iterations of MCMC sampling,
@@ -186,25 +186,20 @@ class ShapEvaluator(DataEvaluator, ABC):
     ):
         """Trains and evaluates the performance of the model
 
-        :param list[int] x_batch: Data covariates+labels indices
+        :param list[int] x_batch: Data covariates+labels indices subset
         :param int batch_size: Training batch size, defaults to 32
         :param int epochs: Number of epochs to train the pred_model, defaults to 1
         :return float: returns current performance of model given the batch
         """
 
-        # Checks if subset is all of one label
-        if all(torch.equal(self.y_train[indices[0]], self.y_train[i]) for i in indices):
-            y_valid_hat = self.y_train[indices[0]].expand(len(self.y_valid), -1)
-
-        else:
-            curr_model = copy.deepcopy(self.pred_model)
-            curr_model.fit(
-                Subset(self.x_train, indices=indices),
-                Subset(self.y_train, indices=indices),
-                batch_size=batch_size,
-                epochs=epochs,
-            )
-            y_valid_hat = curr_model.predict(self.x_valid)
+        curr_model = copy.deepcopy(self.pred_model)
+        curr_model.fit(
+            Subset(self.x_train, indices=indices),
+            Subset(self.y_train, indices=indices),
+            batch_size=batch_size,
+            epochs=epochs,
+        )
+        y_valid_hat = curr_model.predict(self.x_valid)
 
         curr_perf = self.evaluate(self.y_valid, y_valid_hat)
 

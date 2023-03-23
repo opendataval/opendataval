@@ -2,11 +2,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from dataoob.model import ClassifierNNMixin
 
-from dataoob.model import ClassifierNN
 
-
-class ANN(ClassifierNN):
+class ANN(ClassifierNNMixin):
     def __init__(self, input_dim, num_of_classes=2):
         """Initializes the Artifical Neural Network."""
 
@@ -19,7 +18,12 @@ class ANN(ClassifierNN):
         self.linearout = nn.Linear(100, num_of_classes)
         self.output = nn.Softmax(-1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass of ANN
+
+        :param torch.Tensor x: Input tensor
+        :return torch.Tensor: Output Tensor of logistic regression
+        """
         x = self.linear1(x)
         x = F.relu(x)
         x = self.linear2(x)
@@ -28,16 +32,11 @@ class ANN(ClassifierNN):
         x = self.output(x)
         return x
 
-    def predict(self, x):
-        """
-        predict method for CFE-Models which need this method.
-        :param data: torch or list
-        :return: np.array with prediction
-        """
-        if not torch.is_tensor(x):
-            x = torch.from_numpy(np.array(x)).float()
-        else:
-            x = torch.squeeze(x)
+    def predict(self, x: torch.Tensor) -> torch.Tensor:
+        """Predicts output from input tensor
 
+        :param torch.Tensor x: Input tensor
+        :return torch.Tensor: Predicted tensor output
+        """
         y = self.forward(x)
         return y
