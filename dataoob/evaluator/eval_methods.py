@@ -29,7 +29,7 @@ def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[
 
     # Because of the convexity of KMeans classification, the least valuable datapoint
     # will always belong to the lower class on a number line, and vice-versa
-    validation = np.empty((num_points,)).fill(sorted_indices[-1])
+    validation = np.full((num_points,), kmeans.labels_[sorted_indices[-1]])
     validation[noisy_index] = kmeans.labels_[sorted_indices[0]]
 
     f1_kmeans_label = f1_score(kmeans.labels_, validation)
@@ -199,7 +199,7 @@ def remove_high_low(
 
 def discover_corrupted_sample(
     evaluator: DataEvaluator,
-    noise_idx: np.ndarray,
+    noisy_index: np.ndarray,
     percentile_increment: float=.05,
     plot: bool=True,
 ):
@@ -226,8 +226,8 @@ def discover_corrupted_sample(
     num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
     num_bins = int(num_sample//num_period) + 1
 
-    sorted_value_list = np.argsort(-data_values)  # Order descending
-    noise_rate = len(data_values) / len(noise_idx)
+    sorted_value_list = np.argsort(data_values)  # Order descending
+    noise_rate = len(noisy_index) / len(data_values)
 
     # Output initialization
     found_rates = []
@@ -236,7 +236,7 @@ def discover_corrupted_sample(
     for bin_index in range(0, num_sample+num_period, num_period):
         # from low to high data values
         found_rates.append(
-            len(np.intersect1d(sorted_value_list[:bin_index], noise_idx)) / len(noise_idx)
+            len(np.intersect1d(sorted_value_list[:bin_index], noisy_index)) / len(noisy_index)
         )
 
     # Plot corrupted label discovery graphs
@@ -245,7 +245,7 @@ def discover_corrupted_sample(
 
         # Corrupted label discovery results (dvrl, optimal, random)
         y_dv = found_rates[:num_bins]
-        y_opt = [min([a*((1.0/num_bins)/noise_rate), 1]) for a in range(num_bins)]
+        y_opt = [min((a * (1./num_bins/noise_rate), 1.)) for a in range(num_bins)]
         y_random = x_axis
 
         plt.figure(figsize=(6, 7.5))

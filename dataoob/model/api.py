@@ -177,7 +177,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
 
         # Using a dataset and dataloader (despite loading all the data) for better
         # API consistency, such as passing datasets to a sk-learn  model
-        dataset = CatDataset(x_train, y_train, sample_weight)
+        dataset = CatDataset(x_train, y_train)
         num_samples = len(dataset)
         if num_samples == 0:
             self.model = DummyClassifier(strategy="constant", constant=0).fit([0], [0])
@@ -190,11 +190,12 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         dataloader = DataLoader(dataset, num_samples, sampler=ws, collate_fn=to_cpu)
 
         # *weights helps check if we passed weights into the Dataloader
-        x_train, y_train, *weights = next(iter(dataloader))
+        x_train, y_train = next(iter(dataloader))
         y_train = torch.argmax(y_train, dim=1)
         y_train_unique = torch.unique(y_train_unique, sorted=True)
 
         if len(y_train_unique) != self.num_classes:  # All labels must be in sample
+            print("Insufficient classes")
             self.model = DummyClassifier(strategy="most_frequent")
         else:
             self.model.fit(x_train, y_train, *args, **kwargs)
