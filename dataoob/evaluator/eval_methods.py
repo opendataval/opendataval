@@ -21,15 +21,16 @@ def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[
     num_points = len(data_values)
     num_noisy = len(noisy_index)
 
-    index_of_small_values = np.argsort(data_values)[: num_noisy]
-    recall = len(np.intersect1d(index_of_small_values, noisy_index)) / num_noisy
+    sorted_indices = np.argsort(data_values)
+    recall = len(np.intersect1d(sorted_indices[: num_noisy], noisy_index)) / num_noisy
 
     # Computes F1 of a KMeans(k=2) classifier of the data values
     kmeans = KMeans(n_clusters=2).fit(data_values.reshape(-1, 1))
 
-    # Something stupid willl have to happen here LOL
-    validation = np.empty((num_points,)).fill()
-    validation[noisy_index] = kmeans.labels_[index_of_small_values[0]]
+    # Because of the convexity of KMeans classification, the least valuable datapoint
+    # will always belong to the lower class on a number line, and vice-versa
+    validation = np.empty((num_points,)).fill(sorted_indices[-1])
+    validation[noisy_index] = kmeans.labels_[sorted_indices[0]]
 
     f1_kmeans_label = f1_score(kmeans.labels_, validation)
 
