@@ -4,16 +4,24 @@ import numpy as np
 import torch
 import tqdm
 from dataoob.dataval import DataEvaluator
-
 from torch.utils.data import Dataset, Subset
 
 
 class LeaveOneOut(DataEvaluator):
-    """Leave One Out data valuation.
-    Ref. https://arxiv.org/pdf/2110.14049
+    """Leave One Out data valuation implementation.
 
-    :param RandomState random_state: random initial state, defaults to None
+    References
+    ----------
+    .. [1] Y. Kwon and J. Zou,
+        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+        arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
+
+    Parameters
+    ----------
+    random_state : RandomState, optional
+        Random initial state, by default None
     """
+
     def input_data(
         self,
         x_train: torch.Tensor | Dataset,
@@ -23,10 +31,16 @@ class LeaveOneOut(DataEvaluator):
     ):
         """Stores and transforms input data for Leave-One-Out data valuation
 
-        :param torch.Tensor x_train: Data covariates
-        :param torch.Tensor y_train: Data labels
-        :param torch.Tensor x_valid: Test+Held-out covariates
-        :param torch.Tensor y_valid: Test+Held-out labels
+        Parameters
+        ----------
+        x_train : torch.Tensor | Dataset
+            Data covariates
+        y_train : torch.Tensor
+            Data labels
+        x_valid : torch.Tensor | Dataset
+            Test+Held-out covariates
+        y_valid : torch.Tensor
+            Test+Held-out labels
         """
         self.x_train = x_train
         self.y_train = y_train
@@ -40,15 +54,17 @@ class LeaveOneOut(DataEvaluator):
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
         """Computes the data values using the Leave-One-Out data valuation.
+
         Equivalently, LOO can be computed from the marginal contributions as it's a
-        semivalue, however the current implementation of ShapEvaluator does not
-        uses a TMC and does not guarantee we will sample the subset necessary for LOO.
-        It is more accurate and efficient to just compute LOO explicitly as below
+        semivalue
 
-        :param int batch_size: Training batch size, defaults to 32
-        :param int epochs: Number of epochs for training, defaults to 1
+        Parameters
+        ----------
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Number of training epochs, by default 1
         """
-
         self.data_values = np.zeros((self.num_points,))
         indices = self.random_state.permutation(self.num_points)
 
@@ -76,8 +92,11 @@ class LeaveOneOut(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values using the LOO data valuator.
+        """Returns data values using Leave One Out data valuation
 
-        :return np.ndarray: predicted data values/selection for every input data point
+        Returns
+        -------
+        np.ndarray
+            Predicted data values/selection for training input data point
         """
         return self.data_values

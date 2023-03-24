@@ -1,31 +1,47 @@
 import copy
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 import torch
 import tqdm
 from dataoob.dataval import DataEvaluator
 from numpy.random import RandomState
-from torch.utils.data import Dataset, Subset
 from sklearn.utils import check_random_state
+from torch.utils.data import Dataset, Subset
 
 
 class ShapEvaluator(DataEvaluator, ABC):
     """ShapEvaluator is an abstract class for all shapley-based methods of
     computing data values. Implements core computations of marginal contribution.
-    Ref. https://arxiv.org/abs/1904.02868
-    Ref. https://arxiv.org/abs/2110.14049
 
-    :param float gr_threshold: Convergence threshold for the Gelman-Rubin statistic.
-    Shapley values are NP-hard this is the approximation criteria
-    :param int max_iterations: Max number of outer iterations of MCMC sampling,
-    guarantees the training won't deadloop, defaults to 100
-    :param int min_samples: Minimum samples before checking MCMC convergence
-    :param str model_name:  Unique name of the model, used to cache computed marginal contributions,, defaults to None
-    :param RandomState random_state: _description_, defaults to None
+    References
+    ----------
+    .. [1]  A. Ghorbani and J. Zou,
+        Data Shapley: Equitable Valuation of Data for Machine Learning,
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1904.02868.
+
+    .. [2]  Y. Kwon and J. Zou,
+        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+        arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
+
+    Parameters
+    ----------
+    gr_threshold : float, optional
+        Convergence threshold for the Gelman-Rubin statistic.
+        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.01
+    max_iterations : int, optional
+        Max number of outer iterations of MCMC sampling, by default 100
+    min_samples : int, optional
+        Minimum samples before checking MCMC convergence, by default 1000
+    model_name : str, optional
+        Unique name of the model, caches marginal contributions, by default None
+    random_state : RandomState, optional
+        Random initial state, by default None
     """
 
     marg_contrib_dict = {}
+    """Cached marginal contributions"""
     GR_MAX = 100
 
     def __init__(
@@ -34,7 +50,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         max_iterations: int = 100,
         min_samples: int = 1000,
         model_name: str = None,
-        random_state: RandomState = None
+        random_state: RandomState = None,
     ):
         self.max_iterations = max_iterations
         self.gr_threshold = gr_threshold
@@ -46,19 +62,39 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     @abstractmethod
     def compute_weight(self):
-        """Computes the weights applied to the marginal contributions"""
+        """Computes the weights for each cardinality of training set"""
         pass
 
-    def evaluate_data_values(self) -> torch.Tensor:
+    def evaluate_data_values(self) -> np.ndarray:
         """Multiplies the marginal contribution with their respective weights to get
         data values for semivalue-based estimators
 
-        :return np.ndarray: Predicted data values/selection for every input data point
+        Returns
+        -------
+        np.ndarray
+            Predicted data values/selection for every input data point
         """
         return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)
 
     @staticmethod
-    def marginal_cache(model_name: str, marginal_contrib: np.ndarray = None) -> np.ndarray:
+    def marginal_cache(
+        model_name: str, marginal_contrib: np.ndarray = None
+    ) -> Optional[np.ndarray]:
+        """Caches marginal contributions based on a unique model name
+
+        Parameters
+        ----------
+        model_name : str
+            Unique name of the model, caches marginal contributions
+        marginal_contrib : np.ndarray, optional
+            Sampled marginal contributions by cardinality, by default None
+
+        Returns
+        -------
+        np.ndarray, optional
+            Returns cached marginal contributions of model name is in dict,
+            otherwise returns None.
+        """
         if model_name and marginal_contrib is not None:
             ShapEvaluator.marg_contrib_dict[model_name] = marginal_contrib
         elif model_name:
@@ -74,10 +110,16 @@ class ShapEvaluator(DataEvaluator, ABC):
     ):
         """Stores and transforms input data for Shapley-based predictors
 
-        :param torch.Tensor x_train: Data covariates
-        :param torch.Tensor y_train: Data labels
-        :param torch.Tensor x_valid: Test+Held-out covariates
-        :param torch.Tensor y_valid: Test+Held-out labels
+        Parameters
+        ----------
+        x_train : torch.Tensor
+            Data covariates
+        y_train : torch.Tensor
+            Data labels
+        x_valid : torch.Tensor
+            Test+Held-out covariates
+        y_valid : torch.Tensor
+            Test+Held-out labels
         """
         self.x_train = x_train
         self.y_train = y_train
@@ -90,17 +132,20 @@ class ShapEvaluator(DataEvaluator, ABC):
         return self
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
-        """Computes the marginal contributions for Shapley values. Additionally checks
-        termination conditions.
+        """Computes the marginal contributions for semivalue based data evaluators.
+        Checks MCMC convergence using Gelman-Rubin Statistic
 
-        TODO consider updating with Prof's Beta shapley algorithm, efficient computation,
-        pros: more efficient, cons: may affect further sampling, redundant, consider cache
+        Parameters
+        ----------
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Number of training epochs, by default 1
 
-        marginal_increment_array_stack np.ndarray: Marginal increments when one data
-        point is added. Average is Shapley as we consider a random permutation.
-
-        :param int batch_size: Baseline training batch size, defaults to 32
-        :param int epochs: Number of epochs for baseline training, defaults to 1
+        Notes
+        -----
+        marginal_increment_array_stack : np.ndarray
+            Marginal increments when one data point is added.
         """
         # Checks cache if model name has been computed prior
         if self.marginal_cache(self.model_name) is not None:
@@ -127,7 +172,7 @@ class ShapEvaluator(DataEvaluator, ABC):
                 axis=0,
             )
 
-            gr_stat = self._compute_gr_statistics(self.marginal_increment_array_stack)
+            gr_stat = self._compute_gr_statistic(self.marginal_increment_array_stack)
             iteration += 1  # Update terminating conditions
             print(f"{gr_stat=}")
 
@@ -139,14 +184,22 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     def _calculate_marginal_contributions(
         self, batch_size=32, epochs: int = 1, min_cardinality: int = 5
-    ):
+    ) -> np.ndarray:
         """Computes marginal contribution through TMC-Shapley algorithm
 
-        :param int batch_size: Baseline training batch size, defaults to 32
-        :param int epochs: Number of epochs for baseline training, defaults to 1
-        :param int min_cardinality: Minimum cardinality of a training set, defaults to 5
-        :return np.ndarray: An array of marginal increments when one data point is added.
-        Average of this value is Shapley as we consider a random permutation.
+        Parameters
+        ----------
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Number of training epochs, by default 1
+        min_cardinality : int, optional
+            Minimum cardinality of a training set, by default 5
+
+        Returns
+        -------
+        np.ndarray
+            An array of marginal increments when one data point is added.
         """
         # for each iteration, we use random permutation for our MCMC
         subset = self.random_state.permutation(self.num_points)
@@ -164,7 +217,7 @@ class ShapEvaluator(DataEvaluator, ABC):
             marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
-            self.marginal_contrib_sum[cutoff, idx] += (curr_perf - prev_perf)
+            self.marginal_contrib_sum[cutoff, idx] += curr_perf - prev_perf
             self.marginal_count[cutoff, idx] += 1
 
             # if a new increment is not large enough, we terminate the valuation.
@@ -186,12 +239,21 @@ class ShapEvaluator(DataEvaluator, ABC):
         return marginal_increment.reshape(1, -1)
 
     def _evaluate_model(self, subset: list[int], batch_size: int = 32, epochs: int = 1):
-        """Trains and evaluates the performance of the model
+        """Evaluates performance of the model on a subset of the training data set
 
-        :param list[int] x_batch: Data covariates+labels indices subset
-        :param int batch_size: Training batch size, defaults to 32
-        :param int epochs: Number of epochs to train the pred_model, defaults to 1
-        :return float: returns current performance of model given the batch
+        Parameters
+        ----------
+        subset : list[int]
+            indices of covariates/label to be used in training
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Number of training epochs, by default 1
+
+        Returns
+        -------
+        float
+            Performance of subset of training data set
         """
 
         curr_model = copy.deepcopy(self.pred_model)
@@ -206,19 +268,33 @@ class ShapEvaluator(DataEvaluator, ABC):
         curr_perf = self.evaluate(self.y_valid, y_valid_hat)
         return curr_perf
 
-    def _compute_gr_statistics(self, samples: np.ndarray, num_chains: int = 10):
+    def _compute_gr_statistic(self, samples: np.ndarray, num_chains: int = 10) -> float:
         """Computes Gelman-Rubin statistic of the marginal contributions
-        Ref. https://arxiv.org/pdf/1812.09384
 
-        :param np.ndarray mem: Marginal incremental stack, used to calculate values for
-        the num_chains variances
-        :param int num_chains: Number of chains to be made from the incremental stack,
-        defaults to 10
-        :return float: Gelman-Rubin statistic
+        References
+        ----------
+        .. [1] Y. Kwon and J. Zou,
+            Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+            arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
+
+        .. [2] D. Vats and C. Knudson,
+        Revisiting the Gelman-Rubin Diagnostic,
+        arXiv.org, 2018. Available: https://arxiv.org/abs/1812.09384.
+
+        Parameters
+        ----------
+        samples : np.ndarray
+            Marginal incremental stack, used to find values for the num_chains variances
+        num_chains : int, optional
+            Number of chains to be made from the incremental stack, by default 10
+
+        Returns
+        -------
+        float
+            Gelman-Rubin statistic
         """
-
         if len(samples) < self.min_samples:
-            return ShapEvaluator.GR_MAX  # If not enough samples, return a high GR value
+            return ShapEvaluator.GR_MAX  # If not burn-in, returns a high GR value
 
         # Set up
         num_samples, num_datapoints = samples.shape

@@ -1,5 +1,5 @@
 import numpy as np
-import copy
+import copy  # TODO return a dict and inside this dict have an option for plot this params
 
 from torch.utils.data import Subset
 from sklearn.cluster import KMeans
@@ -9,12 +9,20 @@ from sklearn.metrics import f1_score
 from matplotlib import pyplot as plt
 
 def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[float, float]:
-    """Computes recall and F1 score of the performance of the data evaluator.
-    F1 score is computed by using a KMeans(k=2).
+    """Computes recall and F1 score (of 2NN classifier) of the data evaluator
+    on the noisy indices
 
-    :param DataEvaluator evaluator: Data Evaluator.
-    :param np.ndarray noisy_index: Indices with noise added to them from DataLoader.
-    :return tuple[float, float]: Recall, F1 Score (Kmeans) for data evaluator
+    Parameters
+    ----------
+    evaluator : DataEvaluator
+        Data Evaluator
+    noisy_index : np.ndarray
+        Indices with noise added to them from DataLoader.
+
+    Returns
+    -------
+    tuple[float, float]
+        Recall, F1 Score (Kmeans) for data evaluator
     """
     data_values = evaluator.evaluate_data_values()
 
@@ -27,7 +35,7 @@ def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[
     # Computes F1 of a KMeans(k=2) classifier of the data values
     kmeans = KMeans(n_clusters=2).fit(data_values.reshape(-1, 1))
 
-    # Because of the convexity of KMeans classification, the least valuable datapoint
+    # Because of the convexity of KMeans classification, the least valuable data point
     # will always belong to the lower class on a number line, and vice-versa
     validation = np.full((num_points,), kmeans.labels_[sorted_indices[-1]])
     validation[noisy_index] = kmeans.labels_[sorted_indices[0]]
@@ -46,19 +54,30 @@ def point_removal(  # TODO consider just passing in the x_values
     plot: bool = True,
     metric_name: str = "Accuracy",
 ) -> list[float]:
-    """Repeatedly add `percentile_increment` of the data points
+    """Repeatedly add `percentile_increment` of data points and evaluates performance
 
-    :param DataEvaluator evaluator: Data Evaluator.
-    :param str order: Order which data points will be added, must be 'ascending',
-    'descending', otherwise defaults to random, defaults to "random"
-    :param float percentile_increment: Percentage of data points added to the training
-    dataset at every increment, defaults to .05
-    :param int batch_size: Training batch size, defaults to 32
-    :param int epochs: Number of epochs to train the pred_model, defaults to 1
-    :param bool plot: Whether to plot the results using matplotlib, defaults to True
-    :param str metric_name: Y-axis of plot label, defaults to "Accuracy" # TODO better method
-    :return list[int]: List of the performance metric the Data Evaluator for each
-    bin when new data points are added to the training set.
+    Parameters
+    ----------
+    evaluator : DataEvaluator
+        Data Evaluator
+    order : str, optional
+        Order which data points will be added, must be 'ascending',
+        'descending', otherwise defaults to 'random', by default "random"
+    percentile_increment : float, optional
+        Percentile of data points to add each iteration, by default .05
+    batch_size : int, optional
+        Training batch size, by default 32
+    epochs : int, optional
+        Number of training epochs, by default 1
+    plot : bool, optional
+        Whether to plot the data, by default True
+    metric_name : str, optional
+        Name of the passed in performance metric, by default "Accuracy"
+
+    Returns
+    -------
+    list[float]
+        List of the performance metric at each interval
     """
     (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
     data_values = evaluator.evaluate_data_values()
@@ -117,21 +136,29 @@ def remove_high_low(
     plot: bool=True,
     metric_name: str = "Accuracy",
 ) -> tuple[list[float], list[float]]:
-    """Repeatedly removes `percentile_increment` of most valuable/least valuable data
+    """Repeatedly removes ``percentile_increment`` of most valuable/least valuable data
     points and computes the change in the measurement metric as a result
 
-    :param DataEvaluator evaluator: Data Evaluator.
-    :param str order: Order which data points will be added, must be 'ascending',
-    'descending', otherwise defaults to random, defaults to "random"
-    :param float percentile_increment: Percentage of data points added to the training
-    dataset at every increment, defaults to .05
-    :param int batch_size: Training batch size, defaults to 32
-    :param int epochs: Number of epochs to train the pred_model, defaults to 1
-    :param bool plot: Whether to plot the results using matplotlib, defaults to True
-    :param str metric_name: Y-axis of plot label, defaults to "Accuracy" # TODO better method
-    bin when new data points are added to the training set.
-    :return list[float], list[float]: List of the performance metric the Data Evaluator
-    for each bin when the least valuable/most valuable are incrementally removed.
+    Parameters
+    ----------
+    evaluator : DataEvaluator
+        Data Evaluator
+    percentile_increment : float, optional
+        Percentile of data points to add each iteration, by default .05
+    batch_size : int, optional
+        Training batch size, by default 32
+    epochs : int, optional
+        Number of training epochs, by default 1
+    plot : bool, optional
+        Whether to plot the data, by default True
+    metric_name : str, optional
+        Name of the passed in performance metric, by default "Accuracy"
+
+    Returns
+    -------
+    tuple[list[float], list[float]]
+        List of the performance metric the Data Evaluator
+        for each bin when the least valuable/most valuable are incrementally removed.
     """
     (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
     data_values = evaluator.evaluate_data_values()
@@ -203,21 +230,24 @@ def discover_corrupted_sample(
     percentile_increment: float=.05,
     plot: bool=True,
 ):
-    """Repeatedly explores `percentile_increment` of the data values and determines
+    """Repeatedly explores ``percentile_increment`` of the data values and determines
     if within that total percentile, what proportion of the noisy indices are found.
 
-    :param DataEvaluator evaluator: Data Evaluator.
-    :param str order: Order which data points will be added, must be 'ascending',
-    'descending', otherwise defaults to random, defaults to "random"
-    :param float percentile_increment: Percentage of data points added to the training
-    dataset at every increment, defaults to .05
-    :param int batch_size: Training batch size, defaults to 32
-    :param int epochs: Number of epochs to train the pred_model, defaults to 1
-    :param bool plot: Whether to plot the results using matplotlib, defaults to False
-    :param str metric_name: Y-axis of plot label, defaults to "Accuracy" # TODO better method
-    bin when new data points are added to the training set.
-    :return list[float], list[float]: List of the performance metric the Data Evaluator
-    for each bin when the least valuable/most valuable are incrementally removed.
+    Parameters
+    ----------
+    evaluator : DataEvaluator
+        Data Evaluator
+    noisy_index : np.ndarray
+        Indices with noise added to them from DataLoader.
+    percentile_increment : float, optional
+        Percentile of data points to add each iteration, by default .05
+    plot : bool, optional
+        Whether to plot the data, by default True, by default True
+
+    Returns
+    -------
+    list[float]
+        Proportion of noisy indices found at each interval
     """
     (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
     data_values = evaluator.evaluate_data_values()

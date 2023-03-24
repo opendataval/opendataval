@@ -14,24 +14,39 @@ def DataLoader(
     test_count: int | float = 0,
     noise_rate: float = 0.0,
     device: int = torch.device("cpu"),
-):
-    """Dataloader for dataoob, input the dataset name and some additional parameters
-    receive a dataset compatible for Data-oob.
+) -> tuple[torch.Tensor]:
+    """Dataloader for dataoob, input the data set name to receive covariates and labels
+    split into train, valid, and test sets. Also returns noisy indices if any
 
-    :param str dataset_name: Name of the dataset, can be registered in `datasets.py`
-    :param bool force_redownload: Forces redownload from source URL, defaults to False
-    :param int | float train_count: Number/proportion training points, defaults to 0
-    :param int | float valid_count: Number/proportion validation points, defaults to 0
-    :param int | float test_count: Number/proportion testing points, defaults to 0
-    :param float noise_rate: Ratio of noise to add to the data, defaults to 0.
-    :param torch.device device: Tensor device for acceleration, defaults to torch.device("cpu")
-    :return torch.Tensor | Dataset, torch.Tensor: Training Covariates, Training Labels
-    :return torch.Tensor | Dataset, torch.Tensor: Validation Covariates, Valid Labels
-    :return torch.Tensor | Dataset, torch.Tensor: Test Covariates, Test Labels
-    :return np.ndarray: Indices of noisified Training labels
+    Parameters
+    ----------
+    dataset_name : str
+        Name of the data set, can be registered in `datasets.py`
+    force_redownload : bool, optional
+        Forces redownload from source URL, by default False
+    train_count : int | float, optional
+        Number/proportion training points, by default 0
+    valid_count : int | float, optional
+        Number/proportion validation points, by default 0
+    test_count : int | float, optional
+        Number/proportion testing points, by default 0
+    noise_rate : float, optional
+        Ratio of data to add noise to, by default 0.0
+    device : int, optional
+        Tensor device for acceleration, by default torch.device("cpu")
+
+    Returns
+    -------
+    (torch.Tensor | Dataset, torch.Tensor)
+        Training Covariates, Training Labels
+    (torch.Tensor | Dataset, torch.Tensor)
+        Validation Covariates, Valid Labels
+    (torch.Tensor | Dataset, torch.Tensor)
+        Test Covariates, Test Labels
+    (np.ndarray)
+        Indices of noisified Training labels
     """
     x, y = load_dataset(dataset_name, device, force_redownload)
-    # TODO pass in device, download and load functions are necessary
 
     (x_train, y_train), (x_valid, y_valid), (x_test, y_test) = split_dataset(
         x, y, train_count, valid_count, test_count
@@ -46,16 +61,30 @@ def DataLoader(
 def load_dataset(
     dataset_name: str, device: int = torch.device("cpu"), force_redownload: bool = False
 ) -> tuple[torch.Tensor | Dataset, torch.Tensor]:
-    """Loads the dataset from the dataset registry and loads as tensor on specified device
+    """Loads the data set from the dataset registry and loads as tensor on specified device
 
-    :param str dataset_name: Name of a registered datset
-    :param int device: Device to load tensor, defaults to torch.device("cpu")
-    :param bool force_redownload: Forces redownload from URL, defaults to False
-    :raises Exception: _description_  TODO
-    :return tuple[torch.Tensor | Dataset, torch.Tensor]: covariates and labels of the dataset
+    Parameters
+    ----------
+    dataset_name : str
+        Name of a registered data set
+    device : int, optional
+        Tensor device for acceleration, by default torch.device("cpu")
+    force_redownload : bool, optional
+        Forces redownload from source URL, by default False, by default False
+
+    Returns
+    -------
+    (torch.Tensor | Dataset, torch.Tensor)
+        Covariates and Labels of the data set
+
+    Raises
+    ------
+    KeyError
+        In order to use a data set, you must register it by creating a
+        :py:class:`Register`
     """
     if dataset_name not in Register.Datasets:
-        raise Exception("Must register Dataset in register_dataset")
+        raise KeyError("Must register data set in register_dataset")
 
     covariates, labels = Register.Datasets[dataset_name].load_data(force_redownload)
 
@@ -90,19 +119,36 @@ def split_dataset(
     train_count: int | float,
     valid_count: int | float,
     test_count: int | float,
-) -> torch.Tensor:
+):
     """Splits the covariates and labels according to the specified counts/proportions
 
-    :param torch.Tensor | Dataset x: Data+Test+Held-out covariates
-    :param torch.Tensor y: Data+Test+Held-out labels
-    :param int | float train_count: Number/proportion training points, defaults to 0
-    :param int | float valid_count: Number/proportion validation points, defaults to 0
-    :param int | float test_count: Number/proportion testing points, defaults to 0
-    :raises Exception: Raises exception when there's an invalid splitting of the dataset,
-    ie, more datapoints than the total dataset requested.
-    :return torch.Tensor, torch.Tensor: Training Covariates, Training Labels
-    :return torch.Tensor, torch.Tensor: Validation Covariates, Validation Labels
-    :return torch.Tensor, torch.Tensor: Test Covariates, Test Labels
+    Parameters
+    ----------
+    x : torch.Tensor | Dataset
+        Data+Test+Held-out covariates
+    y : torch.Tensor
+        Data+Test+Held-out labels
+    train_count : int | float
+        Number/proportion training points
+    valid_count : int | float
+        Number/proportion validation points
+    test_count : int | float
+        Number/proportion testing points
+
+    Returns
+    -------
+    (torch.Tensor | Dataset, torch.Tensor)
+        Training Covariates, Training Labels
+    (torch.Tensor | Dataset, torch.Tensor)
+        Validation Covariates, Valid Labels
+    (torch.Tensor | Dataset, torch.Tensor)
+        Test Covariates, Test Labels
+
+    Raises
+    ------
+    ValueError
+        Invalid input for splitting the data set, either the proporition is more than 1.
+        or the total splits are greater than the len(dataset)
     """
     assert len(x) == len(y)
     num_points = len(x)
@@ -114,7 +160,7 @@ def split_dataset(
             splits = (round(num_points * p) for p in (tr, val, tst))
             splits = accumulate(splits)
         case _:
-            raise Exception("Invalid split")  # TODO
+            raise ValueError("Invalid split")
 
     # Extra underscore to unpack any remainders
     indices = np.random.permutation(num_points)

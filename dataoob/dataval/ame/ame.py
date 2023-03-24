@@ -1,24 +1,48 @@
-import numpy as np
-from sklearn.utils import check_random_state
-
-from sklearn.linear_model import LassoCV, LinearRegression
-import torch
 import copy
-from numpy.random import RandomState
-from dataoob.dataval import DataEvaluator
-from torch.utils.data import Subset
-from dataoob.dataval import DataEvaluator
-import tqdm
 
+import numpy as np
+import torch
+import tqdm
+from dataoob.dataval import DataEvaluator
+from numpy.random import RandomState
 from scipy.stats import zscore
+from sklearn.linear_model import LassoCV
+from sklearn.utils import check_random_state
+from torch.utils.data import Subset
 
 
 class AME(DataEvaluator):
+    """Implementation of Average Marginal Effect Data Valuation
+
+    References
+    ----------
+    .. [1] J. Lin, A. Zhang, M. Lecuyer, J. Li, A. Panda, and S. Sen,
+        Measuring the Effect of Training Data on Deep Learning Predictions via Randomized Experiments,
+        arXiv.org, 2022. [Online]. Available: https://arxiv.org/abs/2206.10013.
+
+    Parameters
+    ----------
+    num_models : int, optional
+        Number of models to bag/aggregate, by default 10
+    random_state : RandomState, optional
+        Random initial state, by default None
+    """
+
     def __init__(self, num_models: int = 10, random_state: RandomState = None):
         self.num_models = num_models
         self.random_state = check_random_state(random_state)
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+        """Trains the AME model by fitting bagging models on different proprotions
+        and aggregating the subsets and the performance metrics
+
+        Parameters
+        ----------
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Training number of epochs, per training, by default 1
+        """
         subsets, performance = [], []
         for proportion in [0.2, 0.4, 0.6, 0.8]:
             sub, perf = (
@@ -37,22 +61,42 @@ class AME(DataEvaluator):
 
         return self
 
-    def evaluate_data_values(self):
+    def evaluate_data_values(self) -> np.ndarray:
+        """Returns data values using the coefficients of the Lasso regression
+        according to Lin et al.
+
+        Returns
+        -------
+        np.ndarray
+             Predicted data values/selection for every training data point
+        """
         standard_subsets = zscore(self.subsets, axis=1)
         centered_perf = self.performance - np.mean(self.performance)
 
-        dv_ame = LinearRegression(fit_intercept=False)
+        dv_ame = LassoCV(fit_intercept=False)
         dv_ame.fit(X=standard_subsets, y=centered_perf)
         return dv_ame.coef_
 
 
 class BaggingEvaluator(DataEvaluator):
-    """_summary_
+    """Bagging Data Evaluator, samples data points from :math:`Bernouli(proportion)`
 
-    :param int num_models: _description_, defaults to 10
-    :param float proportion: _description_, defaults to 1.0
-    :param RandomState random_state: _description_, defaults to None
+    References
+    ----------
+    .. [1] J. Lin, A. Zhang, M. Lecuyer, J. Li, A. Panda, and S. Sen,
+        Measuring the Effect of Training Data on Deep Learning Predictions via Randomized Experiments,
+        arXiv.org, 2022. [Online]. Available: https://arxiv.org/abs/2206.10013.
+
+    Parameters
+    ----------
+    num_models : int, optional
+        Number of models to bag/aggregate, by default 10
+    proportion : float, optional
+        Proportion for bernuoli which data points are sampled, by default 1.0
+    random_state : RandomState, optional
+        Random initial state, by default None
     """
+
     def __init__(
         self,
         num_models: int = 10,
@@ -73,10 +117,16 @@ class BaggingEvaluator(DataEvaluator):
     ):
         """Stores and transforms input data for Bagging Evaluator
 
-        :param torch.Tensor x_train: Data covariates
-        :param torch.Tensor y_train: Data labels
-        :param torch.Tensor x_valid: Test+Held-out covariates
-        :param torch.Tensor y_valid: Test+Held-out labels
+        Parameters
+        ----------
+        x_train : torch.Tensor
+            Data covariates
+        y_train : torch.Tensor
+            Data labels
+        x_valid : torch.Tensor
+            Test+Held-out covariates
+        y_valid : torch.Tensor
+            Test+Held-out labels
         """
         self.x_train = x_train
         self.y_train = y_train
@@ -87,7 +137,19 @@ class BaggingEvaluator(DataEvaluator):
         return self
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
-        self.num_subsets = self.random_state.binomial(1, self.proportion, size=(self.num_models, self.num_points))
+        """Trains the Bagging model to get subsets and corresponding evaluations of
+        the performance of those subsets to compute the data values
+
+        Parameters
+        ----------
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Number of training epochs, by default 1
+        """
+        self.num_subsets = self.random_state.binomial(
+            1, self.proportion, size=(self.num_models, self.num_points)
+        )
         self.performance = np.zeros((self.num_models,))
 
         for i in tqdm.tqdm(range(self.num_models)):
@@ -108,8 +170,13 @@ class BaggingEvaluator(DataEvaluator):
         return self
 
     def evaluate_data_values(self):
-        """
-        With the held-out data (X_val, y_val), the performance of a model trained on a bootstrapped dataset is evaluated
+        """Returns data values using the coefficients of the Lasso regression,
+        as used by Lin et al. for the AME evaluator
+
+        Returns
+        -------
+        np.ndarray
+            Predicted data values/selection for every training data point
         """
         standard_subsets = zscore(self.subsets, axis=1)
         standard_perf = self.performance - np.mean(self.performance)
@@ -119,4 +186,5 @@ class BaggingEvaluator(DataEvaluator):
         return dv_ame.coef_
 
     def get_subset_perf(self):
+        """Returns the subsets and performance, used by AME DataEvaluator"""
         return self.num_subsets, self.performance

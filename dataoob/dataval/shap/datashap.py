@@ -3,18 +3,28 @@ from dataoob.dataval.shap.shap import ShapEvaluator
 from numpy.random import RandomState
 
 
-
 class DataShapley(ShapEvaluator):
     """Data Shapley implementation.
-    Ref. https://arxiv.org/abs/1904.02868
 
-    :param float gr_threshold: Convergence threshold for the Gelman-Rubin statistic.
-    Shapley values are NP-hard this is the approximation criteria
-    :param int max_iterations: Max number of outer iterations of MCMC sampling,
-    guarantees the training won't deadloop, defaults to 100
-    :param int min_samples: Minimum samples before checking MCMC convergence
-    :param str model_name: Unique name of the model, used to cache computed marginal contributions, defaults to None
-    :param RandomState random_state: Random initial state, defaults to None
+    References
+    ----------
+    .. [1] A. Ghorbani and J. Zou,
+        Data Shapley: Equitable Valuation of Data for Machine Learning,
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1904.02868.
+
+    Parameters
+    ----------
+    gr_threshold : float, optional
+        Convergence threshold for the Gelman-Rubin statistic.
+        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.01
+    max_iterations : int, optional
+        Max number of outer iterations of MCMC sampling, by default 100
+    min_samples : int, optional
+        Minimum samples before checking MCMC convergence, by default 1000
+    model_name : str, optional
+        Unique name of the model, caches marginal contributions, by default None
+    random_state : RandomState, optional
+        Random initial state, by default None
     """
 
     def __init__(
@@ -23,18 +33,21 @@ class DataShapley(ShapEvaluator):
         max_iterations: int = 100,
         min_samples: int = 1000,
         model_name: str = None,
-        random_state: RandomState = None
+        random_state: RandomState = None,
     ):
         super(DataShapley, self).__init__(
             gr_threshold, max_iterations, min_samples, model_name, random_state
         )
 
     def compute_weight(self) -> float:
-        """Computes weight function for each cardinality.
-        It can be seen as sampling uniformly from the set of all combinations of
-        data points because Shapley values take a mean.
+        """Computes weights (uniform) for each cardinality of training set.
+        Shapley values take a simple average of the marginal contributions across
+        all different cardinalities.
 
-        :return float: Marginal contribution weight
+        Returns
+        -------
+        np.ndarray
+            Weights by cardinality of subset
         """
         return 1 / self.num_points
 

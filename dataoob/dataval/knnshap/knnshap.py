@@ -1,18 +1,27 @@
 import numpy as np
 import torch
+import tqdm
 from dataoob.dataval import DataEvaluator
-from torch.utils.data import DataLoader
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
-import tqdm
+from torch.utils.data import DataLoader
 
 
 class KNNShapley(DataEvaluator):
-    """Data valuation for nearest neighbor algorithms.
-    Ref. https://arxiv.org/abs/1908.08619
+    """Data valuation using KNNShapley implementation
 
-    :param int k_neighbors: Number of neighbors to classify, defaults to 10
-    :param RandomState random_state: Random initial state, defaults to None
+    References
+    ----------
+    .. [1] R. Jia et al.,
+        Efficient Task-Specific Data Valuation for Nearest Neighbor Algorithms,
+        arXiv.org, 2019. [Online]. Available: https://arxiv.org/abs/1908.08619.
+
+    Parameters
+    ----------
+    k_neighbors : int, optional
+        Number of neighbors to group the data points, by default 10
+    random_state : RandomState, optional
+        Random initial state, by default None
     """
 
     def __init__(self, k_neighbors: int = 10, random_state: RandomState = None):
@@ -21,24 +30,32 @@ class KNNShapley(DataEvaluator):
 
     @property
     def pred_model(self):
-        raise NotImplementedError("KNNShapley does not support a model, cn change")
+        raise NotImplementedError("KNNShapley does not support a model")
 
     def match(self, y: torch.Tensor) -> torch.Tensor:
-        """Returns 1. for all matching rows and 0. otherwise"""
+        """Returns :math:`1.` for all matching rows and :math:`0.` otherwise"""
         return (y == self.y_valid).all(dim=1).float()
 
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
-        """Computes KNN shapley, as implemented by the following
-        Ref. https://github.com/AI-secure/Shapley-Study/blob/master/shapley/measures/KNN_Shapley.py
+        """Computes KNN shapley data values, as implemented
 
-        :param int batch_size: pred_model training batch size, defaults to 32
-        :param int epochs: Number of epochs for the pred_model,  defaults to 1
+        References
+        ----------
+        .. [1] PyTorch implementation
+            <https://github.com/AI-secure/Shapley-Study/blob/master/shapley/measures/KNN_Shapley.py>
+
+        Parameters
+        ----------
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Number of training epochs, by default 1
         """
         N = len(self.x_train)
-        M = len(self.x_valid)  # Throw something in to extract the values
+        M = len(self.x_valid)
 
         # Computes Euclidean distance by computing crosswise per batch, batch_size//2
-        # Doesn't shuffle to maintain relative order, are views necessary
+        # Doesn't shuffle to maintain relative order
         x_train_view, x_valid_view = self.x_train.view(N, -1), self.x_valid.view(M, -1)
 
         dist_list = []  # Uses batching to only loand at most `batch_size` tensors
@@ -56,11 +73,12 @@ class KNNShapley(DataEvaluator):
         score = torch.zeros_like(dist)
         score[sort_indices[N - 1], range(M)] = self.match(y_train_sort[N - 1]) / N
 
+        # fmt: off
         for i in tqdm.tqdm(range(N - 2, -1, -1)):
             score[sort_indices[i], range(M)] = (
-                score[sort_indices[i + 1], range(M)] +
-                min(self.k_neighbors, i + 1) / (self.k_neighbors * (i + 1)) *
-                (self.match(y_train_sort[i]) - self.match(y_train_sort[i + 1]))
+                score[sort_indices[i + 1], range(M)]
+                + min(self.k_neighbors, i + 1) / (self.k_neighbors * (i + 1))
+                * (self.match(y_train_sort[i]) - self.match(y_train_sort[i + 1]))
             )
 
         self.data_values = score.mean(axis=1)
@@ -68,8 +86,11 @@ class KNNShapley(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values using the KNN Shapley data valuator model.
+        """Returns data values computed from KNN Shapley
 
-        :return np.ndarray: Predicted data values/selection for every input data point
+        Returns
+        -------
+        np.ndarray
+            Predicted data values/selection for training input data point
         """
         return self.data_values
