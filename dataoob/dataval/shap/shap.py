@@ -5,24 +5,24 @@ import numpy as np
 import torch
 import tqdm
 from dataoob.dataval import DataEvaluator
-from dataoob.model import Model
+from numpy.random import RandomState
 from torch.utils.data import Dataset, Subset
+from sklearn.utils import check_random_state
 
 
 class ShapEvaluator(DataEvaluator, ABC):
     """ShapEvaluator is an abstract class for all shapley-based methods of
     computing data values. Implements core computations of marginal contribution.
     Ref. https://arxiv.org/abs/1904.02868
-    Ref. https://arxiv.org/abs/2110.14049 for TMC
-    # TODO fix the overhang on callable
+    Ref. https://arxiv.org/abs/2110.14049
 
-    :param Model pred_model: Prediction model
-    :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function to determine model performance
-    :param float GR_threshold: Convergence threshold for the Gelman-Rubin statistic.
+    :param float gr_threshold: Convergence threshold for the Gelman-Rubin statistic.
     Shapley values are NP-hard this is the approximation criteria
     :param int max_iterations: Max number of outer iterations of MCMC sampling,
     guarantees the training won't deadloop, defaults to 100
     :param int min_samples: Minimum samples before checking MCMC convergence
+    :param str model_name:  Unique name of the model, used to cache computed marginal contributions,, defaults to None
+    :param RandomState random_state: _description_, defaults to None
     """
 
     marg_contrib_dict = {}
@@ -30,21 +30,19 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     def __init__(
         self,
-        pred_model: Model,
-        metric: callable,
         gr_threshold: float = 1.01,
         max_iterations: int = 100,
         min_samples: int = 1000,
         model_name: str = None,
+        random_state: RandomState = None
     ):
-        self.pred_model = copy.deepcopy(pred_model)
-        self.metric = metric
-
         self.max_iterations = max_iterations
         self.gr_threshold = gr_threshold
         self.min_samples = min_samples
 
         self.model_name = model_name
+
+        self.random_state = check_random_state(random_state)
 
     @abstractmethod
     def compute_weight(self):
@@ -60,7 +58,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)
 
     @staticmethod
-    def marginal_cache(model_name: str, marginal_contrib: np.ndarray = None):
+    def marginal_cache(model_name: str, marginal_contrib: np.ndarray = None) -> np.ndarray:
         if model_name and marginal_contrib is not None:
             ShapEvaluator.marg_contrib_dict[model_name] = marginal_contrib
         elif model_name:
@@ -89,6 +87,8 @@ class ShapEvaluator(DataEvaluator, ABC):
         # Additional parameters
         self.num_points = len(x_train)
 
+        return self
+
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
         """Computes the marginal contributions for Shapley values. Additionally checks
         termination conditions.
@@ -105,7 +105,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         # Checks cache if model name has been computed prior
         if self.marginal_cache(self.model_name) is not None:
             self.marginal_contribution = self.marginal_cache(self.model_name)
-            return
+            return self
 
         print(f"Start: marginal contribution computation", flush=True)
         self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
@@ -129,10 +129,13 @@ class ShapEvaluator(DataEvaluator, ABC):
 
             gr_stat = self._compute_gr_statistics(self.marginal_increment_array_stack)
             iteration += 1  # Update terminating conditions
+            print(f"{gr_stat=}")
 
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
         self.marginal_cache(self.model_name, self.marginal_contribution)
         print(f"Done: marginal contribution computation", flush=True)
+
+        return self
 
     def _calculate_marginal_contributions(
         self, batch_size=32, epochs: int = 1, min_cardinality: int = 5
@@ -146,29 +149,30 @@ class ShapEvaluator(DataEvaluator, ABC):
         Average of this value is Shapley as we consider a random permutation.
         """
         # for each iteration, we use random permutation for our MCMC
-        indices = np.random.permutation(self.num_points)
+        subset = self.random_state.permutation(self.num_points)
         marginal_increment = np.zeros(self.num_points) + 1e-12  # Prevents overflow
-        coalition = list(indices[:min_cardinality])
+        coalition = list(subset[:min_cardinality])
         truncation_counter = 0
 
         # Baseline at minimal cardinality
         prev_perf = curr_perf = self._evaluate_model(coalition, batch_size, epochs)
 
-        for cutoff, idx in enumerate(indices[min_cardinality:], start=min_cardinality):
+        for cutoff, idx in enumerate(subset[min_cardinality:], start=min_cardinality):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
             curr_perf = self._evaluate_model(coalition, batch_size, epochs)
             marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
-            self.marginal_contrib_sum[cutoff, idx] += curr_perf - prev_perf
+            self.marginal_contrib_sum[cutoff, idx] += (curr_perf - prev_perf)
             self.marginal_count[cutoff, idx] += 1
 
             # if a new increment is not large enough, we terminate the valuation.
             distance = np.abs(curr_perf - prev_perf) / np.sum(marginal_increment)
 
-            # Update terminating conditions
+            # update prev_perf
             prev_perf = curr_perf
+
             # If updates are too small then we assume it contributes 0.
             if distance < 1e-8:
                 truncation_counter += 1
@@ -181,9 +185,7 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         return marginal_increment.reshape(1, -1)
 
-    def _evaluate_model(
-        self, indices: list[int], batch_size: int = 32, epochs: int = 1
-    ):
+    def _evaluate_model(self, subset: list[int], batch_size: int = 32, epochs: int = 1):
         """Trains and evaluates the performance of the model
 
         :param list[int] x_batch: Data covariates+labels indices subset
@@ -194,15 +196,14 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         curr_model = copy.deepcopy(self.pred_model)
         curr_model.fit(
-            Subset(self.x_train, indices=indices),
-            Subset(self.y_train, indices=indices),
+            Subset(self.x_train, indices=subset),
+            Subset(self.y_train, indices=subset),
             batch_size=batch_size,
             epochs=epochs,
         )
         y_valid_hat = curr_model.predict(self.x_valid)
 
         curr_perf = self.evaluate(self.y_valid, y_valid_hat)
-
         return curr_perf
 
     def _compute_gr_statistics(self, samples: np.ndarray, num_chains: int = 10):

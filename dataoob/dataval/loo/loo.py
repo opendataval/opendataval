@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import tqdm
 from dataoob.dataval import DataEvaluator
-from dataoob.model import Model
+
 from torch.utils.data import Dataset, Subset
 
 
@@ -12,19 +12,8 @@ class LeaveOneOut(DataEvaluator):
     """Leave One Out data valuation.
     Ref. https://arxiv.org/pdf/2110.14049
 
-    :param Model pred_model: Prediction model
-    :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function
-    to determine model performance
+    :param RandomState random_state: random initial state, defaults to None
     """
-
-    def __init__(
-        self,
-        pred_model: Model,
-        metric: callable,
-    ):
-        self.pred_model = copy.deepcopy(pred_model)
-        self.metric = metric
-
     def input_data(
         self,
         x_train: torch.Tensor | Dataset,
@@ -47,6 +36,8 @@ class LeaveOneOut(DataEvaluator):
         # Additional parameters
         self.num_points = len(x_train)
 
+        return self
+
     def train_data_values(self, batch_size: int = 32, epochs: int = 1):
         """Computes the data values using the Leave-One-Out data valuation.
         Equivalently, LOO can be computed from the marginal contributions as it's a
@@ -54,12 +45,12 @@ class LeaveOneOut(DataEvaluator):
         uses a TMC and does not guarantee we will sample the subset necessary for LOO.
         It is more accurate and efficient to just compute LOO explicitly as below
 
-        :param int batch_size: Baseline training batch size, defaults to 32
-        :param int epochs: Number of epochs for baseline training, defaults to 1
+        :param int batch_size: Training batch size, defaults to 32
+        :param int epochs: Number of epochs for training, defaults to 1
         """
 
         self.data_values = np.zeros((self.num_points,))
-        indices = np.random.permutation(self.num_points)
+        indices = self.random_state.permutation(self.num_points)
 
         curr_model = copy.deepcopy(self.pred_model)
 
@@ -81,6 +72,8 @@ class LeaveOneOut(DataEvaluator):
             y_hat = curr_model.predict(self.x_valid)
             loo_score = self.evaluate(self.y_valid, y_hat)
             self.data_values[indices[i]] = baseline_score - loo_score
+
+        return self
 
     def evaluate_data_values(self) -> np.ndarray:
         """Returns data values using the LOO data valuator.

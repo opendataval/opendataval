@@ -2,6 +2,9 @@ import numpy as np
 import torch
 from dataoob.dataval import DataEvaluator
 from torch.utils.data import DataLoader
+from numpy.random import RandomState
+from sklearn.utils import check_random_state
+import tqdm
 
 
 class KNNShapley(DataEvaluator):
@@ -9,36 +12,16 @@ class KNNShapley(DataEvaluator):
     Ref. https://arxiv.org/abs/1908.08619
 
     :param int k_neighbors: Number of neighbors to classify, defaults to 10
+    :param RandomState random_state: Random initial state, defaults to None
     """
 
-    def __init__(
-        self,
-        k_neighbors: int = 10,
-    ):
+    def __init__(self, k_neighbors: int = 10, random_state: RandomState = None):
         self.k_neighbors = k_neighbors
+        self.random_state = check_random_state(random_state)
 
     @property
     def pred_model(self):
         raise NotImplementedError("KNNShapley does not support a model, cn change")
-
-    def input_data(
-        self,
-        x_train: torch.Tensor,
-        y_train: torch.Tensor,
-        x_valid: torch.Tensor,
-        y_valid: torch.Tensor,
-    ):
-        """Stores and transforms input data for KNNShapley
-
-        :param torch.Tensor x_train: Data covariates
-        :param torch.Tensor y_train: Data labels
-        :param torch.Tensor x_valid: Test+Held-out covariates
-        :param torch.Tensor y_valid: Test+Held-out labels
-        """
-        self.x_train = x_train
-        self.y_train = y_train
-        self.x_valid = x_valid
-        self.y_valid = y_valid
 
     def match(self, y: torch.Tensor) -> torch.Tensor:
         """Returns 1. for all matching rows and 0. otherwise"""
@@ -73,7 +56,7 @@ class KNNShapley(DataEvaluator):
         score = torch.zeros_like(dist)
         score[sort_indices[N - 1], range(M)] = self.match(y_train_sort[N - 1]) / N
 
-        for i in range(N - 2, -1, -1):
+        for i in tqdm.tqdm(range(N - 2, -1, -1)):
             score[sort_indices[i], range(M)] = (
                 score[sort_indices[i + 1], range(M)] +
                 min(self.k_neighbors, i + 1) / (self.k_neighbors * (i + 1)) *
@@ -81,6 +64,8 @@ class KNNShapley(DataEvaluator):
             )
 
         self.data_values = score.mean(axis=1)
+
+        return self
 
     def evaluate_data_values(self) -> np.ndarray:
         """Returns data values using the KNN Shapley data valuator model.

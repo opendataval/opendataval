@@ -3,25 +3,24 @@ from abc import ABC, abstractmethod
 
 import torch
 import numpy as np
+from numpy.random import RandomState
 
 from dataoob.model import Model
+from sklearn.utils import check_random_state
+
+from typing import Callable
 
 
 class DataEvaluator(ABC):
-    """Abstract class of Data Evaluators. Provides a template of how evaluators interact
-    with the pred_model and specific methods each evaluator should implement
-    # TODO consider injecting the pred model and metric in a later function
-    # TODO alternatively consider
-    """
+    """Abstract class of Data Evaluators."""
 
-    def __init__(self, pred_model: Model, metric: callable, *args, **kwargs):
-        self.pred_model = copy.deepcopy(pred_model)
-        self.metric = metric
+    def __init__(self, random_state: RandomState = None, *args, **kwargs):
+        self.random_state = check_random_state(random_state)
 
-    def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor, metric: callable=None):
+    def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor, metric: Callable = None):
         if metric is None:
             return self.metric(y, y_hat)
-        elif isinstance(metric, callable):
+        elif callable(metric):
             return metric(y, y_hat)
         raise Exception("Metric not specified")
 
@@ -47,8 +46,22 @@ class DataEvaluator(ABC):
         self.input_data(x_train, y_train, x_valid, y_valid)
         self.train_data_values(batch_size=batch_size, epochs=epochs)
 
+        return self
 
-    @abstractmethod
+    def input_model_metric(self, pred_model: Model, metric: Callable[[torch.Tensor, torch.Tensor], float]):
+        """Inputs the prediction model and the evaluation metric
+
+
+        :param Model pred_model: _description_
+        :param Callable[[torch.Tensor, torch.Tensor], float] metric: Evaluation function to determine model performance
+        :return _type_: _description_
+        """
+        self.pred_model = copy.deepcopy(pred_model)
+        self.metric = metric
+
+        return self
+
+
     def input_data(
         self,
         x_train: torch.Tensor,
@@ -64,7 +77,12 @@ class DataEvaluator(ABC):
         :param torch.Tensor x_valid: Test+Held-out covariates
         :param torch.Tensor y_valid: Test+Held-out labels
         """
-        pass
+        self.x_train = x_train
+        self.y_train = y_train
+        self.x_valid = x_valid
+        self.y_valid = y_valid
+
+        return self
 
     def get_data_points(self):
         return (self.x_train, self.y_train), (self.x_valid, self.y_valid)
@@ -76,7 +94,7 @@ class DataEvaluator(ABC):
         :param int batch_size: Training batch size, defaults to 32
         :param int epochs: Number of epochs to train the pred_model, defaults to 1
         """
-        pass
+        return self
 
     @abstractmethod
     def evaluate_data_values(self) -> np.ndarray:

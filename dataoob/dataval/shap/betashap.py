@@ -1,6 +1,6 @@
 import numpy as np
 from dataoob.dataval.shap.shap import ShapEvaluator
-from dataoob.model import Model
+from numpy.random import RandomState
 from scipy.special import beta
 
 
@@ -8,10 +8,7 @@ class BetaShapley(ShapEvaluator):
     """Beta Shapley implementation. Must specify alpha/beta values for beta function
     Ref. https://arxiv.org/pdf/2110.14049
 
-    :param Model pred_model: Prediction model
-    :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function
-    to determine model performance
-    :param float GR_threshold: Convergence threshold for the Gelman-Rubin statistic.
+    :param float grthreshold: Convergence threshold for the Gelman-Rubin statistic.
     Shapley values are NP-hard this is the approximation criteria
     :param int max_iterations: Max number of outer iterations of MCMC sampling,
     guarantees the training won't deadloop, defaults to 100
@@ -20,21 +17,22 @@ class BetaShapley(ShapEvaluator):
     used to compute the weight function, defaults to 16
     :param float beta: Beta (shape) parameter for the beta distribution
     used to compute the weight function, defaults to 1
+    :param str model_name: Unique name of the model, used to cache computed marginal contributions, defaults to None
+    :param RandomState random_state: Random initial state, defaults to None
     """
 
     def __init__(
         self,
-        pred_model: Model,
-        metric: callable,
         gr_threshold: float = 1.01,
         max_iterations: int = 100,
         min_samples: int = 1000,
         model_name: str = None,
         alpha: int = 16,
         beta: int = 1,
+        random_state: RandomState = None
     ):
         super(BetaShapley, self).__init__(
-            pred_model, metric, gr_threshold, max_iterations, min_samples, model_name
+            gr_threshold, max_iterations, min_samples, model_name, random_state
         )
         self.alpha, self.beta = alpha, beta  # Beta distribution parameters
 

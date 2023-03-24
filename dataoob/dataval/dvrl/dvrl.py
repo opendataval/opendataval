@@ -7,46 +7,45 @@ import torch.nn as nn
 import torch.nn.functional as F
 import tqdm
 from dataoob.dataloader.util import CatDataset
-from dataoob.dataval import DataEvaluator, Model
+from dataoob.dataval import DataEvaluator
 from torch.utils.data import DataLoader, RandomSampler
+
+from sklearn.utils import check_random_state
+from numpy.random import RandomState
+
+from typing import Callable
 
 
 class DVRL(DataEvaluator):
     """Data valuation using reinforcement learning class, implemented with PyTorch
     Ref. https://arxiv.org/abs/1909.11671
 
-    :param Model pred_model: Prediction model
-    :param callable (torch.Tensor, torch.Tensor -> float) metric: Evaluation function
-    to determine model performance
     :param int hidden_dim: Hidden dimensions for the RL Multilayer Perceptron
     (details in `DataValueEstimatorRL` class)
     :param int layer_number: Number of hidden layers for the Value Estimator (VE)
     :param int comb_dim: After combining the input in the VE how many layers,
     much less than `hidden_dim`
-    :param callable (torch.Tensor -> torch.Tensor) act_fn: Activation function for VE
+    :param Callable (torch.Tensor -> torch.Tensor) act_fn: Activation function for VE
     :param int rl_epochs: Number of epochs for the VE, defaults to 1
     :param float lr: Learning rate for the VE, defaults to 0.01
     :param float threshold: Search rate threshold, the VE may get stuck in certain
     bounds close to [0., 1.] because it samples from a binomial, thus outside of
     [1-threshold, threshold] we encourage the VE to search, defaults to 0.9
+    :param RandomState random_state: random initial state, defaults to None
     """
 
     def __init__(
         self,
-        pred_model: Model,
-        metric: callable,
         hidden_dim: int = 100,
         layer_number: int = 5,
         comb_dim: int = 10,
-        act_fn: callable = nn.ReLU(),
+        act_fn: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
         rl_epochs: int = 1000,
         lr: float = 0.01,
         threshold: float = 0.9,
+        random_state: RandomState = None,
         device: torch.device = torch.device("cpu"),
     ):
-        self.pred_model = copy.deepcopy(pred_model)
-        self.metric = metric
-
         # Value estimator parameters
         self.hidden_dim = hidden_dim
         self.layer_number = layer_number
@@ -58,6 +57,8 @@ class DVRL(DataEvaluator):
         self.rl_epochs = rl_epochs
         self.lr = lr
         self.threshold = threshold
+
+        self.random_state = check_random_state(random_state)
 
     def input_data(
         self,
@@ -85,9 +86,12 @@ class DVRL(DataEvaluator):
             layer_number=self.layer_number,
             comb_dim=self.comb_dim,
             act_fn=self.act_fn,
+            random_state=self.random_state
         ).to(self.device)
 
-    def evaluate_baseline_models(self, batch_size: int = 32, epochs: int = 1):
+        return self
+
+    def _evaluate_baseline_models(self, batch_size: int = 32, epochs: int = 1):
         """Loads and trains baseline models. Baseline performance information
         is necessary to compute the reward.
 
@@ -137,19 +141,22 @@ class DVRL(DataEvaluator):
         (this will equal rl_epochs * epochs), defaults to 1
         """
         batch_size = min(batch_size, len(self.x_train))
-        self.evaluate_baseline_models(batch_size=batch_size, epochs=epochs)
+        self._evaluate_baseline_models(batch_size=batch_size, epochs=epochs)
 
         # Solver
         optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=self.lr)
         criterion = DveLoss(threshold=self.threshold)
 
         dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
+        torch_rs = torch.Generator(self.device).manual_seed(self.random_state.tomaxint())
         rs = RandomSampler(
-            dataset, replacement=True, num_samples=(self.rl_epochs * batch_size)
+            dataset, replacement=True,
+            num_samples=self.rl_epochs * batch_size,
+            generator=torch_rs
         )
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
-            DataLoader(dataset, sampler=rs, batch_size=batch_size)
+            DataLoader(dataset, sampler=rs, batch_size=batch_size, generator=torch_rs)
         ):
             optimizer.zero_grad()
 
@@ -157,11 +164,11 @@ class DVRL(DataEvaluator):
             est_dv_curr = self.value_estimator(x_batch, y_batch, y_hat_batch)
 
             # Samples the selection probability
-            sel_prob_curr = torch.bernoulli(est_dv_curr)
+            sel_prob_curr = torch.bernoulli(est_dv_curr, generator=torch_rs)
             # Exception (When selection probability is 0)
             if torch.sum(sel_prob_curr) == 0:
                 est_dv_curr = 0.5 * torch.ones(est_dv_curr.size())
-                sel_prob_curr = torch.bernoulli(est_dv_curr)
+                sel_prob_curr = torch.bernoulli(est_dv_curr, generator=torch_rs)
             sel_prob_curr_weight = sel_prob_curr.detach()
 
             # Prediction and training
@@ -190,8 +197,7 @@ class DVRL(DataEvaluator):
             loss.backward(retain_graph=True)
             optimizer.step()
 
-        # Trains DVRL predictor
-        # Generate data values
+
         final_data_value_weights = self.value_estimator(
             self.x_train, self.y_train, self.y_pred_diff
         ).detach()
@@ -204,6 +210,7 @@ class DVRL(DataEvaluator):
             batch_size=batch_size,
             epochs=epochs,
         )
+        return self
 
     def evaluate_data_values(self) -> np.ndarray:
         """Returns data values using the data valuator model.
@@ -247,8 +254,9 @@ class DataValueEstimatorRL(nn.Module):
     :param int hidden_dim: number of dims per hidden layer
     :param int layer_number: number of hidden layers
     :param int comb_dim: number of layers after combining with y_hat_pred
-    :param callable (torch.Tensor -> torch.Tensor) act_fn: activation function
+    :param Callable (torch.Tensor -> torch.Tensor) act_fn: activation function
     between hidden layers
+    :param RandomState random_state: random initial state, defaults to None
     """
 
     def __init__(
@@ -258,9 +266,13 @@ class DataValueEstimatorRL(nn.Module):
         hidden_dim: int,
         layer_number: int,
         comb_dim: int,
-        act_fn: callable = F.relu,
+        act_fn: Callable = nn.ReLU(),
+        random_state: RandomState = None
     ):
         super(DataValueEstimatorRL, self).__init__()
+
+        if random_state is not None:
+            torch.manual_seed(check_random_state(random_state).tomaxint())
 
         mlp_layers = OrderedDict()
 
