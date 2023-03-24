@@ -4,9 +4,10 @@ from typing import Callable
 
 import numpy as np
 import torch
-from dataoob.model import Model
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
+
+from dataoob.model import Model
 
 
 class DataEvaluator(ABC):

@@ -1,10 +1,11 @@
 import numpy as np
 import torch
 import tqdm
-from dataoob.dataval import DataEvaluator
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader
+
+from dataoob.dataval import DataEvaluator
 
 
 class KNNShapley(DataEvaluator):

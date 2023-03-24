@@ -7,11 +7,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import tqdm
-from dataoob.dataloader.util import CatDataset
-from dataoob.dataval import DataEvaluator
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader, RandomSampler
+
+from dataoob.dataloader.util import CatDataset
+from dataoob.dataval import DataEvaluator
 
 
 class DVRL(DataEvaluator):
@@ -39,8 +40,9 @@ class DVRL(DataEvaluator):
     lr : float, optional
         Learning rate for the VE, by default 0.01
     threshold : float, optional
-        Search rate threshold, the VE may get stuck in certain bounds close to :math:`[0, 1]`,
-        thus outside of :math:`[1-threshold, threshold]` we encourage searching, by default 0.9
+        Search rate threshold, the VE may get stuck in certain bounds close to
+        :math:`[0, 1]`, thus outside of :math:`[1-threshold, threshold]` we encourage
+        searching, by default 0.9
     device : torch.device, optional
         Tensor device for acceleration, by default torch.device("cpu")
     random_state : RandomState, optional
@@ -191,11 +193,11 @@ class DVRL(DataEvaluator):
             pred_dataval = self.value_estimator(x_batch, y_batch, y_hat_batch)
 
             # Samples the selection probability
-            sel_prob_weight = torch.bernoulli(est_dv_curr, generator=gen)
+            sel_prob_weight = torch.bernoulli(pred_dataval, generator=gen)
             # Exception (When selection probability is 0)
             if torch.sum(sel_prob_weight) == 0:
-                est_dv_curr = 0.5 * torch.ones(est_dv_curr.size())
-                sel_prob_weight = torch.bernoulli(est_dv_curr, generator=gen)
+                pred_dataval = 0.5 * torch.ones(pred_dataval.size())
+                sel_prob_weight = torch.bernoulli(pred_dataval, generator=gen)
             sel_prob_weight = sel_prob_weight.detach()
 
             # Prediction and training
@@ -369,8 +371,9 @@ class DveLoss(nn.Module):
     Parameters
     ----------
     threshold : float, optional
-        Search rate threshold, the VE may get stuck in certain bounds close to :math:`[0, 1]`,
-        thus outside of :math:`[1-threshold, threshold]` we encourage searching, by default 0.9
+        Search rate threshold, the VE may get stuck in certain bounds close to
+        :math:`[0, 1]`, thus outside of :math:`[1-threshold, threshold]` we encourage
+        searching, by default 0.9
     exploration_weight : float, optional
         Large constant to encourage exploration in the Value Estimator, by default 1e3
     """

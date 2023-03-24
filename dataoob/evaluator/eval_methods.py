@@ -1,14 +1,17 @@
+import copy  # TODO return a dict and inside this dict have an option for plot
+
 import numpy as np
-import copy  # TODO return a dict and inside this dict have an option for plot this params
-
-from torch.utils.data import Subset
-from sklearn.cluster import KMeans
-from dataoob.dataval import DataEvaluator
-from sklearn.metrics import f1_score
-
 from matplotlib import pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.metrics import f1_score
+from torch.utils.data import Subset
 
-def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[float, float]:
+from dataoob.dataval import DataEvaluator
+
+
+def noisy_detection(
+    evaluator: DataEvaluator, noisy_index: np.ndarray
+) -> tuple[float, float]:
     """Computes recall and F1 score (of 2NN classifier) of the data evaluator
     on the noisy indices
 
@@ -30,7 +33,7 @@ def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[
     num_noisy = len(noisy_index)
 
     sorted_indices = np.argsort(data_values)
-    recall = len(np.intersect1d(sorted_indices[: num_noisy], noisy_index)) / num_noisy
+    recall = len(np.intersect1d(sorted_indices[:num_noisy], noisy_index)) / num_noisy
 
     # Computes F1 of a KMeans(k=2) classifier of the data values
     kmeans = KMeans(n_clusters=2).fit(data_values.reshape(-1, 1))
@@ -48,7 +51,7 @@ def noisy_detection(evaluator: DataEvaluator, noisy_index: np.ndarray) -> tuple[
 def point_removal(  # TODO consider just passing in the x_values
     evaluator: DataEvaluator,
     order: str = "random",
-    percentile_increment: float=.05,
+    percentile_increment: float = 0.05,
     batch_size: int = 32,
     epochs: int = 1,
     plot: bool = True,
@@ -85,7 +88,7 @@ def point_removal(  # TODO consider just passing in the x_values
 
     num_sample = len(data_values)
     num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
-    num_bins = int(num_sample//num_period)
+    num_bins = int(num_sample // num_period)
 
     if order == "ascending":
         sorted_value_list = np.argsort(data_values)
@@ -93,7 +96,6 @@ def point_removal(  # TODO consider just passing in the x_values
         sorted_value_list = np.argsort(-data_values)
     else:
         sorted_value_list = np.random.permutation(num_sample)
-
 
     metric_list = []
 
@@ -114,15 +116,13 @@ def point_removal(  # TODO consider just passing in the x_values
         metric_list.append(model_score)
 
     if plot:
-        x_axis = [a*(1.0/num_bins) for a in range(num_bins)]
+        x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
         plt.figure(figsize=(6, 7.5))
-        plt.plot(x_axis, metric_list[:num_bins], 'o-')
+        plt.plot(x_axis, metric_list[:num_bins], "o-")
 
-        plt.xlabel('Fraction of Removed Samples', size=16)
+        plt.xlabel("Fraction of Removed Samples", size=16)
         plt.ylabel(metric_name, size=16)
-        plt.title(
-            f'Removing value {order}', size=16
-        )
+        plt.title(f"Removing value {order}", size=16)
         plt.show()
 
     return metric_list
@@ -130,10 +130,10 @@ def point_removal(  # TODO consider just passing in the x_values
 
 def remove_high_low(
     evaluator: DataEvaluator,
-    percentile_increment: float=.05,
+    percentile_increment: float = 0.05,
     batch_size: int = 32,
     epochs: int = 1,
-    plot: bool=True,
+    plot: bool = True,
     metric_name: str = "Accuracy",
 ) -> tuple[list[float], list[float]]:
     """Repeatedly removes ``percentile_increment`` of most valuable/least valuable data
@@ -166,7 +166,7 @@ def remove_high_low(
 
     num_sample = len(x_train)
     num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
-    num_bins = int(num_sample//num_period) + 1
+    num_bins = int(num_sample // num_period) + 1
     sorted_value_list = np.argsort(data_values)
 
     valuable_list, unvaluable_list = [], []
@@ -189,7 +189,7 @@ def remove_high_low(
         valuable_list.append(valuable_score)
 
         # Removing most valuable samples first
-        least_valuable_indices = sorted_value_list[: max(num_sample-bin_index, 0)]
+        least_valuable_indices = sorted_value_list[: max(num_sample - bin_index, 0)]
 
         # Fitting on unvaluable subset
         unvaluable_model = copy.deepcopy(curr_model)
@@ -203,21 +203,21 @@ def remove_high_low(
         unvaluable_score = evaluator.evaluate(y_valid, iy_hat_valid)
         unvaluable_list.append(unvaluable_score)
 
-
     # Plot graphs
     if plot:
-        x_axis = [a*(1.0/num_bins) for a in range(num_bins)]
+        x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
 
         # Prediction performances after removing high or low values
         plt.figure(figsize=(6, 7.5))
-        plt.plot(x_axis, valuable_list[:num_bins], 'o-')
-        plt.plot(x_axis, unvaluable_list[:num_bins], 'x-')
+        plt.plot(x_axis, valuable_list[:num_bins], "o-")
+        plt.plot(x_axis, unvaluable_list[:num_bins], "x-")
 
-        plt.xlabel('Fraction of Removed Samples', size=16)
+        plt.xlabel("Fraction of Removed Samples", size=16)
         plt.ylabel(metric_name, size=16)
-        plt.legend(['Removing low value data', 'Removing high value data'],
-                prop={'size': 16})
-        plt.title('Remove High/Low Valued Samples', size=16)
+        plt.legend(
+            ["Removing low value data", "Removing high value data"], prop={"size": 16}
+        )
+        plt.title("Remove High/Low Valued Samples", size=16)
 
         plt.show()
 
@@ -227,8 +227,8 @@ def remove_high_low(
 def discover_corrupted_sample(
     evaluator: DataEvaluator,
     noisy_index: np.ndarray,
-    percentile_increment: float=.05,
-    plot: bool=True,
+    percentile_increment: float = 0.05,
+    plot: bool = True,
 ):
     """Repeatedly explores ``percentile_increment`` of the data values and determines
     if within that total percentile, what proportion of the noisy indices are found.
@@ -254,7 +254,7 @@ def discover_corrupted_sample(
 
     num_sample = len(x_train)
     num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
-    num_bins = int(num_sample//num_period) + 1
+    num_bins = int(num_sample // num_period) + 1
 
     sorted_value_list = np.argsort(data_values)  # Order descending
     noise_rate = len(noisy_index) / len(data_values)
@@ -263,29 +263,30 @@ def discover_corrupted_sample(
     found_rates = []
 
     # For each bin
-    for bin_index in range(0, num_sample+num_period, num_period):
+    for bin_index in range(0, num_sample + num_period, num_period):
         # from low to high data values
         found_rates.append(
-            len(np.intersect1d(sorted_value_list[:bin_index], noisy_index)) / len(noisy_index)
+            len(np.intersect1d(sorted_value_list[:bin_index], noisy_index))
+            / len(noisy_index)
         )
 
     # Plot corrupted label discovery graphs
     if plot:
-        x_axis = [a*(1.0/num_bins) for a in range(num_bins)]
+        x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
 
         # Corrupted label discovery results (dvrl, optimal, random)
         y_dv = found_rates[:num_bins]
-        y_opt = [min((a * (1./num_bins/noise_rate), 1.)) for a in range(num_bins)]
+        y_opt = [min((a * (1.0 / num_bins / noise_rate), 1.0)) for a in range(num_bins)]
         y_random = x_axis
 
         plt.figure(figsize=(6, 7.5))
-        plt.plot(x_axis, y_dv, 'o-')
-        plt.plot(x_axis, y_opt, '--')
-        plt.plot(x_axis, y_random, ':')
-        plt.xlabel('Fraction of data Inspected', size=16)
-        plt.ylabel('Fraction of discovered corrupted samples', size=16)
-        plt.legend(['Evaluator', 'Optimal', 'Random'], prop={'size': 16})
-        plt.title('Corrupted Sample Discovery', size=16)
+        plt.plot(x_axis, y_dv, "o-")
+        plt.plot(x_axis, y_opt, "--")
+        plt.plot(x_axis, y_random, ":")
+        plt.xlabel("Fraction of data Inspected", size=16)
+        plt.ylabel("Fraction of discovered corrupted samples", size=16)
+        plt.legend(["Evaluator", "Optimal", "Random"], prop={"size": 16})
+        plt.title("Corrupted Sample Discovery", size=16)
         plt.show()
 
     # Returns True Positive Rate of corrupted label discovery

@@ -1,7 +1,8 @@
 import numpy as np
-from dataoob.dataval.shap.shap import ShapEvaluator
 from numpy.random import RandomState
 from scipy.special import beta
+
+from dataoob.dataval.shap.shap import ShapEvaluator
 
 
 class BetaShapley(ShapEvaluator):
@@ -10,7 +11,8 @@ class BetaShapley(ShapEvaluator):
     References
     ----------
     .. [1] Y. Kwon and J. Zou,
-        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for
+        Machine Learning,
         arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
     Parameters
@@ -55,12 +57,14 @@ class BetaShapley(ShapEvaluator):
 
         .. math::
             w(j) := \frac{1}{n} * w^{(n)}(j) * \tbinom{n-1}{j-1}
-            \propto \frac{Beta(j + \beta - 1, n - j + \alpha)}{Beta(\alpha, \beta)} * \tbinom{n-1}{j-1}
+            \propto \frac{Beta(j + \beta - 1, n - j + \alpha)}{Beta(\alpha, \beta)} *
+            \tbinom{n-1}{j-1}
 
         References
         ----------
         .. [1] Y. Kwon and J. Zou,
-            Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+            Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for
+            Machine Learning,
             arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
         Returns

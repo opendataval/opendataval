@@ -3,12 +3,13 @@ import copy
 import numpy as np
 import torch
 import tqdm
-from dataoob.dataval import DataEvaluator
 from numpy.random import RandomState
 from scipy.stats import zscore
 from sklearn.linear_model import LassoCV
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
+
+from dataoob.dataval import DataEvaluator
 
 
 class AME(DataEvaluator):
@@ -17,7 +18,8 @@ class AME(DataEvaluator):
     References
     ----------
     .. [1] J. Lin, A. Zhang, M. Lecuyer, J. Li, A. Panda, and S. Sen,
-        Measuring the Effect of Training Data on Deep Learning Predictions via Randomized Experiments,
+        Measuring the Effect of Training Data on Deep Learning Predictions via
+        Randomized Experiments,
         arXiv.org, 2022. [Online]. Available: https://arxiv.org/abs/2206.10013.
 
     Parameters
@@ -84,7 +86,8 @@ class BaggingEvaluator(DataEvaluator):
     References
     ----------
     .. [1] J. Lin, A. Zhang, M. Lecuyer, J. Li, A. Panda, and S. Sen,
-        Measuring the Effect of Training Data on Deep Learning Predictions via Randomized Experiments,
+        Measuring the Effect of Training Data on Deep Learning Predictions via
+        Randomized Experiments,
         arXiv.org, 2022. [Online]. Available: https://arxiv.org/abs/2206.10013.
 
     Parameters

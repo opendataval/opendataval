@@ -3,8 +3,9 @@ import copy
 import numpy as np
 import torch
 import tqdm
-from dataoob.dataval import DataEvaluator
 from torch.utils.data import Dataset, Subset
+
+from dataoob.dataval import DataEvaluator
 
 
 class LeaveOneOut(DataEvaluator):
@@ -13,7 +14,8 @@ class LeaveOneOut(DataEvaluator):
     References
     ----------
     .. [1] Y. Kwon and J. Zou,
-        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for
+        Machine Learning,
         arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
     Parameters

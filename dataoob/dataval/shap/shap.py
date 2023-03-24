@@ -5,10 +5,11 @@ from typing import Optional
 import numpy as np
 import torch
 import tqdm
-from dataoob.dataval import DataEvaluator
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Dataset, Subset
+
+from dataoob.dataval import DataEvaluator
 
 
 class ShapEvaluator(DataEvaluator, ABC):
@@ -22,7 +23,8 @@ class ShapEvaluator(DataEvaluator, ABC):
         arXiv.org, 2019. Available: https://arxiv.org/abs/1904.02868.
 
     .. [2]  Y. Kwon and J. Zou,
-        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for
+        Machine Learning,
         arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
     Parameters
@@ -152,7 +154,7 @@ class ShapEvaluator(DataEvaluator, ABC):
             self.marginal_contribution = self.marginal_cache(self.model_name)
             return self
 
-        print(f"Start: marginal contribution computation", flush=True)
+        print("Start: marginal contribution computation", flush=True)
         self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
         self.marginal_count = np.zeros((self.num_points, self.num_points)) + 1e-8
         self.marginal_increment_array_stack = np.zeros((0, self.num_points))
@@ -178,7 +180,7 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
         self.marginal_cache(self.model_name, self.marginal_contribution)
-        print(f"Done: marginal contribution computation", flush=True)
+        print("Done: marginal contribution computation", flush=True)
 
         return self
 
@@ -233,7 +235,6 @@ class ShapEvaluator(DataEvaluator, ABC):
                 truncation_counter = 0
 
             if truncation_counter == 10:  # If enter space without changes to model
-                # print(f'Among {self.num_points}, {n} samples are observed!',flush=True)
                 break
 
         return marginal_increment.reshape(1, -1)
@@ -274,7 +275,8 @@ class ShapEvaluator(DataEvaluator, ABC):
         References
         ----------
         .. [1] Y. Kwon and J. Zou,
-            Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for Machine Learning,
+            Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for
+            Machine Learning,
             arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
         .. [2] D. Vats and C. Knudson,

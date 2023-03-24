@@ -15,8 +15,8 @@ exclude = '''
 )/
 '''
 
-[tool.ruff.flake8-quotes]
-docstring-quotes = "double"
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
 
 [tool.ruff.pydocstyle]
 convention = "numpy"

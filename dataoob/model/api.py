@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dataoob.dataloader.util import CatDataset
 from sklearn.dummy import DummyClassifier
-from torch.utils.data import (DataLoader, Dataset, WeightedRandomSampler,
-                              dataloader)
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler, dataloader
+
+from dataoob.dataloader.util import CatDataset
 
 
 class Model(ABC):
@@ -300,7 +300,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train = next(iter(dataloader))
         y_train = torch.argmax(y_train, dim=1)
-        y_train_unique = torch.unique(y_train_unique, sorted=True)
+        y_train_unique = torch.unique(y_train, sorted=True)
 
         if len(y_train_unique) != self.num_classes:  # All labels must be in sample
             print("Insufficient classes")

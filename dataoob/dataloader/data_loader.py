@@ -2,8 +2,9 @@ from itertools import accumulate
 
 import numpy as np
 import torch
-from dataoob.dataloader.datasets import Register
 from torch.utils.data import Dataset, Subset
+
+from dataoob.dataloader.datasets import Register
 
 
 def DataLoader(
@@ -61,7 +62,7 @@ def DataLoader(
 def load_dataset(
     dataset_name: str, device: int = torch.device("cpu"), force_redownload: bool = False
 ) -> tuple[torch.Tensor | Dataset, torch.Tensor]:
-    """Loads the data set from the dataset registry and loads as tensor on specified device
+    """Loads the data set from the data set registry as a tensor the specified device
 
     Parameters
     ----------

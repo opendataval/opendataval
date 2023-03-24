@@ -76,6 +76,7 @@ class Register:
     dataset_kwargs : dict[str, Any], optional
         Keyword arguments to pass to the data set functions, by default None
     """
+
     CACHE_DIR = "data_files"
 
     Datasets = {}

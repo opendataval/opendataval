@@ -1,6 +1,7 @@
 import numpy as np
-from dataoob.dataval.shap.shap import ShapEvaluator
 from numpy.random import RandomState
+
+from dataoob.dataval.shap.shap import ShapEvaluator
 
 
 class DataShapley(ShapEvaluator):
