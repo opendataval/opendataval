@@ -114,17 +114,17 @@ class Register:
         self.cov_label_func = _from_pandas(df, label_columns)
         return self
 
-    def add_both(self, func: Callable) -> Callable:
+    def from_covar_label_func(self, func: Callable) -> Callable:
         """Allows data set to be registered from Callable -> (covariates, labels)"""
         self.cov_label_func = func
         return func
 
-    def add_covariates(self, func: Callable) -> Callable:
+    def from_covar_func(self, func: Callable) -> Callable:
         """Allows data set to be registered from 2 Callables, registers covariates"""
         self.cov_func = func
         return func
 
-    def add_labels(self, func: Callable) -> Callable:
+    def from_label_func(self, func: Callable) -> Callable:
         """Allows data set to be registered from 2 Callables, registers labels"""
         self.label_func = func
         return func
@@ -175,7 +175,7 @@ class Register:
         return covariates, labels
 
 
-@Register("gaussian_classifier", categorical=True).add_both
+@Register("gaussian_classifier", categorical=True).from_covar_label_func
 def gaussian_classifier(n=10000, input_dim=10):
     covar = np.random.normal(size=(n, input_dim))
 
@@ -187,7 +187,7 @@ def gaussian_classifier(n=10000, input_dim=10):
     return covar, labels
 
 
-@Register("adult", categorical=True, cacheable=True).add_both
+@Register("adult", categorical=True, cacheable=True).from_covar_label_func
 def download_adult(cache_dir: str, force_redownload: bool = False):
     uci_base_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
     train_url = cache(
@@ -259,22 +259,22 @@ def download_adult(cache_dir: str, force_redownload: bool = False):
     return df.drop("Income", axis=1).values, df["Income"].values
 
 
-@Register("iris", categorical=True).add_both
+@Register("iris", categorical=True).from_covar_label_func
 def download_iris():
     return ds.load_iris(return_X_y=True)
 
 
-@Register("diabetes", categorical=True).add_both
+@Register("diabetes", categorical=True).from_covar_label_func
 def download_diabetes():
     return ds.load_diabetes(return_X_y=True)
 
 
-@Register("digits", categorical=True).add_both
+@Register("digits", categorical=True).from_covar_label_func
 def download_digits():
     return ds.load_digits(return_X_y=True)
 
 
-@Register("breast_cancer", categorical=True).add_both
+@Register("breast_cancer", categorical=True).from_covar_label_func
 def download_breast_cancer():
     return ds.load_breast_cancer(return_X_y=True)
 
@@ -282,12 +282,12 @@ def download_breast_cancer():
 # Alternative registration methods, should only be used on ad-hoc basis
 Register(
     "gaussian_classifier_high_dim", categorical=True, dataset_kwargs={"input_dim": 100}
-).add_both(gaussian_classifier)
+).from_covar_label_func(gaussian_classifier)
 """Registers gaussian classifier, but the input_dim is changed"""
 
 Register(
     "gaussian_only_zeroes", categorical=True, dataset_kwargs={"input_dim": 100}
-).add_label_transform(lambda label: np.zeros_like(label)).add_both(gaussian_classifier)
+).add_label_transform(np.zeros_like).from_covar_label_func(gaussian_classifier)
 """Adds a transform to gaussian classifier, such that the labels are all zero"""
 
 Register("adult_csv", True).from_csv(Register.CACHE_DIR + "/adult/train.csv", [-1, -2])
