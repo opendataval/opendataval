@@ -17,7 +17,7 @@ class DataEvaluator(ABC):
     ----------
     random_state : RandomState, optional
         Random initial state, by default None
-    args : list[Any]
+    args : tuple[Any]
         DavaEvaluator positional arguments
     kwargs : Dict[str, Any]
         DavaEvaluator key word arguments
@@ -72,8 +72,8 @@ class DataEvaluator(ABC):
         y_train: torch.Tensor,
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
-        batch_size: int = 32,
-        epochs: int = 1,
+        *args,
+        **kwargs
     ):
         """Trains the Data Evaluator and the underlying prediction model. Wrapper for
         ``self.input_data`` and ``self.train_data_values`` under one method
@@ -88,10 +88,10 @@ class DataEvaluator(ABC):
             Test+Held-out covariates
         y_valid : torch.Tensor
             Test+Held-out labels
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
 
         Returns
         -------
@@ -99,7 +99,7 @@ class DataEvaluator(ABC):
             returns self
         """
         self.input_data(x_train, y_train, x_valid, y_valid)
-        self.train_data_values(batch_size=batch_size, epochs=epochs)
+        self.train_data_values(*args, **kwargs)
 
         return self
 
@@ -170,15 +170,15 @@ class DataEvaluator(ABC):
         return (self.x_train, self.y_train), (self.x_valid, self.y_valid)
 
     @abstractmethod
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self, *args, **kwargs):
         """Trains the DataEvaluator to compute data values
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
 
         Returns
         -------

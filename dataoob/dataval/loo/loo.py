@@ -54,7 +54,7 @@ class LeaveOneOut(DataEvaluator):
 
         return self
 
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self, *args, **kwargs):
         """Computes the data values using the Leave-One-Out data valuation.
 
         Equivalently, LOO can be computed from the marginal contributions as it's a
@@ -62,18 +62,18 @@ class LeaveOneOut(DataEvaluator):
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
         """
         self.data_values = np.zeros((self.num_points,))
         indices = self.random_state.permutation(self.num_points)
 
         curr_model = copy.deepcopy(self.pred_model)
 
-        curr_model.fit(self.x_train, self.y_train, batch_size=batch_size, epochs=epochs)
-        y_valid_hat = self.pred_model.predict(self.x_valid)
+        curr_model.fit(self.x_train, self.y_train, *args, **kwargs)
+        y_valid_hat = curr_model.predict(self.x_valid)
         baseline_score = self.evaluate(self.y_valid, y_valid_hat)
 
         for i in tqdm.tqdm(range(self.num_points)):
@@ -83,8 +83,8 @@ class LeaveOneOut(DataEvaluator):
             curr_model.fit(
                 Subset(self.x_train, indices=loo_coalition),
                 Subset(self.y_train, indices=loo_coalition),
-                batch_size=batch_size,
-                epochs=epochs,
+                *args,
+                **kwargs
             )
 
             y_hat = curr_model.predict(self.x_valid)

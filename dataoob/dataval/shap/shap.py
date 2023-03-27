@@ -133,16 +133,16 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         return self
 
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self, *args, **kwargs):
         """Computes the marginal contributions for semivalue based data evaluators.
         Checks MCMC convergence using Gelman-Rubin Statistic
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+             Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
 
         Notes
         -----
@@ -166,7 +166,7 @@ class ShapEvaluator(DataEvaluator, ABC):
             # we check the convergence every 100 random samples.
             # we terminate iteration if Shapley value is converged.
             samples_array = [
-                self._calculate_marginal_contributions(batch_size, epochs)
+                self._calculate_marginal_contributions(*args, **kwargs)
                 for _ in tqdm.tqdm(range(100))  # 100 random samples
             ]
             self.marginal_increment_array_stack = np.concatenate(
@@ -185,18 +185,18 @@ class ShapEvaluator(DataEvaluator, ABC):
         return self
 
     def _calculate_marginal_contributions(
-        self, batch_size=32, epochs: int = 1, min_cardinality: int = 5
+        self, *args, min_cardinality: int = 5, **kwargs
     ) -> np.ndarray:
         """Computes marginal contribution through TMC-Shapley algorithm
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+            Training positional args
         min_cardinality : int, optional
-            Minimum cardinality of a training set, by default 5
+            Minimum cardinality of a training set, must be passed as kwarg, by default 5
+        kwargs : dict[str, Any], optional
+            Training key word arguments
 
         Returns
         -------
@@ -210,12 +210,12 @@ class ShapEvaluator(DataEvaluator, ABC):
         truncation_counter = 0
 
         # Baseline at minimal cardinality
-        prev_perf = curr_perf = self._evaluate_model(coalition, batch_size, epochs)
+        prev_perf = curr_perf = self._evaluate_model(coalition, *args, **kwargs)
 
         for cutoff, idx in enumerate(subset[min_cardinality:], start=min_cardinality):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
-            curr_perf = self._evaluate_model(coalition, batch_size, epochs)
+            curr_perf = self._evaluate_model(coalition, *args, **kwargs)
             marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
@@ -239,30 +239,29 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         return marginal_increment.reshape(1, -1)
 
-    def _evaluate_model(self, subset: list[int], batch_size: int = 32, epochs: int = 1):
+    def _evaluate_model(self, subset: list[int], *args, **kwargs):
         """Evaluates performance of the model on a subset of the training data set
 
         Parameters
         ----------
         subset : list[int]
             indices of covariates/label to be used in training
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
 
         Returns
         -------
         float
             Performance of subset of training data set
         """
-
         curr_model = copy.deepcopy(self.pred_model)
         curr_model.fit(
             Subset(self.x_train, indices=subset),
             Subset(self.y_train, indices=subset),
-            batch_size=batch_size,
-            epochs=epochs,
+            *args,
+            **kwargs,
         )
         y_valid_hat = curr_model.predict(self.x_valid)
 

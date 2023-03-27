@@ -63,7 +63,7 @@ class DataBanzhaf(DataEvaluator):
 
         return self
 
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self, *args, **kwargs):
         """Trains the Data Banzhaf value by sampling from the powerset. We compute
         average perfromance of all subsets including and not including a data point.
 
@@ -75,10 +75,10 @@ class DataBanzhaf(DataEvaluator):
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
         """
         num_subsets = self.random_state.binomial(
             1, 0.5, size=(self.samples, self.num_points)
@@ -91,8 +91,8 @@ class DataBanzhaf(DataEvaluator):
             curr_model.fit(
                 Subset(self.x_train, indices=subset),
                 Subset(self.y_train, indices=subset),
-                batch_size=batch_size,
-                epochs=epochs,
+                *args,
+                **kwargs
             )
             y_valid_hat = curr_model.predict(self.x_valid)
 

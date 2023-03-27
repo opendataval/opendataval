@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler, dataloa
 
 from dataoob.dataloader.util import CatDataset
 
-
+# TODO make sure to include something that allows predictions from datasets!!
 class Model(ABC):
     """Abstract class of Models. Provides a template for models"""
 
@@ -17,10 +17,8 @@ class Model(ABC):
         self,
         x_train: torch.Tensor,
         y_train: torch.Tensor,
-        sample_weights: torch.Tensor = None,
-        batch_size=32,
-        epochs=1,
         *args,
+        sample_weights: torch.Tensor = None,
         **kwargs
     ):
         """Fits the model on the training data
@@ -31,27 +29,25 @@ class Model(ABC):
             Data covariates
         y_train : torch.Tensor
             Data labels
-        sample_weights : torch.Tensor, optional
-            Weights associated with each data point, by default None
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
-        args : list[Any]
+        args : tuple[Any]
             Additional positional args
+        sample_weights : torch.Tensor, optional
+            Weights associated with each data point, must be passed in as key word arg,
+            by default None
         kwargs : dict[str, Any]
             Addition key word args
         """
         pass
 
     @abstractmethod
-    def predict(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+    def predict(self, x: torch.Tensor | Dataset, *args, **kwargs) -> torch.Tensor:
         """Predicts the label from the input covariates data
 
         Parameters
         ----------
-        x : torch.Tensor
+        x : torch.Tensor | Dataset
             Input data covariates
+
 
         Returns
         -------
@@ -68,9 +64,9 @@ class BinaryClassifierNNMixin(Model, nn.Module):
         self,
         x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
-        sample_weight: torch.Tensor = None,
         batch_size=32,
         epochs=1,
+        sample_weight: torch.Tensor = None,
     ):
         """Fits a torch binary classifier Model object using SGD
 
@@ -80,15 +76,15 @@ class BinaryClassifierNNMixin(Model, nn.Module):
             Data covariates
         y_train : torch.Tensor
             Data labels
-        sample_weights : torch.Tensor, optional
-            Weights associated with each data point, by default None
         batch_size : int, optional
             Training batch size, by default 32
         epochs : int, optional
             Number of training epochs, by default 1
+        sample_weights : torch.Tensor, optional
+            Weights associated with each data point, by default None
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
-        # TODO update when we move from binary classification
+
         criterion = F.binary_cross_entropy
         dataset = CatDataset(x_train, y_train, sample_weight)
 
@@ -114,9 +110,9 @@ class ClassifierNNMixin(Model, nn.Module):
         self,
         x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
-        sample_weight: torch.Tensor = None,
         batch_size=32,
         epochs=1,
+        sample_weight: torch.Tensor = None,
     ):
         """Fits a torch classifier Model object using SGD
 
@@ -126,12 +122,12 @@ class ClassifierNNMixin(Model, nn.Module):
             Data covariates
         y_train : torch.Tensor
             Data labels
-        sample_weights : torch.Tensor, optional
-            Weights associated with each data point, by default None
         batch_size : int, optional
             Training batch size, by default 32
         epochs : int, optional
             Number of training epochs, by default 1
+        sample_weights : torch.Tensor, optional
+            Weights associated with each data point, by default None
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
         # TODO update when we move from binary classification
@@ -187,10 +183,8 @@ class ClassifierSkLearnWrapper(Model):
         self,
         x_train: torch.Tensor,
         y_train: torch.Tensor,
-        sample_weight: torch.Tensor = None,
-        batch_size=32,
-        epochs=1,
         *args,
+        sample_weight: torch.Tensor = None,
         **kwargs
     ):
         """Fits a sk-learn wrapped classifier Model. If there are less classes in the
@@ -202,12 +196,20 @@ class ClassifierSkLearnWrapper(Model):
             Data covariates
         y_train : torch.Tensor
             Data labels
+        args : tuple[Any]
+            Additional positional args
         sample_weights : torch.Tensor, optional
-            Weights associated with each data point, by default None
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+            Weights associated with each data point, must be passed in as key word arg,
+            by default None
+        kwargs : dict[str, Any]
+            Addition key word args
+
+        .. highlight:: python
+        ::
+            wrapped = ClassifierSkLearnWrapper(
+                LogisticRegression(), 2, torch.device('cuda')
+            )
+
         """
         # Using a data set and dataloader (despite loading all the data) for better
         # API consistency, such as passing data sets to a sk-learn  model
@@ -252,7 +254,9 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
 
     .. highlight:: python
     ::
-        wrapped = ClassifierSkLearnWrapper(RandomForest(), 2, torch.device('cuda'))
+        wrapped = ClassifierSkLearnWrapper(
+            RandomForestClassifier(), 2, torch.device('cuda')
+        )
 
     """
 
@@ -260,10 +264,8 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         self,
         x_train: torch.Tensor,
         y_train: torch.Tensor,
-        sample_weight: torch.Tensor = None,
-        batch_size=32,
-        epochs=1,
         *args,
+        sample_weight: torch.Tensor = None,
         **kwargs
     ):
         """Fits a sk-learn wrapped classifier Model without sample weight. It uses
@@ -276,12 +278,13 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
             Data covariates
         y_train : torch.Tensor
             Data labels
+        args : tuple[Any]
+            Additional positional args
         sample_weights : torch.Tensor, optional
-            Weights associated with each data point, by default None
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+            Weights associated with each data point, must be passed in as key word arg,
+            by default None
+        kwargs : dict[str, Any]
+            Addition key word args
         """
         # Using a data set and dataloader (despite loading all the data) for better
         # API consistency, such as passing data sets to a sk-learn  model

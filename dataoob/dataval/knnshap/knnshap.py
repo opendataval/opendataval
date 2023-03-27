@@ -21,12 +21,20 @@ class KNNShapley(DataEvaluator):
     ----------
     k_neighbors : int, optional
         Number of neighbors to group the data points, by default 10
+    batch_size : int, optional
+        Batch size of tensors to load at a time during training, by default 32
     random_state : RandomState, optional
         Random initial state, by default None
     """
 
-    def __init__(self, k_neighbors: int = 10, random_state: RandomState = None):
+    def __init__(
+        self,
+        k_neighbors: int = 10,
+        batch_size: int = 32,
+        random_state: RandomState = None,
+    ):
         self.k_neighbors = k_neighbors
+        self.batch_size = batch_size
         self.random_state = check_random_state(random_state)
 
     @property
@@ -37,20 +45,13 @@ class KNNShapley(DataEvaluator):
         """Returns :math:`1.` for all matching rows and :math:`0.` otherwise"""
         return (y == self.y_valid).all(dim=1).float()
 
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self):
         """Computes KNN shapley data values, as implemented
 
         References
         ----------
         .. [1] PyTorch implementation
             <https://github.com/AI-secure/Shapley-Study/blob/master/shapley/measures/KNN_Shapley.py>
-
-        Parameters
-        ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
         """
         N = len(self.x_train)
         M = len(self.x_valid)
@@ -59,11 +60,11 @@ class KNNShapley(DataEvaluator):
         # Doesn't shuffle to maintain relative order
         x_train_view, x_valid_view = self.x_train.view(N, -1), self.x_valid.view(M, -1)
 
-        dist_list = []  # Uses batching to only loand at most `batch_size` tensors
-        for x_train_batch in DataLoader(x_train_view, batch_size, shuffle=False):
+        dist_list = []  # Uses batching to only load at most `batch_size` tensors
+        for x_train_batch in DataLoader(x_train_view, self.batch_size, shuffle=False):
             dist_row = []
-            for x_valid_batch in DataLoader(x_valid_view, batch_size, shuffle=False):
-                dist_row.append(torch.cdist(x_train_batch, x_valid_batch))
+            for x_val_batch in DataLoader(x_valid_view, self.batch_size, shuffle=False):
+                dist_row.append(torch.cdist(x_train_batch, x_val_batch))
             dist_list.append(torch.cat(dist_row, dim=1))
         dist = torch.cat(dist_list, dim=0)
 

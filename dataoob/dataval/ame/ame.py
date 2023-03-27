@@ -34,16 +34,16 @@ class AME(DataEvaluator):
         self.num_models = num_models
         self.random_state = check_random_state(random_state)
 
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self, *args, **kwargs):
         """Trains the AME model by fitting bagging models on different proprotions
         and aggregating the subsets and the performance metrics
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Training number of epochs, per training, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
         """
         subsets, performance = [], []
         for proportion in [0.2, 0.4, 0.6, 0.8]:
@@ -51,7 +51,7 @@ class AME(DataEvaluator):
                 BaggingEvaluator(self.num_models, proportion, self.random_state)
                 .input_model_metric(self.pred_model, self.metric)
                 .input_data(self.x_train, self.y_train, self.x_valid, self.y_valid)
-                .train_data_values(batch_size, epochs)
+                .train_data_values(*args, **kwargs)
                 .get_subset_perf()
             )
 
@@ -139,16 +139,16 @@ class BaggingEvaluator(DataEvaluator):
         self.num_points = len(x_train)
         return self
 
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self, *args, **kwargs):
         """Trains the Bagging model to get subsets and corresponding evaluations of
         the performance of those subsets to compute the data values
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
         """
         self.num_subsets = self.random_state.binomial(
             1, self.proportion, size=(self.num_models, self.num_points)
@@ -162,8 +162,8 @@ class BaggingEvaluator(DataEvaluator):
             curr_model.fit(
                 Subset(self.x_train, indices=subset),
                 Subset(self.y_train, indices=subset),
-                batch_size=batch_size,
-                epochs=epochs,
+                *args,
+                **kwargs
             )
             y_valid_hat = curr_model.predict(self.x_valid)
 

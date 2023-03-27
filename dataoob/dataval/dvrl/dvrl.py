@@ -37,6 +37,8 @@ class DVRL(DataEvaluator):
         Activation function for VE, by default nn.ReLU()
     rl_epochs : int, optional
         Number of training epochs for the VE, by default 1000
+    rl_batch_size : int, optional
+        Batch size for training the VE, by default 32
     lr : float, optional
         Learning rate for the VE, by default 0.01
     threshold : float, optional
@@ -56,6 +58,7 @@ class DVRL(DataEvaluator):
         comb_dim: int = 10,
         act_fn: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
         rl_epochs: int = 1000,
+        rl_batch_size: int = 32,
         lr: float = 0.01,
         threshold: float = 0.9,
         device: torch.device = torch.device("cpu"),
@@ -70,6 +73,7 @@ class DVRL(DataEvaluator):
 
         # Training parameters
         self.rl_epochs = rl_epochs
+        self.rl_batch_size = rl_batch_size
         self.lr = lr
         self.threshold = threshold
 
@@ -112,37 +116,27 @@ class DVRL(DataEvaluator):
 
         return self
 
-    def _evaluate_baseline_models(self, batch_size: int = 32, epochs: int = 1):
+    def _evaluate_baseline_models(self, *args, **kwargs):
         """Loads and trains baseline models. Baseline performance information is
         necessary to compute the reward.
 
         Parameters
         ----------
-        batch_size : int, optional
-            Baseline training batch size, by default 32
-        epochs : int, optional
-            Number of epochs for baseline training, by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
         """
         # Final model
         self.final_model = copy.deepcopy(self.pred_model)
 
         # Train baseline model with input data
         self.ori_model = copy.deepcopy(self.pred_model)
-        self.ori_model.fit(
-            self.x_train,
-            self.y_train,
-            batch_size=batch_size,
-            epochs=epochs,
-        )
+        self.ori_model.fit(self.x_train, self.y_train, *args, **kwargs)
 
         # Trains validation model
         self.val_model = copy.deepcopy(self.ori_model)
-        self.val_model.fit(
-            self.x_valid,
-            self.y_valid,
-            batch_size=batch_size,
-            epochs=epochs,
-        )
+        self.val_model.fit(self.x_valid, self.y_valid, *args, **kwargs)
 
         # Eval performance
         # Baseline performance
@@ -157,19 +151,19 @@ class DVRL(DataEvaluator):
             / torch.sum(self.y_train, axis=1, keepdim=True)
         )
 
-    def train_data_values(self, batch_size: int = 32, epochs: int = 1):
+    def train_data_values(self, *args, **kwargs):
         """Trains the VE to assign probabilities of each data point being selected
         using a signal from the evaluation performance.
 
         Parameters
         ----------
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs (total = rl_epochs * epochs), by default 1
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
         """
-        batch_size = min(batch_size, len(self.x_train))
-        self._evaluate_baseline_models(batch_size=batch_size, epochs=epochs)
+        batch_size = min(self.rl_batch_size, len(self.x_train))
+        self._evaluate_baseline_models(*args, **kwargs)
 
         # Solver
         optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=self.lr)
@@ -203,11 +197,7 @@ class DVRL(DataEvaluator):
             # Prediction and training
             new_model = copy.deepcopy(self.pred_model)
             new_model.fit(
-                x_batch,
-                y_batch,
-                sample_weight=sel_prob_weight,
-                batch_size=batch_size,
-                epochs=epochs,
+                x_batch, y_batch, sample_weight=sel_prob_weight, *args, **kwargs
             )
 
             # Reward computation
@@ -231,8 +221,8 @@ class DVRL(DataEvaluator):
             self.x_train,
             self.y_train,
             sample_weight=final_data_value_weights,
-            batch_size=batch_size,
-            epochs=epochs,
+            *args,
+            **kwargs,
         )
         return self
 
