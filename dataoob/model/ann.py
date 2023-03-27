@@ -31,12 +31,3 @@ class ANN(ClassifierNNMixin):
         x = self.linearout(x)
         x = self.output(x)
         return x
-
-    def predict(self, x: torch.Tensor) -> torch.Tensor:
-        """Predicts output from input tensor
-
-        :param torch.Tensor x: Input tensor
-        :return torch.Tensor: Predicted tensor output
-        """
-        y = self.forward(x)
-        return y

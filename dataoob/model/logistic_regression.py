@@ -25,12 +25,3 @@ class LogisticRegression(BinaryClassifierNNMixin):
         x = self.linear(x)
         x = F.softmax(x, dim=1)
         return x
-
-    def predict(self, x: torch.Tensor) -> torch.Tensor:
-        """Predicts output from input tensor
-
-        :param torch.Tensor x: Input tensor
-        :return torch.Tensor: Predicted tensor output
-        """
-        y = self.forward(x)
-        return y

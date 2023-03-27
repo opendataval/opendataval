@@ -243,7 +243,7 @@ class DVRL(DataEvaluator):
         # Estimates data value
         final_data_value = self.value_estimator(self.x_train, self.y_train, y_hat)
 
-        return np.array(torch.squeeze(final_data_value).detach().cpu())
+        return torch.squeeze(final_data_value).numpy(force=True)
 
 
 class DataValueEstimatorRL(nn.Module):

@@ -112,6 +112,9 @@ class DataBanzhaf(DataEvaluator):
             Predicted data values/selection for every training data point
         """
         msr = np.divide(
-            self.sample_utility, self.sample_counts, where=self.sample_counts != 0.0
+            self.sample_utility,
+            self.sample_counts,
+            out=np.zeros_like(self.sample_utility),
+            where=self.sample_counts != 0,
         )
         return msr[:, 1] - msr[:, 0]  # Diff of subsets including/excluding i data point

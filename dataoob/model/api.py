@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,14 +8,14 @@ from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler, dataloa
 
 from dataoob.dataloader.util import CatDataset
 
-# TODO make sure to include something that allows predictions from datasets!!
+
 class Model(ABC):
     """Abstract class of Models. Provides a template for models"""
 
     @abstractmethod
     def fit(
         self,
-        x_train: torch.Tensor,
+        x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
         *args,
         sample_weights: torch.Tensor = None,
@@ -102,6 +102,24 @@ class BinaryClassifierNNMixin(Model, nn.Module):
                 loss.backward()  # Compute gradient
                 optimizer.step()  # Updates weights
 
+    def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
+        """Predicts output from input tensor/data set
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input covariates
+
+        Returns
+        -------
+        torch.Tensor
+            Predicted tensor output
+        """
+        if isinstance(x, Dataset):
+            x = next(iter(DataLoader(x, batch_size=len(x), shuffle=False)))
+        y_hat = self.forward(x)
+        return y_hat
+
 
 class ClassifierNNMixin(Model, nn.Module):
     """Classifier Mixin for Torch Neural Networks"""
@@ -148,10 +166,28 @@ class ClassifierNNMixin(Model, nn.Module):
                 loss.backward()  # Compute gradient
                 optimizer.step()  # Updates weights
 
+    def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
+        """Predicts output from input tensor/data set
 
-def to_cpu(tensors: torch.Tensor) -> torch.Tensor:
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input covariates
+
+        Returns
+        -------
+        torch.Tensor
+            Predicted tensor output
+        """
+        if isinstance(x, Dataset):
+            x = next(iter(DataLoader(x, batch_size=len(x), shuffle=False)))
+        y_hat = self.forward(x)
+        return y_hat
+
+
+def to_cpu(tensors: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
     """Mini function to move tensor to CPU for sk-learn"""
-    return tuple(t.detach().cpu() for t in dataloader.default_collate(tensors))
+    return tuple(t.numpy(force=True) for t in dataloader.default_collate(tensors))
 
 
 class ClassifierSkLearnWrapper(Model):
@@ -222,19 +258,23 @@ class ClassifierSkLearnWrapper(Model):
 
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train, *weights = next(iter(dataloader))
-        y_train = torch.argmax(y_train, dim=1)
-        y_train_unique = torch.unique(y_train, sorted=True)
+        y_train = np.argmax(y_train, axis=1)
+        y_train_unique = np.unique(y_train)
 
         if len(y_train_unique) != self.num_classes:  # All labels must be in sample
             self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
         elif sample_weight is not None:
-            self.model.fit(x_train, y_train, torch.squeeze(weights[0]), *args, **kwargs)
+            self.model.fit(x_train, y_train, np.squeeze(weights[0]), *args, **kwargs)
         else:
-            self.model.fit(x_train, y_train, *args, **kwargs)
+            self.model.fit(x_train, y_train, sample_weight=None, *args, **kwargs)
 
-    def predict(self, x: torch.Tensor):
+    def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
         """Predicts labels from sk-learn model"""
-        x = x.detach().cpu()
+        # Extracts the input into a cpu tensor
+        if isinstance(x, Dataset):
+            x = next(iter(DataLoader(x, len(x), shuffle=False, collate_fn=to_cpu)))[0]
+        else:
+            x = x.numpy(force=True)
         output = self.model.predict_proba(x)
 
         return torch.from_numpy(output).to(dtype=torch.float32, device=self.device)
@@ -302,8 +342,8 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
 
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train = next(iter(dataloader))
-        y_train = torch.argmax(y_train, dim=1)
-        y_train_unique = torch.unique(y_train, sorted=True)
+        y_train = np.argmax(y_train, axis=1)
+        y_train_unique = np.unique(y_train)
 
         if len(y_train_unique) != self.num_classes:  # All labels must be in sample
             print("Insufficient classes")

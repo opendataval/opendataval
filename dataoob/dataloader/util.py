@@ -9,8 +9,8 @@ class CatDataset(Dataset[tuple[Dataset, ...]]):
 
     Parameters
     ----------
-    datasets : list[Dataset]
-        List of data sets we would like to concat together, must be same length
+    datasets : tuple[Dataset]
+        Tuple of data sets we would like to concat together, must be same length
 
     Raises
     ------

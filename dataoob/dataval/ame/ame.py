@@ -108,7 +108,6 @@ class BaggingEvaluator(DataEvaluator):
     ):
         self.num_models = num_models
         self.proportion = proportion
-
         self.random_state = check_random_state(random_state)
 
     def input_data(
