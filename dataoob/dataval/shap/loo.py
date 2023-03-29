@@ -13,10 +13,9 @@ class LeaveOneOut(DataEvaluator):
 
     References
     ----------
-    .. [1] Y. Kwon and J. Zou,
-        Beta Shapley: a Unified and Noise-reduced Data Valuation Framework for
-        Machine Learning,
-        arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
+    .. [1] R. Cook,
+        Detection of Influential Observation in Linear Regression,
+        Technometrics, Vol. 19, No. 1 (Feb., 1977), pp. 15-18 (4 pages).
 
     Parameters
     ----------
