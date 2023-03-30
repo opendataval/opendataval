@@ -56,8 +56,8 @@ class BetaShapley(ShapEvaluator):
         [1] Beta Shap weight computation, :math:`j` is cardinality, Equation (3) and (5)
 
         .. math::
-            w(j) := \frac{1}{n} * w^{(n)}(j) * \tbinom{n-1}{j-1}
-            \propto \frac{Beta(j + \beta - 1, n - j + \alpha)}{Beta(\alpha, \beta)} *
+            w(j) := \frac{1}{n} w^{(n)}(j) \tbinom{n-1}{j-1}
+            \propto \frac{Beta(j + \beta - 1, n - j + \alpha)}{Beta(\alpha, \beta)}
             \tbinom{n-1}{j-1}
 
         References

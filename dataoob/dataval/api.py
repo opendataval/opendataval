@@ -73,7 +73,7 @@ class DataEvaluator(ABC):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """Trains the Data Evaluator and the underlying prediction model. Wrapper for
         ``self.input_data`` and ``self.train_data_values`` under one method
@@ -95,8 +95,8 @@ class DataEvaluator(ABC):
 
         Returns
         -------
-        DataEvaluator
-            returns self
+        self : object
+            Returns a Data Evaluator.
         """
         self.input_data(x_train, y_train, x_valid, y_valid)
         self.train_data_values(*args, **kwargs)
@@ -117,8 +117,8 @@ class DataEvaluator(ABC):
 
         Returns
         -------
-        DataEvaluator
-            returns self
+        self : object
+            Returns a Data Evaluator.
         """
         self.pred_model = copy.deepcopy(pred_model)
         self.metric = metric
@@ -147,8 +147,8 @@ class DataEvaluator(ABC):
 
         Returns
         -------
-        DataEvaluator
-            returns self
+        self : object
+            Returns a Data Evaluator.
         """
         self.x_train = x_train
         self.y_train = y_train
@@ -182,8 +182,8 @@ class DataEvaluator(ABC):
 
         Returns
         -------
-        DataEvaluator
-            returns self
+        self : object
+            Returns a trained Data Evaluator.
         """
         return self
 
@@ -197,6 +197,18 @@ class DataEvaluator(ABC):
             Predicted data values/selection for training input data point
         """
         pass
+
+    def __new__(cls, *args, **kwargs):
+        """Saves the input arguments for better plot ttiles"""
+        obj = object.__new__(cls)
+        obj.__inputs = [str(arg) for arg in args]
+        obj.__inputs.extend(f"{arg_name}={value}" for arg_name, value in kwargs.items())
+
+        return obj
+
+    @property
+    def plot_title(self) -> str:  # For publication keep it simple
+        return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
 
 
 def DE(method: DataEvaluator, model: Model, *args, **kwargs):

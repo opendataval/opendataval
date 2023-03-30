@@ -25,12 +25,12 @@ class AME(DataEvaluator):
     Parameters
     ----------
     num_models : int, optional
-        Number of models to bag/aggregate, by default 10
+        Number of models to bag/aggregate, by default 1000
     random_state : RandomState, optional
         Random initial state, by default None
     """
 
-    def __init__(self, num_models: int = 10, random_state: RandomState = None):
+    def __init__(self, num_models: int = 1000, random_state: RandomState = None):
         self.num_models = num_models
         self.random_state = check_random_state(random_state)
 
@@ -93,7 +93,7 @@ class BaggingEvaluator(DataEvaluator):
     Parameters
     ----------
     num_models : int, optional
-        Number of models to bag/aggregate, by default 10
+        Number of models to bag/aggregate, by default 1000
     proportion : float, optional
         Proportion for bernuoli which data points are sampled, by default 1.0
     random_state : RandomState, optional
@@ -102,7 +102,7 @@ class BaggingEvaluator(DataEvaluator):
 
     def __init__(
         self,
-        num_models: int = 10,
+        num_models: int = 1000,
         proportion: float = 1.0,
         random_state: RandomState = None,
     ):
