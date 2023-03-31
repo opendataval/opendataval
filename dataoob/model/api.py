@@ -277,7 +277,7 @@ class ClassifierSkLearnWrapper(Model):
             x = x.numpy(force=True)
         output = self.model.predict_proba(x)
 
-        return torch.from_numpy(output).to(dtype=torch.float32, device=self.device)
+        return torch.from_numpy(output).to(device=self.device, dtype=torch.float)
 
 
 class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):

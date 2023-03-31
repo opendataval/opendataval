@@ -1,3 +1,57 @@
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools ~=63.2.0",
+    "wheel ~=0.37.1",
+]
+
+[project]
+name = "dataoob"
+authors = [
+    {name = "Yongchan Kwon", email = "yk3012@columbia.edu"},
+    {name = "Kevin Jiang", email = "kfj2112@columbia.edu"}
+]
+description = "Transparent Data Valuation"
+readme = "README.md"
+requires-python = ">=3.11.0"
+keywords = ["Data Valuation", "Data Centric", "Machine Learning"]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Intended Audience :: Science/Research",
+]
+dependencies = [
+    "matplotlib~=3.7",
+    "pandas~=1.5",
+    "numpy~=1.24",
+    "scipy~=1.10",
+    "scikit-learn~=1.2",
+    "torch~=2.0.0",
+    "torchvision~=0.14",
+    "tqdm~=4.64"
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "ruff~=0.0.2",
+    "black~=3.10",
+    "sphinx~=6.1",
+    "pre-commit~=3.2"
+]
+test = [
+    "pytest-cov~=3.0.0",
+]
+
+[tool.setuptools]
+packages = ["dataoob"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dataoob.__version__"}
+
 [tool.black]
 line-length = 88
 include = '\.pyi?$'
@@ -23,4 +77,4 @@ convention = "numpy"
 
 [tool.ruff.isort]
 known-first-party = ["dataoob"]
-known-third-party = ["pytorch", "numpy", "scipy", "pandas", "sklearn", "tqdm"]
+known-third-party = ["torch", "numpy", "scipy", "pandas", "sklearn", "tqdm"]
