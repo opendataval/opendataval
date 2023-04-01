@@ -12,7 +12,7 @@ authors = [
     {name = "Yongchan Kwon", email = "yk3012@columbia.edu"},
     {name = "Kevin Jiang", email = "kfj2112@columbia.edu"}
 ]
-description = "Transparent Data Valuation"
+description = "Transparent Data Valuation"  # TODO
 readme = "README.md"
 requires-python = ">=3.11.0"
 keywords = ["Data Valuation", "Data Centric", "Machine Learning"]
@@ -31,7 +31,8 @@ dependencies = [
     "scikit-learn~=1.2",
     "torch~=2.0.0",
     "torchvision~=0.14",
-    "tqdm~=4.64"
+    "tqdm~=4.64",
+    "opendatasets~=0.1.22"
 ]
 dynamic = ["version"]
 
@@ -43,11 +44,11 @@ dev = [
     "pre-commit~=3.2"
 ]
 test = [
-    "pytest-cov~=3.0.0",
+    "pytest-cov~=3.0.0",  # TODO
 ]
 
 [tool.setuptools]
-packages = ["dataoob"]
+packages = ["dataoob"]  # TODO
 
 [tool.setuptools.dynamic]
 version = {attr = "dataoob.__version__"}

@@ -197,7 +197,7 @@ class DVRL(DataEvaluator):
             # Prediction and training
             new_model = copy.deepcopy(self.pred_model)
             new_model.fit(
-                x_batch, y_batch, sample_weight=sel_prob_weight, *args, **kwargs
+                x_batch, y_batch, *args, sample_weight=sel_prob_weight, **kwargs
             )
 
             # Reward computation

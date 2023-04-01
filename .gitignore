@@ -87,6 +87,4 @@ data_files/
 tmp_*/
 tmp/
 docs/
-
-# Personal
-todo.txt
+kaggle.json

@@ -81,7 +81,7 @@ class DataOob(DataEvaluator):
 
         """
         self.oob_pred = torch.zeros((0, self.label_dim), requires_grad=False)
-        self.oob_indices = GroupingIndex(start=1)
+        self.oob_indices = GroupingIndex()
 
         for i in tqdm.tqdm(range(self.num_models)):
             in_bag = np.random.randint(0, self.num_points, self.max_samples)
@@ -107,9 +107,9 @@ class DataOob(DataEvaluator):
         self.data_values = np.zeros(self.num_points)
 
         for i, indices in self.oob_indices.items():
-            self.data_values[i] = self.evaluate(
-                self.y_train[i].expand(len(indices)), self.oob_pred[indices]
-            )
+            # Expands the label to the desired size, squeezes for regression
+            oob_labels = self.y_train[i].expand((len(indices), -1)).squeeze(dim=1)
+            self.data_values[i] = self.evaluate(oob_labels, self.oob_pred[indices])
         return self.data_values
 
 

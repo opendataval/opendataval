@@ -1,82 +1,29 @@
 from itertools import accumulate
 
 import numpy as np
+from numpy.random import RandomState
+from sklearn.utils import check_random_state
 import torch
 from torch.utils.data import Dataset, Subset
 
 from dataoob.dataloader.datasets import Register
+from typing import Any, Callable, Self
 
 
-def DataLoader(
-    dataset_name: str,
-    force_redownload: bool = False,
-    train_count: int | float = 0,
-    valid_count: int | float = 0,
-    test_count: int | float = 0,
-    noise_rate: float = 0.0,
-    device: int = torch.device("cpu"),
-) -> tuple[torch.Tensor]:
-    """Dataloader for dataoob, input the data set name to receive covariates and labels
-    split into train, valid, and test sets. Also returns noisy indices if any
+class DataLoader:
+    """DataLoader for dataoob, given input dataset name, prepares the data and provides
+    an API for subsequent splitting and adding noise
 
     Parameters
     ----------
     dataset_name : str
         Name of the data set, can be registered in `datasets.py`
-    force_redownload : bool, optional
-        Forces redownload from source URL, by default False
-    train_count : int | float, optional
-        Number/proportion training points, by default 0
-    valid_count : int | float, optional
-        Number/proportion validation points, by default 0
-    test_count : int | float, optional
-        Number/proportion testing points, by default 0
+    force_download : bool, optional
+        Forces download from source URL, by default False
     noise_rate : float, optional
         Ratio of data to add noise to, by default 0.0
     device : int, optional
         Tensor device for acceleration, by default torch.device("cpu")
-
-    Returns
-    -------
-    (torch.Tensor | Dataset, torch.Tensor)
-        Training Covariates, Training Labels
-    (torch.Tensor | Dataset, torch.Tensor)
-        Validation Covariates, Valid Labels
-    (torch.Tensor | Dataset, torch.Tensor)
-        Test Covariates, Test Labels
-    (np.ndarray)
-        Indices of noisified Training labels
-    """
-    x, y = load_dataset(dataset_name, device, force_redownload)
-
-    (x_train, y_train), (x_valid, y_valid), (x_test, y_test) = split_dataset(
-        x, y, train_count, valid_count, test_count
-    )
-
-    # Noisify the data
-    y_train, noisy_indices = noisify(y_train, noise_rate)
-
-    return (x_train, y_train), (x_valid, y_valid), (x_test, y_test), noisy_indices
-
-
-def load_dataset(
-    dataset_name: str, device: int = torch.device("cpu"), force_redownload: bool = False
-) -> tuple[torch.Tensor | Dataset, torch.Tensor]:
-    """Loads the data set from the data set registry as a tensor the specified device
-
-    Parameters
-    ----------
-    dataset_name : str
-        Name of a registered data set
-    device : int, optional
-        Tensor device for acceleration, by default torch.device("cpu")
-    force_redownload : bool, optional
-        Forces redownload from source URL, by default False, by default False
-
-    Returns
-    -------
-    (torch.Tensor | Dataset, torch.Tensor)
-        Covariates and Labels of the data set
 
     Raises
     ------
@@ -84,96 +31,144 @@ def load_dataset(
         In order to use a data set, you must register it by creating a
         :py:class:`Register`
     """
-    if dataset_name not in Register.Datasets:
-        raise KeyError("Must register data set in register_dataset")
 
-    covariates, labels = Register.Datasets[dataset_name].load_data(force_redownload)
+    def __init__(
+        self,
+        dataset_name: str,
+        force_download: bool = False,
+        device: torch.device = torch.device("cpu"),
+        random_state: RandomState = None,
+    ):
+        if dataset_name not in Register.Datasets:
+            raise KeyError("Must register data set in register_dataset")
 
-    if not isinstance(covariates, Dataset):
-        covariates = torch.tensor(covariates).to(dtype=torch.float32, device=device)
-    labels = torch.tensor(labels).to(dtype=torch.float32, device=device)
+        dataset = Register.Datasets[dataset_name]
+        self.covar, self.labels = dataset.load_data(force_download)
 
-    return covariates, labels
+        self.device = device
+        self.random_state = check_random_state(random_state)
+
+    @property
+    def datapoints(self):
+        """Returns split data points to be input into a DataEvaluator as tensors
+
+        Returns
+        -------
+        (torch.Tensor | Dataset, torch.Tensor)
+            Training Covariates, Training Labels
+        (torch.Tensor | Dataset, torch.Tensor)
+            Validation+Test Covariates, Valid+test Labels
+        """
+        if isinstance(self.covar, Dataset):
+            x_train, x_valid = self.x_train, self.x_valid
+        else:
+            x_train = torch.tensor(self.x_train).to(self.device, dtype=torch.float)
+            x_valid = torch.tensor(self.x_valid).to(self.device, dtype=torch.float)
+
+        y_train = torch.tensor(self.y_train).to(self.device, dtype=torch.float)
+        y_valid = torch.tensor(self.y_valid).to(self.device, dtype=torch.float)
+
+        return x_train, y_train, x_valid, y_valid
+
+    def split_dataset(self, train_count: int | float = 0, valid_count: int | float = 0):
+        """Splits the covariates and labels to the specified counts/proportions
+
+        Parameters
+        ----------
+        train_count : int | float
+            Number/proportion training points
+        valid_count : int | float
+            Number/proportion validation points
+
+        Returns
+        -------
+        self : object
+            Returns a DataLoader with covariates, labels split into train/valid.
+
+        Raises
+        ------
+        ValueError
+            Invalid input for splitting the data set, either the proportion is more
+            than 1 or the total splits are greater than the len(dataset)
+        """
+        assert hasattr(self, "covar") and hasattr(self, "labels")
+        assert len(self.covar) == len(self.labels)
+        num_points = len(self.covar)
+
+        match (train_count, valid_count):
+            case int(train), int(valid) if sum((train, valid)) <= num_points:
+                splits = accumulate((train, valid))
+            case float(train), float(valid) if sum((train, valid)) <= 1.0:
+                splits = (round(num_points * prob) for prob in (train, valid))
+                splits = accumulate(splits)
+            case _:
+                raise ValueError("Invalid split")
+
+        # Extra underscore to unpack any remainders
+        indices = self.random_state.permutation(num_points)
+        train_idx, valid_idx, _ = np.split(indices, list(splits))
+
+        if isinstance(self.covar, Dataset):
+            self.x_train = Subset(self.covar, train_idx)
+            self.x_valid = Subset(self.covar, valid_idx)
+        else:
+            self.x_train, self.x_valid = self.covar[train_idx], self.covar[valid_idx]
+        self.y_train, self.y_valid = self.labels[train_idx], self.labels[valid_idx]
+
+        return self
+
+    def noisify(
+        self,
+        add_noise_func: Callable[[Self, Any, ...], dict[str, np.ndarray | Dataset]],
+        *noise_args,
+        **noise_kwargs
+    ):
+        """Adds noise to the data set and saves the indices of the noisy data
+
+        Parameters
+        ----------
+        add_noise_func : Callable
+            Takes as argument required arguments x_train, y_train, x_valid, y_valid
+            and adds noise to those data points as needed. Returns dict[str, np.ndarray]
+            that has the updated np.ndarray in a dict to update the data loader
+
+        Returns
+        -------
+        self : object
+            Returns a DataLoader with noise added to the data set.
+        """
+        # Passes the DataLoader to the noise_func, has access to all instance variables
+        noisy_datapoints = add_noise_func(*noise_args, data_loader=self, **noise_kwargs)
+
+        self.x_train = noisy_datapoints.get("x_train", self.x_train)
+        self.y_train = noisy_datapoints.get("y_train", self.y_train)
+        self.x_valid = noisy_datapoints.get("x_valid", self.x_valid)
+        self.y_valid = noisy_datapoints.get("y_valid", self.y_valid)
+        self.noisy_indices = noisy_datapoints.get("noisy_indices", np.array([]))
+
+        return self
 
 
-def noisify(
-    labels: torch.Tensor, noise_rate: float = 0.0
-) -> tuple[torch.Tensor, np.ndarray]:  # TODO leave for now change later
-    if noise_rate == 0.0:
-        return labels, np.array([])
-    elif 0 <= noise_rate <= 1.0:
-        num_points = labels.size(dim=0)
-
-        noise_count = round(num_points * noise_rate)
-        replace = np.random.choice(num_points, noise_count, replace=False)
-        target = np.random.choice(num_points, noise_count, replace=False)
-        labels[replace] = labels[target]
-
-        return labels, replace
-    else:
-        raise Exception()
-
-
-def split_dataset(
-    x: torch.Tensor | Dataset,
-    y: torch.Tensor,
-    train_count: int | float,
-    valid_count: int | float,
-    test_count: int | float,
-):
-    """Splits the covariates and labels according to the specified counts/proportions
+def mix_labels(data_loader: DataLoader, noise_rate: float) -> dict[str, np.ndarray]:
+    """Mixes y_train labels of a DataLoader, adding noise to data
 
     Parameters
     ----------
-    x : torch.Tensor | Dataset
-        Data+Test+Held-out covariates
-    y : torch.Tensor
-        Data+Test+Held-out labels
-    train_count : int | float
-        Number/proportion training points
-    valid_count : int | float
-        Number/proportion validation points
-    test_count : int | float
-        Number/proportion testing points
+    data_loader : DataLoader
+        DataLoader object housing the data to have noise added to
+    noise_rate : float
+        Proportion of labels to add noise to
 
     Returns
     -------
-    (torch.Tensor | Dataset, torch.Tensor)
-        Training Covariates, Training Labels
-    (torch.Tensor | Dataset, torch.Tensor)
-        Validation Covariates, Valid Labels
-    (torch.Tensor | Dataset, torch.Tensor)
-        Test Covariates, Test Labels
-
-    Raises
-    ------
-    ValueError
-        Invalid input for splitting the data set, either the proporition is more than 1.
-        or the total splits are greater than the len(dataset)
+    dict[str, np.ndarray]
+        dictionary of updated data points
     """
-    assert len(x) == len(y)
-    num_points = len(x)
+    y_train = data_loader.y_train
+    rs = check_random_state(data_loader.random_state)
+    num_points = len(y_train)
+    replace = rs.choice(num_points, round(num_points * noise_rate), replace=False)
+    target = rs.choice(num_points, round(num_points * noise_rate), replace=False)
+    y_train[replace] = y_train[target]
 
-    match (train_count, valid_count, test_count):
-        case int(tr), int(val), int(tst) if sum((tr, val, tst)) <= num_points:
-            splits = accumulate((tr, val, tst))
-        case float(tr), float(val), float(tst) if sum((tr, val, tst)) <= 1.0:
-            splits = (round(num_points * p) for p in (tr, val, tst))
-            splits = accumulate(splits)
-        case _:
-            raise ValueError("Invalid split")
-
-    # Extra underscore to unpack any remainders
-    indices = np.random.permutation(num_points)
-    train_idx, valid_idx, test_idx, _ = np.split(indices, list(splits))
-
-    if isinstance(x, Dataset):
-        x_train, y_train = Subset(x, train_idx), y[train_idx]
-        x_valid, y_valid = Subset(x, valid_idx), y[valid_idx]
-        x_test, y_test = Subset(x, test_idx), y[test_idx]
-    else:
-        x_train, y_train = x[train_idx], y[train_idx]
-        x_valid, y_valid = x[valid_idx], y[valid_idx]
-        x_test, y_test = x[test_idx], y[test_idx]
-
-    return (x_train, y_train), (x_valid, y_valid), (x_test, y_test)
+    return {"y_train": y_train, "noisy_indices": replace}
