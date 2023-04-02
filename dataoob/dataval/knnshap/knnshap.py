@@ -61,9 +61,9 @@ class KNNShapley(DataEvaluator):
         x_train_view, x_valid_view = self.x_train.view(N, -1), self.x_valid.view(M, -1)
 
         dist_list = []  # Uses batching to only load at most `batch_size` tensors
-        for x_train_batch in DataLoader(x_train_view, self.batch_size, shuffle=False):
+        for x_train_batch in DataLoader(x_train_view, self.batch_size):  # No shuffle
             dist_row = []
-            for x_val_batch in DataLoader(x_valid_view, self.batch_size, shuffle=False):
+            for x_val_batch in DataLoader(x_valid_view, self.batch_size):
                 dist_row.append(torch.cdist(x_train_batch, x_val_batch))
             dist_list.append(torch.cat(dist_row, dim=1))
         dist = torch.cat(dist_list, dim=0)

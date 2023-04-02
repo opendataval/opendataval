@@ -301,7 +301,7 @@ class DataValueEstimatorRL(nn.Module):
     ):
         super(DataValueEstimatorRL, self).__init__()
 
-        if random_state is not None:
+        if random_state is not None:  # Can't pass generators to nn.Module layers
             torch.manual_seed(check_random_state(random_state).tomaxint())
 
         mlp_layers = OrderedDict()
