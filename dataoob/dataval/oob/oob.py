@@ -61,30 +61,39 @@ class DataOob(DataEvaluator):
         y_train : torch.Tensor
             Data labels
         x_valid : torch.Tensor
-            Test+Held-out covariates
+            Test+Held-out covariates, unused by data-oob
         y_valid : torch.Tensor
-            Test+Held-out labels
+            Test+Held-out labels, unused by data-oob
         """
         self.x_train = x_train
         self.y_train = y_train
-        self.x_valid = x_valid
-        self.y_valid = y_valid
+        _ = x_valid, y_valid  # Unused parameters,
 
         self.num_points = len(x_train)
         self.label_dim = 1 if self.y_train.dim() == 1 else self.y_train.size(dim=1)
         self.max_samples = round(self.proportion * self.num_points)
+        self.device = x_train.device
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """This implementation is closer to the original implementation, although
-        it doesn't generalize to regressions
+        """Trains Data Out-of-Bag model by bagging a model and collecting all
+        out-of-bag predictions. We then evaluate each data point to their out-of-bag
+        predictions
 
+        Parameters
+        ----------
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
         """
-        self.oob_pred = torch.zeros((0, self.label_dim), requires_grad=False)
+        self.oob_pred = torch.zeros(
+            (0, self.label_dim), requires_grad=False, device=self.device
+        )
         self.oob_indices = GroupingIndex()
 
         for i in tqdm.tqdm(range(self.num_models)):
-            in_bag = np.random.randint(0, self.num_points, self.max_samples)
+            in_bag = self.random_state.randint(0, self.num_points, self.max_samples)
             # out_bag is the indices where the bincount is zero.
             out_bag = (np.bincount(in_bag, minlength=self.num_points) == 0).nonzero()[0]
 
@@ -97,19 +106,26 @@ class DataOob(DataEvaluator):
             )
 
             y_hat = curr_model.predict(Subset(self.x_train, indices=out_bag))
-
             self.oob_pred = torch.cat((self.oob_pred, y_hat), dim=0)
             self.oob_indices.add_indices(out_bag)
 
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
+        """Returns data values by evaluating how the oob labels compare to the labels.
+
+        Returns
+        -------
+        np.ndarray
+            Predicted data values/selection for every training data point
+        """
         self.data_values = np.zeros(self.num_points)
 
         for i, indices in self.oob_indices.items():
             # Expands the label to the desired size, squeezes for regression
             oob_labels = self.y_train[i].expand((len(indices), -1)).squeeze(dim=1)
             self.data_values[i] = self.evaluate(oob_labels, self.oob_pred[indices])
+
         return self.data_values
 
 

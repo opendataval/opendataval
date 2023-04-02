@@ -8,6 +8,7 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
 from dataoob.model import Model
+from dataoob.dataloader import DataLoader
 
 
 class DataEvaluator(ABC):
@@ -125,6 +126,11 @@ class DataEvaluator(ABC):
 
         return self
 
+    def input_dataloader(self, loader: DataLoader):
+        """Inputs data from a DataLoader object"""
+        x_train, y_train, x_valid, y_valid = loader.datapoints
+        return self.input_data(x_train, y_train, x_valid, y_valid)
+
     def input_data(
         self,
         x_train: torch.Tensor,
@@ -156,18 +162,6 @@ class DataEvaluator(ABC):
         self.y_valid = y_valid
 
         return self
-
-    def get_data_points(self):
-        """Returns input data points. Useful when we evaluate DataEvaluator performance
-
-        Returns
-        -------
-        (torch.Tensor | Dataset, torch.Tensor)
-            Training Covariates, Training Labels
-        (torch.Tensor | Dataset, torch.Tensor)
-            Validation Covariates, Valid Labels
-        """
-        return (self.x_train, self.y_train), (self.x_valid, self.y_valid)
 
     @abstractmethod
     def train_data_values(self, *args, **kwargs):

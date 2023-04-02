@@ -138,7 +138,7 @@ class DataLoader:
             Returns a DataLoader with noise added to the data set.
         """
         # Passes the DataLoader to the noise_func, has access to all instance variables
-        noisy_datapoints = add_noise_func(*noise_args, data_loader=self, **noise_kwargs)
+        noisy_datapoints = add_noise_func(*noise_args, loader=self, **noise_kwargs)
 
         self.x_train = noisy_datapoints.get("x_train", self.x_train)
         self.y_train = noisy_datapoints.get("y_train", self.y_train)
@@ -149,12 +149,12 @@ class DataLoader:
         return self
 
 
-def mix_labels(data_loader: DataLoader, noise_rate: float) -> dict[str, np.ndarray]:
+def mix_labels(loader: DataLoader, noise_rate: float) -> dict[str, np.ndarray]:
     """Mixes y_train labels of a DataLoader, adding noise to data
 
     Parameters
     ----------
-    data_loader : DataLoader
+    loader : DataLoader
         DataLoader object housing the data to have noise added to
     noise_rate : float
         Proportion of labels to add noise to
@@ -164,8 +164,8 @@ def mix_labels(data_loader: DataLoader, noise_rate: float) -> dict[str, np.ndarr
     dict[str, np.ndarray]
         dictionary of updated data points
     """
-    y_train = data_loader.y_train
-    rs = check_random_state(data_loader.random_state)
+    y_train = loader.y_train
+    rs = check_random_state(loader.random_state)
     num_points = len(y_train)
     replace = rs.choice(num_points, round(num_points * noise_rate), replace=False)
     target = rs.choice(num_points, round(num_points * noise_rate), replace=False)

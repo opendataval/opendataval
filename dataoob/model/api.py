@@ -64,9 +64,9 @@ class BinaryClassifierNNMixin(Model, nn.Module):
         self,
         x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
-        batch_size=32,
-        epochs=1,
         sample_weight: torch.Tensor = None,
+        batch_size: int = 32,
+        epochs: int = 1,
     ):
         """Fits a torch binary classifier Model object using SGD
 
@@ -116,7 +116,7 @@ class BinaryClassifierNNMixin(Model, nn.Module):
             Predicted tensor output
         """
         if isinstance(x, Dataset):
-            x = next(iter(DataLoader(x, batch_size=len(x), shuffle=False)))
+            x = next(iter(DataLoader(x, batch_size=len(x))))
         y_hat = self.forward(x)
         return y_hat
 
@@ -128,9 +128,9 @@ class ClassifierNNMixin(Model, nn.Module):
         self,
         x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
-        batch_size=32,
-        epochs=1,
         sample_weight: torch.Tensor = None,
+        batch_size: int = 32,
+        epochs: int = 1,
     ):
         """Fits a torch classifier Model object using SGD
 
@@ -159,9 +159,11 @@ class ClassifierNNMixin(Model, nn.Module):
                 outputs = self.__call__(x_batch)
 
                 if sample_weight is not None:
-                    loss = criterion(outputs, y_batch, weight=weights[0])
+                    # F.cross_entropy doesn't support sample_weights
+                    loss = criterion(outputs, y_batch, reduction="none")
+                    loss = (loss * weights[0]).mean()
                 else:
-                    loss = criterion(outputs, y_batch)
+                    loss = criterion(outputs, y_batch, reduction="mean")
 
                 loss.backward()  # Compute gradient
                 optimizer.step()  # Updates weights
@@ -180,7 +182,7 @@ class ClassifierNNMixin(Model, nn.Module):
             Predicted tensor output
         """
         if isinstance(x, Dataset):
-            x = next(iter(DataLoader(x, batch_size=len(x), shuffle=False)))
+            x = next(iter(DataLoader(x, batch_size=len(x))))
         y_hat = self.forward(x)
         return y_hat
 
@@ -247,8 +249,7 @@ class ClassifierSkLearnWrapper(Model):
             )
 
         """
-        # Using a data set and dataloader (despite loading all the data) for better
-        # API consistency, such as passing data sets to a sk-learn  model
+        # Using a data set and dataloader (despite loading all the data) consistency
         dataset = CatDataset(x_train, y_train, sample_weight)
         num_samples = len(dataset)
         if num_samples == 0:
@@ -272,7 +273,7 @@ class ClassifierSkLearnWrapper(Model):
         """Predicts labels from sk-learn model"""
         # Extracts the input into a cpu tensor
         if isinstance(x, Dataset):
-            x = next(iter(DataLoader(x, len(x), shuffle=False, collate_fn=to_cpu)))[0]
+            x = next(iter(DataLoader(x, len(x), collate_fn=to_cpu)))[0]
         else:
             x = x.numpy(force=True)
         output = self.model.predict_proba(x)

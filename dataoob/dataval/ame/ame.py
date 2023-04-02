@@ -70,7 +70,7 @@ class AME(DataEvaluator):
         Returns
         -------
         np.ndarray
-             Predicted data values/selection for every training data point
+            Predicted data values/selection for every training data point
         """
         standard_subsets = zscore(self.subsets, axis=1)
         centered_perf = self.performance - np.mean(self.performance)
