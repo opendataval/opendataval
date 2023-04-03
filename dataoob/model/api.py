@@ -148,7 +148,7 @@ class ClassifierNNMixin(Model, nn.Module):
             Weights associated with each data point, by default None
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
-        # TODO update when we move from binary classification
+
         criterion = F.cross_entropy
         dataset = CatDataset(x_train, y_train, sample_weight)
 
@@ -347,7 +347,6 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         y_train_unique = np.unique(y_train)
 
         if len(y_train_unique) != self.num_classes:  # All labels must be in sample
-            print("Insufficient classes")
-            self.model = DummyClassifier(strategy="most_frequent")
+            self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
         else:
             self.model.fit(x_train, y_train, *args, **kwargs)
