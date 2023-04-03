@@ -203,8 +203,3 @@ class DataEvaluator(ABC):
     @property
     def plot_title(self) -> str:  # For publication keep it simple
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
-
-
-def DE(method: DataEvaluator, model: Model, *args, **kwargs):
-    # TODO Write If Else statements once it's populated with Data Evaluators
-    return method(model, *args, **kwargs)

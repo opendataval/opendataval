@@ -1,103 +1,106 @@
-import copy  # TODO return a dict and inside this dict have an option for plot
+import copy
 
 import numpy as np
-from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 from sklearn.cluster import KMeans
 from sklearn.metrics import f1_score
 from torch.utils.data import Subset
+from typing import Any, Literal
 
 from dataoob.dataval import DataEvaluator
+from dataoob.dataloader import DataLoader
 
 
-def noisy_detection(
-    evaluator: DataEvaluator, noisy_index: np.ndarray
-) -> tuple[float, float]:
+def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, float]:
     """Computes recall and F1 score (of 2NN classifier) of the data evaluator
     on the noisy indices
 
     Parameters
     ----------
     evaluator : DataEvaluator
-        Data Evaluator
-    noisy_index : np.ndarray
-        Indices with noise added to them from DataLoader.
+        DataEvaluator to be tested
+    loader : DataLoader
+        DataLoader containing noisy indices
 
     Returns
     -------
-    tuple[float, float]
-        Recall, F1 Score (Kmeans) for data evaluator
+    dict[str, float]
+        'recall', 'kmeans_f1' (F1 score of 2-means classifier) of the DataEvaluator
+        in detecting noisy indices
     """
     data_values = evaluator.evaluate_data_values()
+    noisy_indices = loader.noisy_indices
 
     num_points = len(data_values)
-    num_noisy = len(noisy_index)
+    num_noisy = len(noisy_indices)
 
     sorted_indices = np.argsort(data_values)
-    recall = len(np.intersect1d(sorted_indices[:num_noisy], noisy_index)) / num_noisy
+    recall = len(np.intersect1d(sorted_indices[:num_noisy], noisy_indices)) / num_noisy
 
     # Computes F1 of a KMeans(k=2) classifier of the data values
-    kmeans = KMeans(n_clusters=2).fit(data_values.reshape(-1, 1))
+    kmeans = KMeans(n_clusters=2, n_init="auto").fit(data_values.reshape(-1, 1))
 
     # Because of the convexity of KMeans classification, the least valuable data point
     # will always belong to the lower class on a number line, and vice-versa
     validation = np.full((num_points,), kmeans.labels_[sorted_indices[-1]])
-    validation[noisy_index] = kmeans.labels_[sorted_indices[0]]
+    validation[noisy_indices] = kmeans.labels_[sorted_indices[0]]
 
     f1_kmeans_label = f1_score(kmeans.labels_, validation)
 
-    return recall, f1_kmeans_label
+    return {"recall": recall, "kmeans_f1": f1_kmeans_label}
 
 
-def point_removal(  # TODO consider just passing in the x_values
+def point_addition(
     evaluator: DataEvaluator,
-    order: str = "random",
-    percentile_increment: float = 0.05,
-    batch_size: int = 32,
-    epochs: int = 1,
-    plot: bool = True,
-    metric_name: str = "Accuracy",
-) -> list[float]:
-    """Repeatedly add `percentile_increment` of data points and evaluates performance
+    loader: DataLoader,
+    order: Literal["random", "ascending", "descending"] = "random",
+    percentile: float = 0.05,
+    plot: Axes = None,
+    metric_name: str = "accuracy",
+    train_kwargs: dict[str, Any] = None,
+) -> dict[str, list[float]]:
+    """Repeatedly add `percentile` of data points and evaluates performance
 
     Parameters
     ----------
     evaluator : DataEvaluator
-        Data Evaluator
-    order : str, optional
-        Order which data points will be added, must be 'ascending',
-        'descending', otherwise defaults to 'random', by default "random"
-    percentile_increment : float, optional
-        Percentile of data points to add each iteration, by default .05
-    batch_size : int, optional
-        Training batch size, by default 32
-    epochs : int, optional
-        Number of training epochs, by default 1
-    plot : bool, optional
-        Whether to plot the data, by default True
+        DataEvaluator to be tested
+    loader : DataLoader
+        DataLoader containing training and valid data points
+    order : Literal["random", "ascending";, "descending";], optional
+        Order which data points will be added, by default "random"
+    percentile : float, optional
+        Percentile of data points to add each iteration, by default 0.05
+    plot : Axes, optional
+        Matplotlib Axes to plot data output, by default None
     metric_name : str, optional
-        Name of the passed in performance metric, by default "Accuracy"
+        Name of DataEvaluator defined performance metric, by default assumed "accuracy"
+    train_kwargs : dict[str, Any], optional
+        Training key word arguments for training the pred_model, by default None
 
     Returns
     -------
-    list[float]
-        List of the performance metric at each interval
+    dict[str, list[float]]
+        dict containing list of performance after adding (i * percentile) data points
     """
-    (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
+    x_train, y_train, x_valid, y_valid = loader.datapoints
     data_values = evaluator.evaluate_data_values()
     curr_model = copy.deepcopy(evaluator.pred_model)
 
     num_sample = len(data_values)
-    num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
+    num_period = max(round(num_sample * percentile), 5)  # Add at least 5 per bin
     num_bins = int(num_sample // num_period)
 
-    if order == "ascending":
-        sorted_value_list = np.argsort(data_values)
-    elif order == "descending":
-        sorted_value_list = np.argsort(-data_values)
-    else:
-        sorted_value_list = np.random.permutation(num_sample)
+    match order:
+        case "ascending":
+            sorted_value_list = np.argsort(data_values)
+        case "descending":
+            sorted_value_list = np.argsort(-data_values)
+        case "random":
+            sorted_value_list = np.random.permutation(num_sample)
 
     metric_list = []
+    train_kwargs = train_kwargs if train_kwargs is not None else {}
 
     for bin_index in range(0, num_sample, num_period):
 
@@ -107,69 +110,71 @@ def point_removal(  # TODO consider just passing in the x_values
         new_model.fit(
             Subset(x_train, sorted_value_coalition),
             Subset(y_train, sorted_value_coalition),
-            batch_size=batch_size,
-            epochs=epochs,
+            **train_kwargs,
         )
         y_hat_valid = new_model.predict(x_valid)
         model_score = evaluator.evaluate(y_valid, y_hat_valid)
 
         metric_list.append(model_score)
 
+    x_axis = [i * (1.0 / num_bins) for i in range(num_bins)]
+    eval_results = {f"{order}_add_{metric_name}": metric_list, "axis": x_axis}
+
     if plot:
-        x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
-        plt.figure(figsize=(6, 7.5))
-        plt.plot(x_axis, metric_list[:num_bins], "o-")
+        plot.plot(x_axis, metric_list[:num_bins], "o-")
 
-        plt.xlabel("Fraction of Removed Samples", size=16)
-        plt.ylabel(metric_name, size=16)
-        plt.title(f"Removing value {order}", size=16)
-        plt.show()
+        plot.set_xlabel("Fraction Added")
+        plot.set_ylabel(metric_name)
+        plot.set_title(
+            evaluator.plot_title
+        )  # Figure out a better way to find instance variable
 
-    return metric_list
+    return eval_results
 
 
 def remove_high_low(
     evaluator: DataEvaluator,
-    percentile_increment: float = 0.05,
-    batch_size: int = 32,
-    epochs: int = 1,
-    plot: bool = True,
-    metric_name: str = "Accuracy",
-) -> tuple[list[float], list[float]]:
-    """Repeatedly removes ``percentile_increment`` of most valuable/least valuable data
-    points and computes the change in the measurement metric as a result
+    loader: DataLoader,
+    percentile: float = 0.05,
+    plot: Axes = None,
+    metric_name: str = "accuracy",
+    train_kwargs: dict[str, Any] = None,
+) -> dict[str, list[float]]:
+    """Repeatedly removes ``percentile`` of most valuable/least valuable data points
+    and computes the performance
 
     Parameters
     ----------
     evaluator : DataEvaluator
-        Data Evaluator
-    percentile_increment : float, optional
-        Percentile of data points to add each iteration, by default .05
-    batch_size : int, optional
-        Training batch size, by default 32
-    epochs : int, optional
-        Number of training epochs, by default 1
-    plot : bool, optional
-        Whether to plot the data, by default True
+        DataEvaluator to be tested
+    loader : DataLoader
+        DataLoader containing training and valid data points
+    percentile : float, optional
+        Percentile of data points to add remove iteration, by default 0.05
+    plot : Axes, optional
+        Matplotlib Axes to plot data output, by default None
     metric_name : str, optional
-        Name of the passed in performance metric, by default "Accuracy"
+        Name of DataEvaluator defined performance metric, by default assumed "accuracy"
+    train_kwargs : dict[str, Any], optional
+        Training key word arguments for training the pred_model, by default None
 
     Returns
     -------
-    tuple[list[float], list[float]]
-        List of the performance metric the Data Evaluator
-        for each bin when the least valuable/most valuable are incrementally removed.
+    dict[str, list[float]]
+        dict containing list of the performance of the DataEvaluator
+        (i * percentile) valuable/most valuable data points are removed
     """
-    (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
+    x_train, y_train, x_valid, y_valid = loader.datapoints
     data_values = evaluator.evaluate_data_values()
     curr_model = copy.deepcopy(evaluator.pred_model)
 
     num_sample = len(x_train)
-    num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
+    num_period = max(round(num_sample * percentile), 5)  # Add at least 5/bin
     num_bins = int(num_sample // num_period) + 1
     sorted_value_list = np.argsort(data_values)
 
     valuable_list, unvaluable_list = [], []
+    train_kwargs = train_kwargs if train_kwargs is not None else {}
 
     for bin_index in range(0, num_sample + num_period, num_period):
 
@@ -181,8 +186,7 @@ def remove_high_low(
         valuable_model.fit(
             Subset(x_train, most_valuable_indices),
             Subset(y_train, most_valuable_indices),
-            batch_size=batch_size,
-            epochs=epochs,
+            **train_kwargs,
         )
         y_hat_valid = valuable_model.predict(x_valid)
         valuable_score = evaluator.evaluate(y_valid, y_hat_valid)
@@ -196,68 +200,72 @@ def remove_high_low(
         unvaluable_model.fit(
             Subset(x_train, least_valuable_indices),
             Subset(y_train, least_valuable_indices),
-            batch_size=batch_size,
-            epochs=epochs,
+            **train_kwargs,
         )
         iy_hat_valid = unvaluable_model.predict(x_valid)
         unvaluable_score = evaluator.evaluate(y_valid, iy_hat_valid)
         unvaluable_list.append(unvaluable_score)
 
+    x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
+
+    eval_results = {
+        f"remove_mostval_{metric_name}": valuable_list,
+        f"remove_leastval_{metric_name}": unvaluable_list,
+        "axis": x_axis,
+    }
+
     # Plot graphs
     if plot:
-        x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
-
         # Prediction performances after removing high or low values
-        plt.figure(figsize=(6, 7.5))
-        plt.plot(x_axis, valuable_list[:num_bins], "o-")
-        plt.plot(x_axis, unvaluable_list[:num_bins], "x-")
+        plot.plot(x_axis, valuable_list[:num_bins], "o-")
+        plot.plot(x_axis, unvaluable_list[:num_bins], "x-")
 
-        plt.xlabel("Fraction of Removed Samples", size=16)
-        plt.ylabel(metric_name, size=16)
-        plt.legend(
-            ["Removing low value data", "Removing high value data"], prop={"size": 16}
-        )
-        plt.title("Remove High/Low Valued Samples", size=16)
+        plot.set_xlabel("Fraction Removed")
+        plot.set_ylabel(metric_name)
+        plot.legend(["Removing low value data", "Removing high value data"])
 
-        plt.show()
+        plot.set_title(evaluator.plot_title)
 
-    return valuable_list, unvaluable_list
+    return eval_results
 
 
 def discover_corrupted_sample(
     evaluator: DataEvaluator,
-    noisy_index: np.ndarray,
-    percentile_increment: float = 0.05,
-    plot: bool = True,
-):
-    """Repeatedly explores ``percentile_increment`` of the data values and determines
+    loader: DataLoader,
+    percentile: float = 0.05,
+    plot: Axes = None,
+) -> dict[str, list[float]]:
+    """Repeatedly explores ``percentile`` of the data values and determines
     if within that total percentile, what proportion of the noisy indices are found.
 
     Parameters
     ----------
     evaluator : DataEvaluator
-        Data Evaluator
-    noisy_index : np.ndarray
-        Indices with noise added to them from DataLoader.
-    percentile_increment : float, optional
-        Percentile of data points to add each iteration, by default .05
-    plot : bool, optional
-        Whether to plot the data, by default True, by default True
+        DataEvaluator to be tested
+    loader : DataLoader
+        DataLoader containing noisy indices
+    percentile : float, optional
+        Percentile of data points to additionally search per iteration, by default .05
+    plot : Axes, optional
+        Matplotlib Axes to plot data output, by default None, by default None
 
     Returns
     -------
-    list[float]
-        Proportion of noisy indices found at each interval
+    Dict[str, list[float]]
+        dict containing list of the proportion of noisy indices found after exploring
+        the (i * percentile) least valuable data points. If plot is not None,
+        also returns optimal and random search performances as lists
     """
-    (x_train, y_train), (x_valid, y_valid) = evaluator.get_data_points()
+    x_train, *_ = loader.datapoints
+    noisy_indices = loader.noisy_indices
     data_values = evaluator.evaluate_data_values()
 
     num_sample = len(x_train)
-    num_period = max(round(num_sample * percentile_increment), 5)  # Add at least 5/bin
+    num_period = max(round(num_sample * percentile), 5)  # Add at least 5 per bin
     num_bins = int(num_sample // num_period) + 1
 
-    sorted_value_list = np.argsort(data_values)  # Order descending
-    noise_rate = len(noisy_index) / len(data_values)
+    sorted_value_list = np.argsort(data_values, kind="stable")  # Order descending
+    noise_rate = len(noisy_indices) / len(data_values)
 
     # Output initialization
     found_rates = []
@@ -266,28 +274,31 @@ def discover_corrupted_sample(
     for bin_index in range(0, num_sample + num_period, num_period):
         # from low to high data values
         found_rates.append(
-            len(np.intersect1d(sorted_value_list[:bin_index], noisy_index))
-            / len(noisy_index)
+            len(np.intersect1d(sorted_value_list[:bin_index], noisy_indices))
+            / len(noisy_indices)
         )
 
-    # Plot corrupted label discovery graphs
-    if plot:
-        x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
+    x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
+    eval_results = {"corrupt_found": found_rates, "axis": x_axis}
 
+    # Plot corrupted label discovery graphs
+    if plot is not None:
         # Corrupted label discovery results (dvrl, optimal, random)
         y_dv = found_rates[:num_bins]
         y_opt = [min((a * (1.0 / num_bins / noise_rate), 1.0)) for a in range(num_bins)]
         y_random = x_axis
 
-        plt.figure(figsize=(6, 7.5))
-        plt.plot(x_axis, y_dv, "o-")
-        plt.plot(x_axis, y_opt, "--")
-        plt.plot(x_axis, y_random, ":")
-        plt.xlabel("Fraction of data Inspected", size=16)
-        plt.ylabel("Fraction of discovered corrupted samples", size=16)
-        plt.legend(["Evaluator", "Optimal", "Random"], prop={"size": 16})
-        plt.title("Corrupted Sample Discovery", size=16)
-        plt.show()
+        eval_results["optimal"] = y_opt
+        eval_results["random"] = y_random
+
+        plot.plot(x_axis, y_dv, "o-")
+        plot.plot(x_axis, y_opt, "--")
+        plot.plot(x_axis, y_random, ":")
+        plot.set_xlabel("Prop of data inspected")
+        plot.set_ylabel("Prop of discovered corrupted samples")
+        plot.legend(["Evaluator", "Optimal", "Random"])
+
+        plot.set_title(evaluator.plot_title)
 
     # Returns True Positive Rate of corrupted label discovery
-    return found_rates
+    return eval_results
