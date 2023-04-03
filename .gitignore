@@ -87,4 +87,5 @@ data_files/
 tmp_*/
 tmp/
 docs/
+csv/
 kaggle.json
