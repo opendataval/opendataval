@@ -223,7 +223,7 @@ class ShapEvaluator(DataEvaluator, ABC):
             self.marginal_count[cutoff, idx] += 1
 
             # if a new increment is not large enough, we terminate the valuation.
-            distance = np.abs(curr_perf - prev_perf) / np.sum(marginal_increment)
+            distance = abs(curr_perf - prev_perf) / np.sum(marginal_increment)
 
             # update prev_perf
             prev_perf = curr_perf
