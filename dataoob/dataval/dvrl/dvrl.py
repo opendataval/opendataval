@@ -190,7 +190,7 @@ class DVRL(DataEvaluator):
             sel_prob_weight = torch.bernoulli(pred_dataval, generator=gen)
             # Exception (When selection probability is 0)
             if torch.sum(sel_prob_weight) == 0:
-                pred_dataval = 0.5 * torch.ones(pred_dataval.size())
+                pred_dataval = 0.5 * torch.ones_like(pred_dataval)
                 sel_prob_weight = torch.bernoulli(pred_dataval, generator=gen)
             sel_prob_weight = sel_prob_weight.detach()
 
@@ -208,8 +208,8 @@ class DVRL(DataEvaluator):
 
             # Trains the VE
             loss = criterion(pred_dataval, sel_prob_weight, reward_curr)
-            if loss.item() == 0.0:
-                # In the case where reward_crr == 0, meaning performance is same
+            if abs(loss.item()) < 1e-6:
+                # In the case where reward_crr ~ 0, meaning performance is same
                 # as validation such as when the accuracy is all predicting one label
                 continue
             loss.backward(retain_graph=True)

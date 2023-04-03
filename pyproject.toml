@@ -32,7 +32,9 @@ dependencies = [
     "torch~=2.0.0",
     "torchvision~=0.14",
     "tqdm~=4.64",
-    "opendatasets~=0.1.22"
+    "opendatasets~=0.1.22",
+    "jupyterlab~=3.6.1",
+    "notebook~=6.5.2"
 ]
 dynamic = ["version"]
 
