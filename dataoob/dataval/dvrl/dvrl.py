@@ -171,12 +171,7 @@ class DVRL(DataEvaluator):
 
         dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
         gen = torch.Generator(self.device).manual_seed(self.random_state.tomaxint())
-        rs = RandomSampler(
-            dataset,
-            replacement=True,
-            num_samples=self.rl_epochs * batch_size,
-            generator=gen,
-        )
+        rs = RandomSampler(dataset, True, self.rl_epochs * batch_size, generator=gen)
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
             DataLoader(dataset, sampler=rs, batch_size=batch_size, generator=gen)
@@ -187,18 +182,16 @@ class DVRL(DataEvaluator):
             pred_dataval = self.value_estimator(x_batch, y_batch, y_hat_batch)
 
             # Samples the selection probability
-            sel_prob_weight = torch.bernoulli(pred_dataval, generator=gen)
-            # Exception (When selection probability is 0)
-            if torch.sum(sel_prob_weight) == 0:
+            select_prob = torch.bernoulli(pred_dataval, generator=gen)
+
+            if select_prob.sum().item() == 0:  # Exception (select probability is 0)
                 pred_dataval = 0.5 * torch.ones_like(pred_dataval)
-                sel_prob_weight = torch.bernoulli(pred_dataval, generator=gen)
-            sel_prob_weight = sel_prob_weight.detach()
+                select_prob = torch.bernoulli(pred_dataval, generator=gen)
+            select_prob = select_prob.detach()
 
             # Prediction and training
             new_model = copy.deepcopy(self.pred_model)
-            new_model.fit(
-                x_batch, y_batch, *args, sample_weight=sel_prob_weight, **kwargs
-            )
+            new_model.fit(x_batch, y_batch, *args, sample_weight=select_prob, **kwargs)
 
             # Reward computation
             y_valid_hat = new_model.predict(self.x_valid)
@@ -207,7 +200,7 @@ class DVRL(DataEvaluator):
             reward_curr = dvrl_perf - self.valid_perf
 
             # Trains the VE
-            loss = criterion(pred_dataval, sel_prob_weight, reward_curr)
+            loss = criterion(pred_dataval, select_prob, reward_curr)
             if abs(loss.item()) < 1e-6:
                 # In the case where reward_crr ~ 0, meaning performance is same
                 # as validation such as when the accuracy is all predicting one label
@@ -215,17 +208,13 @@ class DVRL(DataEvaluator):
             loss.backward(retain_graph=True)
             optimizer.step()
 
-        final_data_value_weights = self.value_estimator(
-            self.x_train, self.y_train, self.y_pred_diff
-        ).detach()
         # Trains final model
+        final_prob = self.value_estimator(self.x_train, self.y_train, self.y_pred_diff)
+        final_prob = final_prob.detach()
         self.final_model.fit(
-            self.x_train,
-            self.y_train,
-            sample_weight=final_data_value_weights,
-            *args,
-            **kwargs,
+            self.x_train, self.y_train, *args, sample_weight=final_prob, **kwargs
         )
+
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
@@ -243,7 +232,8 @@ class DVRL(DataEvaluator):
         )
 
         # Estimates data value
-        final_data_value = self.value_estimator(self.x_train, self.y_train, y_hat)
+        with torch.no_grad():  # No dropout layers so no need to set to eval
+            final_data_value = self.value_estimator(self.x_train, self.y_train, y_hat)
 
         return torch.squeeze(final_data_value).numpy(force=True)
 
@@ -380,7 +370,7 @@ class DveLoss(nn.Module):
         pred_dataval: torch.Tensor,
         selector_input: torch.Tensor,
         reward_input: float,
-    ):
+    ) -> torch.Tensor:
         """Computes the loss for the Value Estimator, uses the reward signal from the
         prediction model, BCE loss, and whether Value Estimator is getting stuck
         outside of the threshold bounds

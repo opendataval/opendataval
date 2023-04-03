@@ -36,8 +36,13 @@ class Model(ABC):
             by default None
         kwargs : dict[str, Any]
             Addition key word args
+
+        Returns
+        -------
+        self : object
+            Returns self for api consistency with sklearn.
         """
-        pass
+        return self
 
     @abstractmethod
     def predict(self, x: torch.Tensor | Dataset, *args, **kwargs) -> torch.Tensor:
@@ -88,6 +93,7 @@ class BinaryClassifierNNMixin(Model, nn.Module):
         criterion = F.binary_cross_entropy
         dataset = CatDataset(x_train, y_train, sample_weight)
 
+        self.train()
         for _ in range(int(epochs)):
             # *weights helps check if we passed weights into the Dataloader
             for x_batch, y_batch, *weights in DataLoader(dataset, batch_size):
@@ -101,6 +107,8 @@ class BinaryClassifierNNMixin(Model, nn.Module):
 
                 loss.backward()  # Compute gradient
                 optimizer.step()  # Updates weights
+
+        return self
 
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
         """Predicts output from input tensor/data set
@@ -117,7 +125,9 @@ class BinaryClassifierNNMixin(Model, nn.Module):
         """
         if isinstance(x, Dataset):
             x = next(iter(DataLoader(x, batch_size=len(x))))
-        y_hat = self.forward(x)
+        self.eval()
+        with torch.no_grad():
+            y_hat = self.forward(x)
         return y_hat
 
 
@@ -152,6 +162,7 @@ class ClassifierNNMixin(Model, nn.Module):
         criterion = F.cross_entropy
         dataset = CatDataset(x_train, y_train, sample_weight)
 
+        self.train()
         for _ in range(int(epochs)):
             # *weights helps check if we passed weights into the Dataloader
             for x_batch, y_batch, *weights in DataLoader(dataset, batch_size):
@@ -167,6 +178,7 @@ class ClassifierNNMixin(Model, nn.Module):
 
                 loss.backward()  # Compute gradient
                 optimizer.step()  # Updates weights
+        return self
 
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
         """Predicts output from input tensor/data set
@@ -183,7 +195,10 @@ class ClassifierNNMixin(Model, nn.Module):
         """
         if isinstance(x, Dataset):
             x = next(iter(DataLoader(x, batch_size=len(x))))
-        y_hat = self.forward(x)
+
+        self.eval()
+        with torch.no_grad():
+            y_hat = self.forward(x)
         return y_hat
 
 
@@ -269,6 +284,8 @@ class ClassifierSkLearnWrapper(Model):
         else:
             self.model.fit(x_train, y_train, sample_weight=None, *args, **kwargs)
 
+        return self
+
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
         """Predicts labels from sk-learn model"""
         # Extracts the input into a cpu tensor
@@ -350,3 +367,5 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
             self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
         else:
             self.model.fit(x_train, y_train, *args, **kwargs)
+
+        return self
