@@ -1,49 +1,254 @@
-import sklearn.metrics as metrics
+from numpy.random import RandomState
 import torch
+import pandas as pd
+from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from dataclasses import dataclass, field, asdict
+from sklearn.utils import check_random_state
 
-from dataoob.dataloader.data_loader import DataLoader
+from dataoob.dataloader.loader import DataLoader, mix_labels
 from dataoob.dataval import DataEvaluator
+from dataoob.model import Model
+import math
 
-metrics_dict = {
-    "accuracy": lambda a, b: metrics.accuracy_score(
-        a.detach().cpu()[:, 1], torch.argmax(b.detach().cpu(), axis=1)
-    )
-}  # Maybe have some nice dataclasses to organize data loading kwargs, training kwargs
-# Like have training kwarg, when you define the model
-# an devaluating kwargs, evaluator kwargs
+from typing import Any, Callable
+
+
+def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
+    return (torch.argmax(a, axis=1) == torch.argmax(b, axis=1)).float().mean().item()
+
+
+metrics_dict = {  # TODO add metrics and change this implementation
+    "accuracy": accuracy_metric,
+    "l2": lambda a, b: torch.square(a - b).sum().sqrt().item(),
+    "mse": lambda a, b: torch.square(a - b).mean().item(),
+}
+
+
+@dataclass
+class DataLoaderArgs:
+    dataset: str
+    force_download: bool = False
+    device: torch.device = (torch.device("cpu"),)
+    random_state: RandomState = None
+
+    train_count: int | float = 0
+    valid_count: int | float = 0
+
+    noise_kwargs: dict[str, Any] = field(default_factory=dict)
+    add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels
+
+
+@dataclass
+class DataEvaluatorArgs:
+    pred_model: Model
+    metric_name: str = "accuracy"
+    train_kwargs: dict[str, Any] = field(default_factory=dict)
+
+
 class EvaluatorPipeline:
+    """Sets up an experiment to compare a group of DataEvaluators
+
+    Parameters
+    ----------
+    loader : DataLoader
+        DataLoader for the data set used for the experiment. All `exper_func` take a
+        DataLoader as an argument to have access to all data points and noisy indices.
+    data_evaluators : list[DataEvaluator]
+        List of DataEvaluators to be tested by `exper_func`
+    pred_model : Model
+        Prediction model for the DataEvaluators
+    metric_name : str, optional
+        Name of the performance metric used to evaluate the performance of the
+        prediction model, must be string for better labeling, by default "accuracy"
+    train_kwargs : dict[str, Any], optional
+        Training key word arguments for the prediction model, by default None
+    """
+
     def __init__(
         self,
-        dataset: str,
-        noisy_rate: float,
-        pred_model,
-        metric: str,
+        loader: DataLoader,
         data_evaluators: list[DataEvaluator],
-        device: torch.device = torch.device("cpu"),
-        batch_size=32,
-        epochs=10,
+        pred_model: Model,
+        metric_name: str = "accuracy",
+        train_kwargs: dict[str, Any] = None,
     ):
-        force_redownload = False
-        (
-            (x_train, y_train),
-            (x_valid, y_valid),
-            (xt, yt),
-            self.noisy_indices,
-        ) = DataLoader(dataset, force_redownload, 100, 50, 0, noisy_rate, device)
+        self.loader = loader
+        self.train_kwargs = {} if train_kwargs is None else train_kwargs
+        self.metric_name = metric_name
+        self.data_evaluators = []
 
-        self.metric = metric
-        self.data_evaluators = data_evaluators
+        for data_val in data_evaluators:
+            try:
+                self.data_evaluators.append(
+                    data_val.input_model_metric(pred_model, metrics_dict[metric_name])
+                    .input_dataloader(loader)
+                    .train_data_values(**self.train_kwargs)
+                )
+
+            except Exception as ex:
+
+                import warnings
+                import traceback
+
+                warnings.warn(
+                    f"""
+                    An error occured during training, however training all evaluators
+                    takes a long time, so we will be ignoring the evaluator:
+                    {data_val.plot_title} and proceeding.
+
+                    The error is as follows: {str(ex)}
+                    The traceback is: \n{traceback.format_tb(ex.__traceback__)}
+                """
+                )
+
+        self.num_data_eval = len(self.data_evaluators)
+
+    @staticmethod
+    def create_dataloader(
+        dataset: str,
+        force_download: bool = False,
+        train_count: int | float = 0,
+        valid_count: int | float = 0,
+        noise_kwargs: dict[str, Any] = None,
+        add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels,
+        device: torch.device = torch.device("cpu"),
+        random_state: RandomState = None,
+        pred_model: Model = None,
+        metric_name: str = "accuracy",
+        train_kwargs: dict[str, Any] = None,
+        data_evaluators: list[DataEvaluator] = None,
+    ):
+        """Creates a DataLoader from args and passes it into the init"""
+        random_state = check_random_state(random_state)
+
+        loader = (
+            DataLoader(dataset, force_download, device, random_state)
+            .split_dataset(train_count, valid_count)
+            .noisify(add_noise_func, **noise_kwargs)
+        )
+
+        return EvaluatorPipeline(
+            loader, data_evaluators, pred_model, metric_name, train_kwargs
+        )
+
+    @staticmethod
+    def setup(
+        loader_args: DataLoaderArgs,
+        data_evaluator_args: DataEvaluatorArgs,
+        data_evaluators: list[DataEvaluator] = None,
+    ):
+        """Creates EvaluatorPipeline from dataclass arg wrappers"""
+        return EvaluatorPipeline.create_dataloader(
+            data_evaluators=data_evaluators,
+            **(asdict(loader_args) | asdict(data_evaluator_args)),
+        )
+
+    def evaluate(
+        self,
+        exper_func: Callable[[DataEvaluator, DataLoader, ...], dict[str, Any]],
+        include_train: bool = False,
+        **exper_kwargs,
+    ) -> pd.DataFrame:
+        """Runs an experiment on a list of pre-train DataEvaluators and their
+        corresponding dataset and returns a DataFrame of the results
+
+        Parameters
+        ----------
+        exper_func : Callable[[DataEvaluator, DataLoader, ...], dict[str, Any]]
+            Experiment function, runs an experiment on a DataEvaluator and the data of
+            the DataLoader associated. Output must be a dict with results of the
+            experiment. NOTE, the results must all be <= 1 dimensional but does not
+            need to be the same length.
+        include_train : bool, optional
+            Whether to pass to exper_func the training kwargs defined for the
+            EvaluatorPipeline. If True, also passes in metric_name, by default False
+        eval_kwargs : dict[str, Any], optional
+            Additional key word arguments to be passed to the exper_func
+
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing the results for each DataEvaluator experiment.
+            DataFrame is indexed: [result_title, DataEvaluator.plot_title]
+            Any 1-D experiment result is expanded into columns: list(range(len(result)))
+
+            To get the results by result_title, df.loc[result_title]
+            To get the results by DataEvaluator, use df.ax(plot_title, level=1)
+        """
+        data_eval_perf = {}
+        if include_train:
+            # All methods that train the underlying model track the model performance
+            exper_kwargs["train_kwargs"] = self.train_kwargs
+            exper_kwargs["metric_name"] = self.metric_name
 
         for data_val in self.data_evaluators:
-            # TODO this could be a blast zone, wrap this in something
-            data_val.input_model_metric(pred_model, metrics_dict[metric])
-            data_val.train(x_train, y_train, x_valid, y_valid)
+            eval_resp = exper_func(data_val, self.loader, **exper_kwargs)
+            data_eval_perf[data_val.plot_title] = eval_resp
 
-    def evaluate(self, evaluator, **eval_kwargs):
-        res = []
-        for data_val in self.data_evaluators:
-            res.append(evaluator(data_val, noisy_index=self.noisy_indices))
-        return res
+        # index=[result_title, plot_title] columns=[range(len(axis))]
+        return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series)
 
-    def plot(self):
-        pass
+    def plot(
+        self,
+        exper_func: Callable[[DataEvaluator, DataLoader, Axes, ...], dict[str, Any]],
+        fig: Figure = None,
+        row: int = None,
+        col: int = 2,
+        include_train: bool = False,
+        **exper_kwargs,
+    ) -> tuple[pd.DataFrame, Figure]:
+        """Runs an experiment on a list of pre-train DataEvaluators and their
+        corresponding dataset and plots the result
+
+        Parameters
+        ----------
+        exper_func : Callable[[DataEvaluator, DataLoader, Axes, ...], dict[str, Any]]
+            Experiment function, runs an experiment on a DataEvaluator and the data of
+            the DataLoader associated. Output must be a dict with results of the
+            experiment. NOTE, the results must all be <= 1 dimensional but does not
+            need to be the same length.
+        fig : Figure, optional
+            MatPlotLib Figure which each experiment result is plotted, by default None
+        row : int, optional
+            Number of rows of subplots in the plot, by default set to num_evaluators/col
+        col : int, optional
+            Number of columns of subplots in the plot, by default 2
+        include_train : bool, optional
+             Whether to pass to exper_func the training kwargs defined for the
+            EvaluatorPipeline. If True, also passes in metric_name, by default False
+
+        Returns
+        -------
+        tuple[pd.DataFrame, Figure]
+            DataFrame containing the results for each DataEvaluator experiment.
+            DataFrame is indexed: [result_title, DataEvaluator.plot_title]
+            Any 1-D experiment result is expanded into columns: list(range(len(result)))
+
+            To get the results by result_title, df.loc[result_title]
+            To get the results by DataEvaluator, use df.ax(plot_title, level=1)
+
+            Figure is a plotted version of the results dict.
+        """
+        if fig is None:
+            fig = plt.figure(figsize=(15, 15))
+
+        if not row:
+            row = math.ceil(self.num_data_eval / col)
+
+        data_eval_perf = {}
+        if include_train:
+            # All methods that train the underlying model track the model performance
+            exper_kwargs["train_kwargs"] = self.train_kwargs
+            exper_kwargs["metric_name"] = self.metric_name
+
+        for i, data_val in enumerate(self.data_evaluators, start=1):
+            plot = fig.add_subplot(row, col, i)
+            eval_resp = exper_func(data_val, self.loader, plot=plot, **exper_kwargs)
+
+            data_eval_perf[data_val.plot_title] = eval_resp
+
+        # index=[result_title, plot_title] columns=[range(len(axis))]
+        return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series), fig
