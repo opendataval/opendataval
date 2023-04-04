@@ -30,11 +30,11 @@ metrics_dict = {  # TODO add metrics and change this implementation
 class DataLoaderArgs:
     dataset: str
     force_download: bool = False
-    device: torch.device = (torch.device("cpu"),)
+    device: torch.device = torch.device("cpu")
     random_state: RandomState = None
 
-    train_count: int | float = 0
-    valid_count: int | float = 0
+    train_count: int | float = 0.8  # 80-20 split is relatively standard
+    valid_count: int | float = 0.2
 
     noise_kwargs: dict[str, Any] = field(default_factory=dict)
     add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels
@@ -43,11 +43,19 @@ class DataLoaderArgs:
 @dataclass
 class DataEvaluatorArgs:
     pred_model: Model
-    metric_name: str = "accuracy"
     train_kwargs: dict[str, Any] = field(default_factory=dict)
+    metric_name: str = "accuracy"
 
 
-class EvaluatorPipeline:
+@dataclass
+class DataEvaluatorFactoryArgs:
+    pred_model_factory: Callable[[int, int, torch.device], Model]
+    train_kwargs: dict[str, Any] = field(default_factory=dict)
+    metric_name: str = "accuracy"
+    device: torch.device = torch.device("cpu")
+
+
+class ExperimentMediator:
     """Sets up an experiment to compare a group of DataEvaluators
 
     Parameters
@@ -71,8 +79,8 @@ class EvaluatorPipeline:
         loader: DataLoader,
         data_evaluators: list[DataEvaluator],
         pred_model: Model,
-        metric_name: str = "accuracy",
         train_kwargs: dict[str, Any] = None,
+        metric_name: str = "accuracy",
     ):
         self.loader = loader
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
@@ -116,12 +124,13 @@ class EvaluatorPipeline:
         device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
         pred_model: Model = None,
-        metric_name: str = "accuracy",
         train_kwargs: dict[str, Any] = None,
+        metric_name: str = "accuracy",
         data_evaluators: list[DataEvaluator] = None,
     ):
         """Creates a DataLoader from args and passes it into the init"""
         random_state = check_random_state(random_state)
+        noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
         loader = (
             DataLoader(dataset, force_download, device, random_state)
@@ -129,8 +138,12 @@ class EvaluatorPipeline:
             .noisify(add_noise_func, **noise_kwargs)
         )
 
-        return EvaluatorPipeline(
-            loader, data_evaluators, pred_model, metric_name, train_kwargs
+        return ExperimentMediator(
+            loader=loader,
+            data_evaluator=data_evaluators,
+            pred_model=pred_model,
+            train_kwargs=train_kwargs,
+            metric_name=metric_name,
         )
 
     @staticmethod
@@ -139,10 +152,41 @@ class EvaluatorPipeline:
         data_evaluator_args: DataEvaluatorArgs,
         data_evaluators: list[DataEvaluator] = None,
     ):
-        """Creates EvaluatorPipeline from dataclass arg wrappers"""
-        return EvaluatorPipeline.create_dataloader(
+        """Creates ExperimentMediator from dataclass arg wrappers"""
+        return ExperimentMediator.create_dataloader(
             data_evaluators=data_evaluators,
             **(asdict(loader_args) | asdict(data_evaluator_args)),
+        )
+
+    @staticmethod
+    def preset_setup(
+        loader_args: DataLoaderArgs,
+        de_factory_args: DataEvaluatorFactoryArgs,
+        data_evaluators: list[DataEvaluator] = None,
+    ):
+        """Creates ExperimentMediator from presets, infers input/output dimensions"""
+        rs = check_random_state(loader_args.random_state)
+
+        if loader_args.device != de_factory_args.device:
+            raise Exception("All tensors must be on same device")
+        device = loader_args.device
+
+        loader = (
+            DataLoader(loader_args.dataset, loader_args.force_download, device, rs)
+            .split_dataset(loader_args.train_count, loader_args.valid_count)
+            .noisify(loader_args.add_noise_func, **loader_args.noise_kwargs)
+        )
+
+        covar_dim = len(loader.x_train[0])
+        label_dim = loader.y_train.shape[1] if loader.y_train.ndim == 2 else 1
+        pred_model = de_factory_args.pred_model_factory(covar_dim, label_dim, device)
+
+        return ExperimentMediator(
+            loader=loader,
+            data_evaluators=data_evaluators,
+            pred_model=pred_model,
+            train_kwargs=de_factory_args.train_kwargs,
+            metric_name=de_factory_args.metric_name,
         )
 
     def evaluate(
@@ -163,7 +207,7 @@ class EvaluatorPipeline:
             need to be the same length.
         include_train : bool, optional
             Whether to pass to exper_func the training kwargs defined for the
-            EvaluatorPipeline. If True, also passes in metric_name, by default False
+            ExperimentMediator. If True, also passes in metric_name, by default False
         eval_kwargs : dict[str, Any], optional
             Additional key word arguments to be passed to the exper_func
 
@@ -194,7 +238,7 @@ class EvaluatorPipeline:
     def plot(
         self,
         exper_func: Callable[[DataEvaluator, DataLoader, Axes, ...], dict[str, Any]],
-        fig: Figure = None,
+        figure: Figure = None,
         row: int = None,
         col: int = 2,
         include_train: bool = False,
@@ -217,8 +261,10 @@ class EvaluatorPipeline:
         col : int, optional
             Number of columns of subplots in the plot, by default 2
         include_train : bool, optional
-             Whether to pass to exper_func the training kwargs defined for the
-            EvaluatorPipeline. If True, also passes in metric_name, by default False
+            Whether to pass to exper_func the training kwargs defined for the
+            ExperimentMediator. If True, passes in metric_name, by default False
+        eval_kwargs : dict[str, Any], optional
+            Additional key word arguments to be passed to the exper_func
 
         Returns
         -------
@@ -232,8 +278,8 @@ class EvaluatorPipeline:
 
             Figure is a plotted version of the results dict.
         """
-        if fig is None:
-            fig = plt.figure(figsize=(15, 15))
+        if figure is None:
+            figure = plt.figure(figsize=(15, 15))
 
         if not row:
             row = math.ceil(self.num_data_eval / col)
@@ -245,10 +291,10 @@ class EvaluatorPipeline:
             exper_kwargs["metric_name"] = self.metric_name
 
         for i, data_val in enumerate(self.data_evaluators, start=1):
-            plot = fig.add_subplot(row, col, i)
+            plot = figure.add_subplot(row, col, i)
             eval_resp = exper_func(data_val, self.loader, plot=plot, **exper_kwargs)
 
             data_eval_perf[data_val.plot_title] = eval_resp
 
         # index=[result_title, plot_title] columns=[range(len(axis))]
-        return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series), fig
+        return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series), figure
