@@ -80,12 +80,11 @@ class DataBanzhaf(DataEvaluator):
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
-        num_subsets = self.random_state.binomial(
-            1, 0.5, size=(self.samples, self.num_points)
-        )
+        sample_dim = (self.samples, self.num_points)
+        subsets = self.random_state.binomial(1, 0.5, size=sample_dim)
 
         for i in tqdm.tqdm(range(self.samples)):
-            subset = num_subsets[i].nonzero()[0]
+            subset = subsets[i].nonzero()[0]
 
             curr_model = copy.deepcopy(self.pred_model)
             curr_model.fit(
@@ -97,8 +96,8 @@ class DataBanzhaf(DataEvaluator):
             y_valid_hat = curr_model.predict(self.x_valid)
 
             curr_perf = self.evaluate(self.y_valid, y_valid_hat)
-            self.sample_utility[range(self.num_points), num_subsets[i]] += curr_perf
-            self.sample_counts[range(self.num_points), num_subsets[i]] += 1
+            self.sample_utility[range(self.num_points), subsets[i]] += curr_perf
+            self.sample_counts[range(self.num_points), subsets[i]] += 1
 
         return self
 

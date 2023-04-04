@@ -62,11 +62,11 @@ class DataLoader:
         if isinstance(self.covar, Dataset):
             x_train, x_valid = self.x_train, self.x_valid
         else:
-            x_train = torch.tensor(self.x_train).to(self.device, dtype=torch.float)
-            x_valid = torch.tensor(self.x_valid).to(self.device, dtype=torch.float)
+            x_train = torch.tensor(self.x_train, device=self.device, dtype=torch.float)
+            x_valid = torch.tensor(self.x_valid, device=self.device, dtype=torch.float)
 
-        y_train = torch.tensor(self.y_train).to(self.device, dtype=torch.float)
-        y_valid = torch.tensor(self.y_valid).to(self.device, dtype=torch.float)
+        y_train = torch.tensor(self.y_train, device=self.device, dtype=torch.float)
+        y_valid = torch.tensor(self.y_valid, device=self.device, dtype=torch.float)
 
         return x_train, y_train, x_valid, y_valid
 

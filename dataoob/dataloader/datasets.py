@@ -5,6 +5,7 @@ from urllib.request import urlretrieve
 import numpy as np
 import pandas as pd
 import sklearn.datasets as ds
+from sklearn.preprocessing import minmax_scale
 from torch.utils.data import Dataset
 import opendatasets as od
 
@@ -130,7 +131,7 @@ class Register:
     def from_covar_label_func(self, func: DatasetCallable) -> DatasetCallable:
         """Allows data set to be registered from Callable -> (covariates, labels)"""
         self.covar_label_func = func
-        return func
+        return Self
 
     def from_covar_func(self, func: DatasetCallable) -> DatasetCallable:
         """Allows data set to be registered from 2 Callables, registers covariates"""
@@ -142,7 +143,7 @@ class Register:
         self.label_func = func
         return func
 
-    def add_covariate_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
+    def add_covar_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
         """Applies transform to covariates after it is loaded"""
         self.covar_transform = transform
         return self
@@ -189,7 +190,7 @@ class Register:
 
 
 @Register("gaussian_classifier", categorical=True).from_covar_label_func
-def gaussian_classifier(n=10000, input_dim=10):
+def gaussian_classifier(n: int = 10000, input_dim: int = 10):
     covar = np.random.normal(size=(n, input_dim))
 
     beta_true = np.random.normal(size=input_dim).reshape(input_dim, 1)
@@ -202,13 +203,9 @@ def gaussian_classifier(n=10000, input_dim=10):
 
 @Register("adult", categorical=True, cacheable=True).from_covar_label_func
 def download_adult(cache_dir: str, force_download: bool = False):
-    uci_base_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
-    train_url = cache(
-        uci_base_url + "/adult.data", cache_dir, "train.csv", force_download
-    )
-    test_url = cache(
-        uci_base_url + "/adult.test", cache_dir, "test.csv", force_download
-    )
+    uci_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
+    train_url = cache(uci_url + "/adult.data", cache_dir, "train.csv", force_download)
+    test_url = cache(uci_url + "/adult.test", cache_dir, "test.csv", force_download)
 
     data_train = pd.read_csv(train_url, header=None)
     data_test = pd.read_csv(test_url, skiprows=1, header=None)
@@ -287,7 +284,7 @@ def download_digits():
     return ds.load_digits(return_X_y=True)
 
 
-@Register("breast_cancer", categorical=True).from_covar_label_func
+@Register("breast_cancer", True).add_covar_transform(minmax_scale).from_covar_label_func
 def download_breast_cancer():
     return ds.load_breast_cancer(return_X_y=True)
 
@@ -299,9 +296,17 @@ def download_election(cache_dir: str, force_download: bool):
 
     dataset_url = "https://www.kaggle.com/tunguz/us-elections-dataset"
     od.download(dataset_url, data_dir=cache_dir, force=force_download)
+
     df = pd.read_csv(f"{cache_dir}/us-elections-dataset/1976-2020-president.csv")
-    print(df.head(5))
-    return df, df
+    df = df.drop(
+        ["notes", "party_detailed", "candidate", "state_po", "version", "office"],
+        axis=1,
+    )
+    df = pd.get_dummies(df, columns=["state"])
+
+    covar = df.drop("party_simplified", axis=1).astype("float").values
+    labels = df["party_simplified"].astype("category").cat.codes.values
+    return covar, labels
 
 
 # Alternative registration methods, should only be used on ad-hoc basis

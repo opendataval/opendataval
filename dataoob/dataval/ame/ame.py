@@ -72,11 +72,12 @@ class AME(DataEvaluator):
         np.ndarray
             Predicted data values/selection for every training data point
         """
-        standard_subsets = zscore(self.subsets, axis=1)
+        norm_subsets = zscore(self.subsets, axis=1)
+        norm_subsets[np.isnan(norm_subsets)] = 0  # For when all elements are the same
         centered_perf = self.performance - np.mean(self.performance)
 
-        dv_ame = LassoCV(fit_intercept=False)
-        dv_ame.fit(X=standard_subsets, y=centered_perf)
+        dv_ame = LassoCV()
+        dv_ame.fit(X=norm_subsets, y=centered_perf)
         return dv_ame.coef_
 
 
@@ -149,13 +150,12 @@ class BaggingEvaluator(DataEvaluator):
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
-        self.num_subsets = self.random_state.binomial(
-            1, self.proportion, size=(self.num_models, self.num_points)
-        )
+        sample_dim = (self.num_models, self.num_points)
+        self.subsets = self.random_state.binomial(1, self.proportion, size=sample_dim)
         self.performance = np.zeros((self.num_models,))
 
         for i in tqdm.tqdm(range(self.num_models)):
-            subset = self.num_subsets[i].nonzero()[0]
+            subset = self.subsets[i].nonzero()[0]
 
             curr_model = copy.deepcopy(self.pred_model)
             curr_model.fit(
@@ -180,13 +180,14 @@ class BaggingEvaluator(DataEvaluator):
         np.ndarray
             Predicted data values/selection for every training data point
         """
-        standard_subsets = zscore(self.subsets, axis=1)
-        standard_perf = self.performance - np.mean(self.performance)
+        norm_subsets = zscore(self.subsets, axis=1)
+        norm_subsets[np.isnan(norm_subsets)] = 0
+        centered_perf = self.performance - np.mean(self.performance)
 
         dv_ame = LassoCV()
-        dv_ame.fit(X=standard_subsets, y=standard_perf)
+        dv_ame.fit(X=norm_subsets, y=centered_perf)
         return dv_ame.coef_
 
     def get_subset_perf(self):
         """Returns the subsets and performance, used by AME DataEvaluator"""
-        return self.num_subsets, self.performance
+        return self.subsets, self.performance
