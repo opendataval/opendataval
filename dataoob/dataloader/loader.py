@@ -123,14 +123,17 @@ class DataLoader:
         *noise_args,
         **noise_kwargs
     ):
-        """Adds noise to the data set and saves the indices of the noisy data
+        """Adds noise to the data set and saves the indices of the noisy data.
+        Return object of `add_noise_func` is a dict with keys to signify how the
+        data are updated: {'x_train', 'y_train', 'x_test', 'y_test', 'noisy_indices'}
 
         Parameters
         ----------
         add_noise_func : Callable
             Takes as argument required arguments x_train, y_train, x_valid, y_valid
             and adds noise to those data points as needed. Returns dict[str, np.ndarray]
-            that has the updated np.ndarray in a dict to update the data loader
+            that has the updated np.ndarray in a dict to update the data loader with the
+            following keys: {'x_train', 'y_train', 'x_test', 'y_test', 'noisy_indices'}
 
         Returns
         -------

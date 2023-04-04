@@ -1,5 +1,3 @@
-import copy
-
 import numpy as np
 from matplotlib.axes import Axes
 from sklearn.cluster import KMeans
@@ -85,7 +83,7 @@ def point_addition(
     """
     x_train, y_train, x_valid, y_valid = loader.datapoints
     data_values = evaluator.evaluate_data_values()
-    curr_model = copy.deepcopy(evaluator.pred_model)
+    curr_model = evaluator.pred_model.clone()
 
     num_sample = len(data_values)
     num_period = max(round(num_sample * percentile), 5)  # Add at least 5 per bin
@@ -106,7 +104,7 @@ def point_addition(
 
         sorted_value_coalition = sorted_value_list[:bin_index]
 
-        new_model = copy.deepcopy(curr_model)
+        new_model = curr_model.clone()
         new_model.fit(
             Subset(x_train, sorted_value_coalition),
             Subset(y_train, sorted_value_coalition),
@@ -166,7 +164,7 @@ def remove_high_low(
     """
     x_train, y_train, x_valid, y_valid = loader.datapoints
     data_values = evaluator.evaluate_data_values()
-    curr_model = copy.deepcopy(evaluator.pred_model)
+    curr_model = evaluator.pred_model.clone()
 
     num_sample = len(x_train)
     num_period = max(round(num_sample * percentile), 5)  # Add at least 5/bin
@@ -182,7 +180,7 @@ def remove_high_low(
         most_valuable_indices = sorted_value_list[bin_index:]
 
         # Fitting on valuable subset
-        valuable_model = copy.deepcopy(curr_model)
+        valuable_model = curr_model.clone()
         valuable_model.fit(
             Subset(x_train, most_valuable_indices),
             Subset(y_train, most_valuable_indices),
@@ -196,7 +194,7 @@ def remove_high_low(
         least_valuable_indices = sorted_value_list[: max(num_sample - bin_index, 0)]
 
         # Fitting on unvaluable subset
-        unvaluable_model = copy.deepcopy(curr_model)
+        unvaluable_model = curr_model.clone()
         unvaluable_model.fit(
             Subset(x_train, least_valuable_indices),
             Subset(y_train, least_valuable_indices),

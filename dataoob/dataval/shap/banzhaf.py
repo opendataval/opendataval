@@ -1,5 +1,3 @@
-import copy
-
 import numpy as np
 import torch
 import tqdm
@@ -86,7 +84,7 @@ class DataBanzhaf(DataEvaluator):
         for i in tqdm.tqdm(range(self.samples)):
             subset = subsets[i].nonzero()[0]
 
-            curr_model = copy.deepcopy(self.pred_model)
+            curr_model = self.pred_model.clone()
             curr_model.fit(
                 Subset(self.x_train, indices=subset),
                 Subset(self.y_train, indices=subset),

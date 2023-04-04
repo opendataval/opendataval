@@ -1,5 +1,3 @@
-import copy
-
 import numpy as np
 import torch
 import tqdm
@@ -69,7 +67,7 @@ class LeaveOneOut(DataEvaluator):
         self.data_values = np.zeros((self.num_points,))
         indices = self.random_state.permutation(self.num_points)
 
-        curr_model = copy.deepcopy(self.pred_model)
+        curr_model = self.pred_model.clone()
 
         curr_model.fit(self.x_train, self.y_train, *args, **kwargs)
         y_valid_hat = curr_model.predict(self.x_valid)
@@ -78,7 +76,7 @@ class LeaveOneOut(DataEvaluator):
         for i in tqdm.tqdm(range(self.num_points)):
             loo_coalition = np.delete(indices, i)  # Deletes random point
 
-            curr_model = copy.deepcopy(self.pred_model)
+            curr_model = self.pred_model.clone()
             curr_model.fit(
                 Subset(self.x_train, indices=loo_coalition),
                 Subset(self.y_train, indices=loo_coalition),

@@ -1,4 +1,7 @@
+import copy
+from typing import Self
 from abc import ABC, abstractmethod
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -20,7 +23,7 @@ class Model(ABC):
         *args,
         sample_weights: torch.Tensor = None,
         **kwargs
-    ):
+    ) -> Self:
         """Fits the model on the training data
 
         Parameters
@@ -61,6 +64,18 @@ class Model(ABC):
         """
         pass
 
+    def clone(self) -> Self:
+        """Copy and returns object representing current state. We often take a base
+        model and train it several times, so we need to have the same initial conditions
+        Default clone implementation.
+
+        Returns
+        -------
+        self : object
+            Returns deep copy of model.
+        """
+        return copy.deepcopy(self)
+
 
 class BinaryClassifierNNMixin(Model, nn.Module):
     """Binary Classifier Mixin for Torch Neural Networks"""
@@ -96,7 +111,7 @@ class BinaryClassifierNNMixin(Model, nn.Module):
         self.train()
         for _ in range(int(epochs)):
             # *weights helps check if we passed weights into the Dataloader
-            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size):
+            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
                 optimizer.zero_grad()
                 outputs = self.__call__(x_batch)
 

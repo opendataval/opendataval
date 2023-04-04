@@ -4,7 +4,6 @@ import tqdm
 import torch
 
 from torch.utils.data import Subset
-import copy
 
 from dataoob.dataval import DataEvaluator
 from numpy.random import RandomState
@@ -97,7 +96,7 @@ class DataOob(DataEvaluator):
             # out_bag is the indices where the bincount is zero.
             out_bag = (np.bincount(in_bag, minlength=self.num_points) == 0).nonzero()[0]
 
-            curr_model = copy.deepcopy(self.pred_model)
+            curr_model = self.pred_model.clone()
             curr_model.fit(
                 Subset(self.x_train, indices=in_bag),
                 Subset(self.y_train, indices=in_bag),

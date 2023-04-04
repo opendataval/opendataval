@@ -1,4 +1,3 @@
-import copy
 from collections import OrderedDict
 from typing import Callable
 
@@ -128,14 +127,14 @@ class DVRL(DataEvaluator):
             Training key word arguments
         """
         # Final model
-        self.final_model = copy.deepcopy(self.pred_model)
+        self.final_model = self.pred_model.clone()
 
         # Train baseline model with input data
-        self.ori_model = copy.deepcopy(self.pred_model)
+        self.ori_model = self.pred_model.clone()
         self.ori_model.fit(self.x_train, self.y_train, *args, **kwargs)
 
         # Trains validation model
-        self.val_model = copy.deepcopy(self.ori_model)
+        self.val_model = self.ori_model.clone()
         self.val_model.fit(self.x_valid, self.y_valid, *args, **kwargs)
 
         # Eval performance
@@ -190,7 +189,7 @@ class DVRL(DataEvaluator):
             select_prob = select_prob.detach()
 
             # Prediction and training
-            new_model = copy.deepcopy(self.pred_model)
+            new_model = self.pred_model.clone()
             new_model.fit(x_batch, y_batch, *args, sample_weight=select_prob, **kwargs)
 
             # Reward computation

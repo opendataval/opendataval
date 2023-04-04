@@ -1,4 +1,3 @@
-import copy
 from abc import ABC, abstractmethod
 from typing import Callable
 
@@ -121,7 +120,7 @@ class DataEvaluator(ABC):
         self : object
             Returns a Data Evaluator.
         """
-        self.pred_model = copy.deepcopy(pred_model)
+        self.pred_model = pred_model.clone()
         self.metric = metric
 
         return self

@@ -1,4 +1,3 @@
-import copy
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -256,7 +255,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         float
             Performance of subset of training data set
         """
-        curr_model = copy.deepcopy(self.pred_model)
+        curr_model = self.pred_model.clone()
         curr_model.fit(
             Subset(self.x_train, indices=subset),
             Subset(self.y_train, indices=subset),
