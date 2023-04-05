@@ -36,12 +36,13 @@ class DataShapley(ShapEvaluator):
         model_name: str = None,
         random_state: RandomState = None,
     ):
-        super(DataShapley, self).__init__(
+        super().__init__(
             gr_threshold, max_iterations, min_samples, model_name, random_state
         )
 
     def compute_weight(self) -> float:
-        """Computes weights (uniform) for each cardinality of training set.
+        """Compute weights (uniform) for each cardinality of training set.
+
         Shapley values take a simple average of the marginal contributions across
         all different cardinalities.
 
@@ -53,9 +54,14 @@ class DataShapley(ShapEvaluator):
         return 1 / self.num_points
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Multiplies the marginal contribution with their respective weights to get
+        """Return data values for each training data point.
+
+        Multiplies the marginal contribution with their respective weights to get
         Data Shapley data values
 
-        :return np.ndarray: Predicted data values/selection for every input data point
+        Returns
+        -------
+        np.ndarray
+            Predicted data values/selection for every training data point
         """
         return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)

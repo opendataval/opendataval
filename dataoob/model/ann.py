@@ -1,13 +1,14 @@
+from collections import OrderedDict
+from typing import Callable
+
 import torch
 import torch.nn as nn
 
 from dataoob.model import BinaryClassifierNNMixin, ClassifierNNMixin
-from collections import OrderedDict
-from typing import Callable
 
 
 class ANN(ClassifierNNMixin):
-    """Initializes the Artifical Neural Network."""
+    """Initializes the Artificial Neural Network."""
 
     def __init__(
         self,
@@ -15,9 +16,11 @@ class ANN(ClassifierNNMixin):
         num_classes: int,
         layers: int = 5,
         hidden_dim: int = 25,
-        act_fn: Callable = nn.ReLU(),
+        act_fn: Callable = None,
     ):
-        super(ANN, self).__init__()
+        super().__init__()
+
+        act_fn = nn.ReLU() if act_fn is None else act_fn
 
         mlp_layers = OrderedDict()
 
@@ -36,24 +39,30 @@ class ANN(ClassifierNNMixin):
         self.mlp = nn.Sequential(mlp_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass of ANN
+        """Forward pass of Artificial Neural Network.
 
-        :param torch.Tensor x: Input tensor
-        :return torch.Tensor: Output Tensor of logistic regression
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor
+
+        Returns
+        -------
+        torch.Tensor
+            Output Tensor of ANN
         """
         x = self.mlp(x)
         return x
 
 
 class BinaryANN(BinaryClassifierNNMixin, ANN):
-    """Initializes the Binary Artificial Neural Network. BinaryClassifier is first
-    to override ANN's fit method"""
+    """Initializes the BinaryANN. BinaryClassifierNNMixin defines `.fit()`."""
 
     def __init__(
         self,
         input_dim: int,
         layers: int = 5,
         hidden_dim: int = 25,
-        act_fn: Callable = nn.ReLU(),
+        act_fn: Callable = None,
     ):
-        super(BinaryANN, self).__init__(input_dim, 2, layers, hidden_dim, act_fn)
+        super().__init__(input_dim, 2, layers, hidden_dim, act_fn)

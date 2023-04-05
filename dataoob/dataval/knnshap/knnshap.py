@@ -5,11 +5,11 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader
 
-from dataoob.dataval import DataEvaluator
+from dataoob.dataval.api import DataEvaluator
 
 
 class KNNShapley(DataEvaluator):
-    """Data valuation using KNNShapley implementation
+    """Data valuation using KNNShapley implementation.
 
     References
     ----------
@@ -39,26 +39,29 @@ class KNNShapley(DataEvaluator):
 
     @property
     def pred_model(self):
-        raise NotImplementedError("KNNShapley does not support a model")
+        """KNNShapley does not support a model."""
+        raise NotImplementedError("KNNShapley does not support a model.")
 
     def match(self, y: torch.Tensor) -> torch.Tensor:
-        """Returns :math:`1.` for all matching rows and :math:`0.` otherwise"""
+        """:math:`1.` for all matching rows and :math:`0.` otherwise."""
         return (y == self.y_valid).all(dim=1).float()
 
     def train_data_values(self):
-        """Computes KNN shapley data values, as implemented
+        """Trains model to predict data values.
+
+        Computes KNN shapley data values, as implemented
 
         References
         ----------
         .. [1] PyTorch implementation
             <https://github.com/AI-secure/Shapley-Study/blob/master/shapley/measures/KNN_Shapley.py>
         """
-        N = len(self.x_train)
-        M = len(self.x_valid)
+        n = len(self.x_train)
+        m = len(self.x_valid)
 
         # Computes Euclidean distance by computing crosswise per batch, batch_size//2
         # Doesn't shuffle to maintain relative order
-        x_train_view, x_valid_view = self.x_train.view(N, -1), self.x_valid.view(M, -1)
+        x_train_view, x_valid_view = self.x_train.view(n, -1), self.x_valid.view(m, -1)
 
         dist_list = []  # Uses batching to only load at most `batch_size` tensors
         for x_train_batch in DataLoader(x_train_view, self.batch_size):  # No shuffle
@@ -73,12 +76,12 @@ class KNNShapley(DataEvaluator):
         y_train_sort = self.y_train[sort_indices]
 
         score = torch.zeros_like(dist)
-        score[sort_indices[N - 1], range(M)] = self.match(y_train_sort[N - 1]) / N
+        score[sort_indices[m - 1], range(m)] = self.match(y_train_sort[n - 1]) / n
 
         # fmt: off
-        for i in tqdm.tqdm(range(N - 2, -1, -1)):
-            score[sort_indices[i], range(M)] = (
-                score[sort_indices[i + 1], range(M)]
+        for i in tqdm.tqdm(range(n - 2, -1, -1)):
+            score[sort_indices[i], range(m)] = (
+                score[sort_indices[i + 1], range(m)]
                 + min(self.k_neighbors, i + 1) / (self.k_neighbors * (i + 1))
                 * (self.match(y_train_sort[i]) - self.match(y_train_sort[i + 1]))
             )
@@ -88,7 +91,9 @@ class KNNShapley(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values computed from KNN Shapley
+        """Return data values for each training data point.
+
+        Compute data values using KNN Shapley data valuation
 
         Returns
         -------

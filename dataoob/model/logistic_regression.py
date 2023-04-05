@@ -6,10 +6,10 @@ from dataoob.model import BinaryClassifierNNMixin, ClassifierNNMixin
 
 
 class LogisticRegression(ClassifierNNMixin):
-    """Initializes the LogisticRegression."""
+    """Initialize LogisticRegression."""
 
     def __init__(self, input_dim: int, num_classes: int):
-        super(LogisticRegression, self).__init__()
+        super().__init__()
 
         self.input_dim = input_dim
         self.num_of_classes = num_classes
@@ -17,10 +17,17 @@ class LogisticRegression(ClassifierNNMixin):
         self.linear = nn.Linear(self.input_dim, self.num_of_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass of Logistic Regression
+        """Forward pass of Logistic Regression.
 
-        :param torch.Tensor x: Input tensor
-        :return torch.Tensor: Output Tensor of logistic regression
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor
+
+        Returns
+        -------
+        torch.Tensor
+            Output Tensor of logistic regression
         """
         x = self.linear(x)
         x = F.softmax(x, dim=1)
@@ -28,8 +35,7 @@ class LogisticRegression(ClassifierNNMixin):
 
 
 class BinaryLogisticRegression(BinaryClassifierNNMixin, LogisticRegression):
-    """Initializes the Binary Logistic Regression. BinaryClassifier is first to
-    overide LogisticRegression's fit method"""
+    """Initialize BinaryLogisticRegression. BinaryClassifierNNMixin defines `.fit()`."""
 
     def __init__(self, input_dim: int):
-        super(BinaryLogisticRegression, self).__init__(input_dim, 2)
+        super().__init__(input_dim, 2)

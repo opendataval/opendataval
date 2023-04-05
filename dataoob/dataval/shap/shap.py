@@ -8,12 +8,11 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Dataset, Subset
 
-from dataoob.dataval import DataEvaluator
+from dataoob.dataval.api import DataEvaluator
 
 
 class ShapEvaluator(DataEvaluator, ABC):
-    """ShapEvaluator is an abstract class for all shapley-based methods of
-    computing data values. Implements core computations of marginal contribution.
+    """Abstract class for all Shapley-based methods of computing data values.
 
     References
     ----------
@@ -42,7 +41,7 @@ class ShapEvaluator(DataEvaluator, ABC):
     """
 
     marg_contrib_dict = {}
-    """Cached marginal contributions"""
+    """Cached marginal contributions."""
     GR_MAX = 100
 
     def __init__(
@@ -63,11 +62,12 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     @abstractmethod
     def compute_weight(self):
-        """Computes the weights for each cardinality of training set"""
-        pass
+        """Compute the weights for each cardinality of training set."""
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Multiplies the marginal contribution with their respective weights to get
+        """Return data values for each training data point.
+
+        Multiplies the marginal contribution with their respective weights to get
         data values for semivalue-based estimators
 
         Returns
@@ -81,7 +81,7 @@ class ShapEvaluator(DataEvaluator, ABC):
     def marginal_cache(
         model_name: str, marginal_contrib: np.ndarray = None
     ) -> Optional[np.ndarray]:
-        """Caches marginal contributions based on a unique model name
+        """Cache marginal contributions based on a unique model name.
 
         Parameters
         ----------
@@ -109,7 +109,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         x_valid: torch.Tensor | Dataset,
         y_valid: torch.Tensor,
     ):
-        """Stores and transforms input data for Shapley-based predictors
+        """Store and transform input data for Shapley-based predictors.
 
         Parameters
         ----------
@@ -133,8 +133,10 @@ class ShapEvaluator(DataEvaluator, ABC):
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """Computes the marginal contributions for semivalue based data evaluators.
-        Checks MCMC convergence using Gelman-Rubin Statistic
+        """Compute the marginal contributions for semivalue based data evaluators.
+
+        Computes the marginal contribution by sampling.
+        Checks MCMC convergence every 100 iterations using Gelman-Rubin Statistic.
 
         Parameters
         ----------
@@ -169,7 +171,7 @@ class ShapEvaluator(DataEvaluator, ABC):
                 for _ in tqdm.tqdm(range(100))  # 100 random samples
             ]
             self.marginal_increment_array_stack = np.concatenate(
-                [self.marginal_increment_array_stack] + samples_array,
+                [self.marginal_increment_array_stack, *samples_array],
                 axis=0,
             )
 
@@ -186,7 +188,7 @@ class ShapEvaluator(DataEvaluator, ABC):
     def _calculate_marginal_contributions(
         self, *args, min_cardinality: int = 5, **kwargs
     ) -> np.ndarray:
-        """Computes marginal contribution through TMC-Shapley algorithm
+        """Compute marginal contribution through TMC-Shapley algorithm.
 
         Parameters
         ----------
@@ -239,7 +241,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         return marginal_increment.reshape(1, -1)
 
     def _evaluate_model(self, subset: list[int], *args, **kwargs):
-        """Evaluates performance of the model on a subset of the training data set
+        """Evaluate performance of the model on a subset of the training data set.
 
         Parameters
         ----------
@@ -268,7 +270,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         return curr_perf
 
     def _compute_gr_statistic(self, samples: np.ndarray, num_chains: int = 10) -> float:
-        """Computes Gelman-Rubin statistic of the marginal contributions
+        """Compute Gelman-Rubin statistic of the marginal contributions.
 
         References
         ----------

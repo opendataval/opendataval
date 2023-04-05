@@ -1,19 +1,19 @@
 import copy
-from typing import Self
 from abc import ABC, abstractmethod
+from typing import Self
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.dummy import DummyClassifier
-from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler, dataloader
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler, default_collate
 
 from dataoob.dataloader.util import CatDataset
 
 
 class Model(ABC):
-    """Abstract class of Models. Provides a template for models"""
+    """Abstract class of Models. Provides a template for models."""
 
     @abstractmethod
     def fit(
@@ -24,7 +24,7 @@ class Model(ABC):
         sample_weights: torch.Tensor = None,
         **kwargs
     ) -> Self:
-        """Fits the model on the training data
+        """Fits the model on the training data.
 
         Parameters
         ----------
@@ -49,7 +49,7 @@ class Model(ABC):
 
     @abstractmethod
     def predict(self, x: torch.Tensor | Dataset, *args, **kwargs) -> torch.Tensor:
-        """Predicts the label from the input covariates data
+        """Predicts the label from the input covariates data.
 
         Parameters
         ----------
@@ -62,10 +62,11 @@ class Model(ABC):
         torch.Tensor
             Output predictions based on the input
         """
-        pass
 
     def clone(self) -> Self:
-        """Copy and returns object representing current state. We often take a base
+        """Clone Model object.
+
+        Copy and returns object representing current state. We often take a base
         model and train it several times, so we need to have the same initial conditions
         Default clone implementation.
 
@@ -78,7 +79,7 @@ class Model(ABC):
 
 
 class BinaryClassifierNNMixin(Model, nn.Module):
-    """Binary Classifier Mixin for Torch Neural Networks"""
+    """Binary Classifier Mixin for Torch Neural Networks."""
 
     def fit(
         self,
@@ -88,7 +89,9 @@ class BinaryClassifierNNMixin(Model, nn.Module):
         batch_size: int = 32,
         epochs: int = 1,
     ):
-        """Fits a torch binary classifier Model object using SGD
+        """Fits the model on the training data.
+
+        Fits a torch classifier Model object using ADAM optimizer and BCELoss.
 
         Parameters
         ----------
@@ -126,7 +129,7 @@ class BinaryClassifierNNMixin(Model, nn.Module):
         return self
 
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
-        """Predicts output from input tensor/data set
+        """Predicts output from input tensor/data set.
 
         Parameters
         ----------
@@ -147,7 +150,7 @@ class BinaryClassifierNNMixin(Model, nn.Module):
 
 
 class ClassifierNNMixin(Model, nn.Module):
-    """Classifier Mixin for Torch Neural Networks"""
+    """Classifier Mixin for Torch Neural Networks."""
 
     def fit(
         self,
@@ -157,7 +160,10 @@ class ClassifierNNMixin(Model, nn.Module):
         batch_size: int = 32,
         epochs: int = 1,
     ):
-        """Fits a torch classifier Model object using SGD
+        """Fits the model on the training data.
+
+        Fits a torch classifier Model object using ADAM optimizer and cross
+        categorical entropy loss.
 
         Parameters
         ----------
@@ -196,7 +202,7 @@ class ClassifierNNMixin(Model, nn.Module):
         return self
 
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
-        """Predicts output from input tensor/data set
+        """Predicts output from input tensor/data set.
 
         Parameters
         ----------
@@ -218,12 +224,16 @@ class ClassifierNNMixin(Model, nn.Module):
 
 
 def to_cpu(tensors: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-    """Mini function to move tensor to CPU for sk-learn"""
-    return tuple(t.numpy(force=True) for t in dataloader.default_collate(tensors))
+    """Mini function to move tensor to CPU for sk-learn."""
+    return tuple(t.numpy(force=True) for t in default_collate(tensors))
 
 
 class ClassifierSkLearnWrapper(Model):
-    """Wrapper for sk-learn classifiers that can have weighted fit methods
+    """Wrapper for sk-learn classifiers that can have weighted fit methods.
+
+    Example:
+    ::
+        wrapped = ClassifierSkLearnWrapper(LinearRegression(), 2, torch.device('cuda'))
 
     Parameters
     ----------
@@ -233,11 +243,6 @@ class ClassifierSkLearnWrapper(Model):
         Label dimensionality
     device : torch.device, optional
         Device output tensor is moved to, by default torch.device("cpu")
-
-    .. highlight:: python
-    ::
-        wrapped = ClassifierSkLearnWrapper(LinearRegression(), 2, torch.device('cuda'))
-
     """
 
     def __init__(
@@ -255,8 +260,12 @@ class ClassifierSkLearnWrapper(Model):
         sample_weight: torch.Tensor = None,
         **kwargs
     ):
-        """Fits a sk-learn wrapped classifier Model. If there are less classes in the
+        """Fits the model on the training data.
+
+        Fits a sk-learn wrapped classifier Model. If there are less classes in the
         sample than num_classes, uses dummy model.
+        ::
+            wrapped = ClassifierSkLearnWrapper(MLPClassifier(), 2, torch.device('cpu'))
 
         Parameters
         ----------
@@ -271,13 +280,6 @@ class ClassifierSkLearnWrapper(Model):
             by default None
         kwargs : dict[str, Any]
             Addition key word args
-
-        .. highlight:: python
-        ::
-            wrapped = ClassifierSkLearnWrapper(
-                LogisticRegression(), 2, torch.device('cuda')
-            )
-
         """
         # Using a data set and dataloader (despite loading all the data) consistency
         dataset = CatDataset(x_train, y_train, sample_weight)
@@ -295,14 +297,30 @@ class ClassifierSkLearnWrapper(Model):
         if len(y_train_unique) != self.num_classes:  # All labels must be in sample
             self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
         elif sample_weight is not None:
-            self.model.fit(x_train, y_train, np.squeeze(weights[0]), *args, **kwargs)
+            weights = np.squeeze(weights[0])
+            self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
         else:
-            self.model.fit(x_train, y_train, sample_weight=None, *args, **kwargs)
+            self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
 
         return self
 
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
-        """Predicts labels from sk-learn model"""
+        """Predicts labels from sk-learn model.
+
+        Makes a prediction based on the input tensor. Uses the `.predict_proba(x)`
+        method on sk-learn classifiers. Output dim will match the input to
+        the `.train(x, y)` method
+
+        Parameters
+        ----------
+        x : torch.Tensor | Dataset
+            Input tensor
+
+        Returns
+        -------
+        torch.Tensor
+            Output tensor
+        """
         # Extracts the input into a cpu tensor
         if isinstance(x, Dataset):
             x = next(iter(DataLoader(x, len(x), collate_fn=to_cpu)))[0]
@@ -314,7 +332,13 @@ class ClassifierSkLearnWrapper(Model):
 
 
 class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
-    """Wrapper for sk-learn classifiers that can don't have weighted fit methods
+    """Wrapper for sk-learn classifiers that can don't have weighted fit methods.
+
+    Example:
+    ::
+        wrapped = ClassifierSkLearnWrapper(
+            LinearDiscriminantAnalysis(), 2, torch.device('cpu')
+        )
 
     Parameters
     ----------
@@ -324,13 +348,6 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         Label dimensionality
     device : torch.device, optional
         Device output tensor is moved to, by default torch.device("cpu")
-
-    .. highlight:: python
-    ::
-        wrapped = ClassifierSkLearnWrapper(
-            RandomForestClassifier(), 2, torch.device('cuda')
-        )
-
     """
 
     def fit(
@@ -341,7 +358,9 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         sample_weight: torch.Tensor = None,
         **kwargs
     ):
-        """Fits a sk-learn wrapped classifier Model without sample weight. It uses
+        """Fits the model on the training data.
+
+        Fits a sk-learn wrapped classifier Model without sample weight. It uses
         weighted random sampling to bypass this. If there are less classes in the
         sample than num_classes, uses dummy model.
 

@@ -1,21 +1,22 @@
-from numpy.random import RandomState
-import torch
+import math
+from dataclasses import asdict, dataclass, field
+from typing import Any, Callable
+
 import pandas as pd
+import torch
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from dataclasses import dataclass, field, asdict
+from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
 from dataoob.dataloader.loader import DataLoader, mix_labels
 from dataoob.dataval import DataEvaluator
 from dataoob.model import Model
-import math
-
-from typing import Any, Callable
 
 
 def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
+    """Compute accuracy of two one-hot encoding tensors."""
     return (torch.argmax(a, axis=1) == torch.argmax(b, axis=1)).float().mean().item()
 
 
@@ -28,6 +29,8 @@ metrics_dict = {  # TODO add metrics and change this implementation
 
 @dataclass
 class DataLoaderArgs:
+    """DataLoaderArgs dataclass for easier creation of ExperimentMediator."""
+
     dataset: str
     force_download: bool = False
     device: torch.device = torch.device("cpu")
@@ -42,6 +45,8 @@ class DataLoaderArgs:
 
 @dataclass
 class DataEvaluatorArgs:
+    """DataLoaderArgs dataclass for easier creation of ExperimentMediator."""
+
     pred_model: Model
     train_kwargs: dict[str, Any] = field(default_factory=dict)
     metric_name: str = "accuracy"
@@ -49,6 +54,8 @@ class DataEvaluatorArgs:
 
 @dataclass
 class DataEvaluatorFactoryArgs:
+    """DataEvaluatorArgs dataclass for ExperimentMediator if input/output dim known."""
+
     pred_model_factory: Callable[[int, int, torch.device], Model]
     train_kwargs: dict[str, Any] = field(default_factory=dict)
     metric_name: str = "accuracy"
@@ -56,7 +63,7 @@ class DataEvaluatorFactoryArgs:
 
 
 class ExperimentMediator:
-    """Sets up an experiment to compare a group of DataEvaluators
+    """Set up an experiment to compare a group of DataEvaluators.
 
     Parameters
     ----------
@@ -96,9 +103,7 @@ class ExperimentMediator:
                 )
 
             except Exception as ex:
-
                 import warnings
-                import traceback
 
                 warnings.warn(
                     f"""
@@ -107,8 +112,8 @@ class ExperimentMediator:
                     {data_val.plot_title} and proceeding.
 
                     The error is as follows: {str(ex)}
-                    The traceback is: \n{traceback.format_tb(ex.__traceback__)}
-                """
+                    """,
+                    stacklevel=10,
                 )
 
         self.num_data_eval = len(self.data_evaluators)
@@ -128,7 +133,7 @@ class ExperimentMediator:
         metric_name: str = "accuracy",
         data_evaluators: list[DataEvaluator] = None,
     ):
-        """Creates a DataLoader from args and passes it into the init"""
+        """Create a DataLoader from args and passes it into the init."""
         random_state = check_random_state(random_state)
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
@@ -152,7 +157,7 @@ class ExperimentMediator:
         data_evaluator_args: DataEvaluatorArgs,
         data_evaluators: list[DataEvaluator] = None,
     ):
-        """Creates ExperimentMediator from dataclass arg wrappers"""
+        """Create ExperimentMediator from dataclass arg wrappers."""
         return ExperimentMediator.create_dataloader(
             data_evaluators=data_evaluators,
             **(asdict(loader_args) | asdict(data_evaluator_args)),
@@ -164,7 +169,7 @@ class ExperimentMediator:
         de_factory_args: DataEvaluatorFactoryArgs,
         data_evaluators: list[DataEvaluator] = None,
     ):
-        """Creates ExperimentMediator from presets, infers input/output dimensions"""
+        """Create ExperimentMediator from presets, infers input/output dimensions."""
         rs = check_random_state(loader_args.random_state)
 
         if loader_args.device != de_factory_args.device:
@@ -195,8 +200,10 @@ class ExperimentMediator:
         include_train: bool = False,
         **exper_kwargs,
     ) -> pd.DataFrame:
-        """Runs an experiment on a list of pre-train DataEvaluators and their
-        corresponding dataset and returns a DataFrame of the results
+        """Evaluate `exper_func` on each DataEvaluator.
+
+        Runs an experiment on a list of pre-train DataEvaluators and their
+        corresponding dataset and returns a DataFrame of the results.
 
         Parameters
         ----------
@@ -244,8 +251,10 @@ class ExperimentMediator:
         include_train: bool = False,
         **exper_kwargs,
     ) -> tuple[pd.DataFrame, Figure]:
-        """Runs an experiment on a list of pre-train DataEvaluators and their
-        corresponding dataset and plots the result
+        """Evaluate `exper_func` on each DataEvaluator and plots result in `fig`.
+
+        Run an experiment on a list of pre-train DataEvaluators and their
+        corresponding dataset and plots the result.
 
         Parameters
         ----------

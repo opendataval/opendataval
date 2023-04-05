@@ -41,7 +41,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "ruff~=0.0.2",
-    "black~=3.10",
+    "black~=22.10",
     "sphinx~=6.1",
     "pre-commit~=3.2"
 ]
@@ -71,13 +71,17 @@ exclude = '''
   | dist
 )/
 '''
+[tool.ruff]
+select = ["E", "F", "I", "C90", "RUF"]
 
 [tool.ruff.per-file-ignores]
-"__init__.py" = ["F401"]
+"__init__.py" = ["F401", "F403"]
 
 [tool.ruff.pydocstyle]
 convention = "numpy"
 
 [tool.ruff.isort]
 known-first-party = ["dataoob"]
-known-third-party = ["torch", "numpy", "scipy", "pandas", "sklearn", "tqdm"]
+known-third-party = [
+    "torch", "numpy", "scipy", "pandas", "sklearn", "tqdm", "opendatasets"
+]

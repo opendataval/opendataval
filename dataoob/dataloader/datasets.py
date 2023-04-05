@@ -1,25 +1,25 @@
 import os
 from typing import Any, Callable, Self
-from urllib.request import urlretrieve
 
 import numpy as np
+import opendatasets as od
 import pandas as pd
+import requests
 import sklearn.datasets as ds
 from sklearn.preprocessing import minmax_scale
 from torch.utils.data import Dataset
-import opendatasets as od
 
 DatasetCallable = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
 
 
 def one_hot_encode(data: np.ndarray) -> np.ndarray:
-    """One hot encodes a 1D numpy array"""
+    """One hot encodes a 1D numpy array."""
     num_values = np.max(data) + 1
     return np.eye(num_values)[data]
 
 
 def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str:
-    """Downloads a file if it it is not present and returns the file_path
+    """Download a file if it it is not present and returns the file_path.
 
     Parameters
     ----------
@@ -43,35 +43,41 @@ def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str
     if not os.path.isdir(cache_dir):
         os.mkdir(cache_dir)
 
-    file_path = os.path.join(cache_dir, file_name)
-    if not os.path.isfile(file_path) or force_download:
-        urlretrieve(url, file_path)
+    filepath = os.path.join(cache_dir, file_name)
 
-    return file_path
+    if not os.path.isfile(filepath) or force_download:
+        with requests.get(url, stream=True, timeout=60) as r, open(filepath, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):  # In case file is large
+                f.write(chunk)
+
+    return filepath
 
 
 def _read_csv(file_path: str, label_columns: str | list) -> DatasetCallable:
-    """Creates data set from csv file path, nested functions for api consistency"""
+    """Create data set from csv file path, nested functions for api consistency."""
     return lambda: _from_pandas(pd.read_csv(file_path), label_columns)()
 
 
 def _from_pandas(df: pd.DataFrame, label_columns: str | list) -> DatasetCallable:
-    """Creates data set from pandas dataframe, nested functions for api consistency"""
+    """Create data set from pandas dataframe, nested functions for api consistency."""
     if all(isinstance(col, int) for col in label_columns):
         label_columns = df.columns[label_columns]
     return lambda: (df.drop(label_columns, axis=1).values, df[label_columns].values)
 
 
 def _from_numpy(array, label_columns: int | list[int]) -> DatasetCallable:
+    """Create data set from numpy array, nested functions for api consistency."""
     if isinstance(label_columns, int):
         label_columns = [label_columns]
     return lambda: (np.delete(array, label_columns, axis=1), array[:, label_columns])
 
 
 class Register:
-    """Registers data sets to be loaded by the DataLoader. Also allows specific
+    """Register a data set by defining its name and adding functions to retrieve data.
+
+    Registers data sets to be loaded by the DataLoader. Also allows specific
     transformations to be applied on a data set. This gives the benefit of creating
-    :py:class:`Register` objects to distinguish seperate data sets
+    :py:class:`Register` objects to distinguish separate data sets
 
     Parameters
     ----------
@@ -83,12 +89,18 @@ class Register:
         Whether data set can be downloaded and cached, by default False
     dataset_kwargs : dict[str, Any], optional
         Keyword arguments to pass to the data set functions, by default None
+
+    Raises
+    ------
+    KeyError
+        :py:class:`Register` keeps track of all data set names registered and all must
+        be unique. If there are any duplicates, raises KeyError.
     """
 
     CACHE_DIR = "data_files"
 
     Datasets: dict[str, Self] = {}
-    """Creates a directory for all registered/downloadable data set functions"""
+    """Creates a directory for all registered/downloadable data set functions."""
 
     def __init__(
         self,
@@ -97,6 +109,9 @@ class Register:
         cacheable: bool = False,
         dataset_kwargs: dict[str, Any] = None,
     ):
+        if dataset_name in Register.Datasets:
+            raise KeyError(f"{dataset_name} has been registered, names must be unique")
+
         self.dataset_name = dataset_name
         self.dataset_kwargs = dataset_kwargs if dataset_kwargs else {}
         self.categorical = categorical
@@ -114,48 +129,50 @@ class Register:
         Register.Datasets[dataset_name] = self
 
     def from_csv(self, file_path: str, label_columns: str | list):
-        """Allows data set to be registered from csv file"""
+        """Register data set from csv file."""
         self.covar_label_func = _read_csv(file_path, label_columns)
         return self
 
     def from_pandas(self, df: pd.DataFrame, label_columns: str | list):
-        """Allows data set to be registered from pd.DataFrame"""
+        """Register data set from pandas data frame."""
         self.covar_label_func = _from_pandas(df, label_columns)
         return self
 
     def from_numpy(self, df: pd.DataFrame, label_columns: int | list[int]):
-        """Allows data set to be registered from np.ndarray"""
+        """Register data set from numpy array."""
         self.covar_label_func = _from_numpy(df, label_columns)
         return self
 
     def from_covar_label_func(self, func: DatasetCallable) -> DatasetCallable:
-        """Allows data set to be registered from Callable -> (covariates, labels)"""
+        """Register data set from Callable -> (covariates, labels)."""
         self.covar_label_func = func
         return Self
 
     def from_covar_func(self, func: DatasetCallable) -> DatasetCallable:
-        """Allows data set to be registered from 2 Callables, registers covariates"""
+        """Register data set from 2 Callables, registers covariates Callable."""
         self.cov_func = func
         return func
 
     def from_label_func(self, func: DatasetCallable) -> DatasetCallable:
-        """Allows data set to be registered from 2 Callables, registers labels"""
+        """Register data set from 2 Callables, registers labels Callable."""
         self.label_func = func
         return func
 
     def add_covar_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
-        """Applies transform to covariates after it is loaded"""
+        """Add covariate transform after data is loaded."""
         self.covar_transform = transform
         return self
 
     def add_label_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
-        """Applies transform to labels after it is loaded"""
+        """Add label transform after data is loaded."""
         self.label_transform = transform
         return self
 
     def load_data(self, force_download: bool = False) -> tuple[Dataset, np.ndarray]:
-        """Loads the covariates and labels from the registered callables, applies
-        transformations, and returns the covariates and labels
+        """Retrieve data from specified data input functions.
+
+        Loads the covariates and labels from the registered callables, applies
+        transformations, and returns the covariates and labels.
 
         Parameters
         ----------
@@ -203,6 +220,13 @@ def gaussian_classifier(n: int = 10000, input_dim: int = 10):
 
 @Register("adult", categorical=True, cacheable=True).from_covar_label_func
 def download_adult(cache_dir: str, force_download: bool = False):
+    """Adult Income data set. Implementation from DVRL repository.
+
+    References
+    ----------
+    DVRL paper: https://arxiv.org/abs/1909.11671.
+    UCI Adult data link: https://archive.ics.uci.edu/ml/datasets/Adult
+    """
     uci_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
     train_url = cache(uci_url + "/adult.data", cache_dir, "train.csv", force_download)
     test_url = cache(uci_url + "/adult.test", cache_dir, "test.csv", force_download)
@@ -291,6 +315,12 @@ def download_breast_cancer():
 
 @Register("election", categorical=True, cacheable=True).from_covar_label_func
 def download_election(cache_dir: str, force_download: bool):
+    """Presidential election results by state since 1976 courtesy of Bojan Tunguz.
+
+    References
+    ----------
+    Kaggle source: https://www.kaggle.com/datasets/tunguz/us-elections-dataset
+    """
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
 
@@ -313,12 +343,12 @@ def download_election(cache_dir: str, force_download: bool):
 Register(
     "gaussian_classifier_high_dim", categorical=True, dataset_kwargs={"input_dim": 100}
 ).from_covar_label_func(gaussian_classifier)
-"""Registers gaussian classifier, but the input_dim is changed"""
+"""Registers gaussian classifier, but the input_dim is changed."""
 
 Register(
     "gaussian_only_zeroes", categorical=True, dataset_kwargs={"input_dim": 100}
 ).add_label_transform(np.zeros_like).from_covar_label_func(gaussian_classifier)
-"""Adds a transform to gaussian classifier, such that the labels are all zero"""
+"""Adds a transform to gaussian classifier, such that the labels are all zero."""
 
 Register("adult_csv", True).from_csv(Register.CACHE_DIR + "/adult/train.csv", [-1, -2])
-"""NOTE below, data is not cleaned"""
+"""NOTE below, data is not cleaned."""

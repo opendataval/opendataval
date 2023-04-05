@@ -1,19 +1,18 @@
+from collections import defaultdict
+
 import numpy as np
-import tqdm
-
 import torch
-
-from torch.utils.data import Subset
-
-from dataoob.dataval import DataEvaluator
+import tqdm
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
+from torch.utils.data import Subset
 
-from collections import defaultdict
+from dataoob.dataval.api import DataEvaluator
 
 
 class DataOob(DataEvaluator):
     """Data Out-of-Bag data valuation implementation.
+
     Input evaluation metrics are valid if we compare one data point across several
     predictions. Examples include: `accuracy` and `L2 distance`
 
@@ -51,7 +50,7 @@ class DataOob(DataEvaluator):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """Stores and transforms input data for Data Out-Of-Bag Evaluator
+        """Store and transform input data for Data Out-Of-Bag Evaluator.
 
         Parameters
         ----------
@@ -66,7 +65,7 @@ class DataOob(DataEvaluator):
         """
         self.x_train = x_train
         self.y_train = y_train
-        _ = x_valid, y_valid  # Unused parameters,
+        _ = x_valid, y_valid  # Unused parameters
 
         self.num_points = len(x_train)
         self.label_dim = 1 if self.y_train.dim() == 1 else self.y_train.size(dim=1)
@@ -75,9 +74,10 @@ class DataOob(DataEvaluator):
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """Trains Data Out-of-Bag model by bagging a model and collecting all
-        out-of-bag predictions. We then evaluate each data point to their out-of-bag
-        predictions
+        """Trains model to predict data values.
+
+        Trains Data Out-of-Bag model by bagging a model and collecting all out-of-bag
+        predictions. We then evaluate each data point to their out-of-bag predictions.
 
         Parameters
         ----------
@@ -91,7 +91,7 @@ class DataOob(DataEvaluator):
         )
         self.oob_indices = GroupingIndex()
 
-        for i in tqdm.tqdm(range(self.num_models)):
+        for _ in tqdm.tqdm(range(self.num_models)):
             in_bag = self.random_state.randint(0, self.num_points, self.max_samples)
             # out_bag is the indices where the bincount is zero.
             out_bag = (np.bincount(in_bag, minlength=self.num_points) == 0).nonzero()[0]
@@ -111,7 +111,9 @@ class DataOob(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values by evaluating how the oob labels compare to the labels.
+        """Return data values for each training data point.
+
+        Compute data values by evaluating how the OOB labels compare to training labels.
 
         Returns
         -------
@@ -129,8 +131,7 @@ class DataOob(DataEvaluator):
 
 
 class GroupingIndex(defaultdict[int, list[int]]):
-    """Modified defaultdict to facilitate a groupings values and the corresponding
-    position of insertion
+    """Stores value and position of insertion in a stack.
 
     Parameters
     ----------
@@ -139,10 +140,11 @@ class GroupingIndex(defaultdict[int, list[int]]):
     """
 
     def __init__(self, start: int = 0):
-        super(GroupingIndex, self).__init__(list)
+        super().__init__(list)
         self.position = start
 
-    def add_indices(self, indices: list[int]):
-        for i in indices:
+    def add_indices(self, values: list[int]):
+        """Add values to defaultdict and record position in stack in-order."""
+        for i in values:
             self.__getitem__(i).append(self.position)
             self.position += 1

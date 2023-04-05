@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Callable
 
 import numpy as np
 import torch
@@ -11,11 +10,11 @@ from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader, RandomSampler
 
 from dataoob.dataloader.util import CatDataset
-from dataoob.dataval import DataEvaluator
+from dataoob.dataval.api import DataEvaluator
 
 
 class DVRL(DataEvaluator):
-    """Data valuation using reinforcement learning class, implemented with PyTorch
+    """Data valuation using reinforcement learning class, implemented with PyTorch.
 
     References
     ----------
@@ -32,8 +31,6 @@ class DVRL(DataEvaluator):
         Number of hidden layers for the Value Estimator (VE), by default 5
     comb_dim : int, optional
         After concat inputs how many layers, much less than `hidden_dim`, by default 10
-    act_fn : Callable[[torch.Tensor], torch.Tensor], optional
-        Activation function for VE, by default nn.ReLU()
     rl_epochs : int, optional
         Number of training epochs for the VE, by default 1000
     rl_batch_size : int, optional
@@ -55,7 +52,6 @@ class DVRL(DataEvaluator):
         hidden_dim: int = 100,
         layer_number: int = 5,
         comb_dim: int = 10,
-        act_fn: Callable[[torch.Tensor], torch.Tensor] = nn.ReLU(),
         rl_epochs: int = 1000,
         rl_batch_size: int = 32,
         lr: float = 0.01,
@@ -67,7 +63,6 @@ class DVRL(DataEvaluator):
         self.hidden_dim = hidden_dim
         self.layer_number = layer_number
         self.comb_dim = comb_dim
-        self.act_fn = act_fn
         self.device = device
 
         # Training parameters
@@ -85,7 +80,7 @@ class DVRL(DataEvaluator):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """Stores and transforms input data for DVRL
+        """Store and transform input data for DVRL.
 
         Parameters
         ----------
@@ -109,15 +104,15 @@ class DVRL(DataEvaluator):
             hidden_dim=self.hidden_dim,
             layer_number=self.layer_number,
             comb_dim=self.comb_dim,
-            act_fn=self.act_fn,
             random_state=self.random_state,
         ).to(self.device)
 
         return self
 
     def _evaluate_baseline_models(self, *args, **kwargs):
-        """Loads and trains baseline models. Baseline performance information is
-        necessary to compute the reward.
+        """Load and train baseline models.
+
+        Baseline performance information is necessary to compute the reward.
 
         Parameters
         ----------
@@ -151,7 +146,9 @@ class DVRL(DataEvaluator):
         )
 
     def train_data_values(self, *args, **kwargs):
-        """Trains the VE to assign probabilities of each data point being selected
+        """Trains model to predict data values.
+
+        Trains the VE to assign probabilities of each data point being selected
         using a signal from the evaluation performance.
 
         Parameters
@@ -217,7 +214,9 @@ class DVRL(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values using the Value Estimator
+        """Return data values for each training data point.
+
+        Compute data values for DVRL using the Value Estimator MLP.
 
         Returns
         -------
@@ -272,8 +271,6 @@ class DataValueEstimatorRL(nn.Module):
         Number of hidden layers for the Value Estimator
     comb_dim : int
         After concat inputs how many layers, much less than `hidden_dim`, by default 10
-    act_fn : Callable, optional
-        Activation function for VE, by default nn.ReLU(), by default nn.ReLU()
     random_state : RandomState, optional
         Random initial state, by default None
     """
@@ -285,10 +282,9 @@ class DataValueEstimatorRL(nn.Module):
         hidden_dim: int,
         layer_number: int,
         comb_dim: int,
-        act_fn: Callable = nn.ReLU(),
         random_state: RandomState = None,
     ):
-        super(DataValueEstimatorRL, self).__init__()
+        super().__init__()
 
         if random_state is not None:  # Can't pass generators to nn.Module layers
             torch.manual_seed(check_random_state(random_state).tomaxint())
@@ -296,14 +292,14 @@ class DataValueEstimatorRL(nn.Module):
         mlp_layers = OrderedDict()
 
         mlp_layers["input"] = nn.Linear(x_dim + y_dim, hidden_dim)
-        mlp_layers["input_acti"] = act_fn
+        mlp_layers["input_acti"] = nn.ReLU()
 
         for i in range(int(layer_number - 3)):
             mlp_layers[f"{i+1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
-            mlp_layers[f"{i+1}_acti"] = act_fn
+            mlp_layers[f"{i+1}_acti"] = nn.ReLU()
 
         mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, comb_dim)
-        mlp_layers[f"{i+1}_out_acti"] = act_fn
+        mlp_layers[f"{i+1}_out_acti"] = nn.ReLU()
 
         self.mlp = nn.Sequential(mlp_layers)
 
@@ -311,7 +307,7 @@ class DataValueEstimatorRL(nn.Module):
 
         # Combines with y_hat
         yhat_combine["reduce_lin"] = nn.Linear(comb_dim + y_dim, comb_dim)
-        yhat_combine["reduce_acti"] = act_fn
+        yhat_combine["reduce_acti"] = nn.ReLU()
 
         yhat_combine["out_lin"] = nn.Linear(comb_dim, 1)
         yhat_combine["out_acti"] = nn.Sigmoid()  # Sigmoid for binary selection
@@ -320,7 +316,9 @@ class DataValueEstimatorRL(nn.Module):
     def forward(
         self, x: torch.Tensor, y: torch.Tensor, y_hat: torch.Tensor
     ) -> torch.Tensor:
-        """Forward pass through Value Estimator. Returns selection probabilities.
+        """Forward pass of inputs through value estimator for data values of input.
+
+        Forward pass through Value Estimator. Returns selection probabilities.
         Concats the difference between labels and predicted labels to compute
         selection probabilities.
 
@@ -346,7 +344,9 @@ class DataValueEstimatorRL(nn.Module):
 
 
 class DveLoss(nn.Module):
-    """Custom loss function for the value estimator RL Model. uses BCE Loss and
+    """Compute Loss for Value Estimator.
+
+    Custom loss function for the value estimator RL Model. Uses BCE Loss and
     checks average is within threshold to encourage exploration
 
     Parameters
@@ -360,7 +360,7 @@ class DveLoss(nn.Module):
     """
 
     def __init__(self, threshold: float = 0.9, exploration_weight: float = 1e3):
-        super(DveLoss, self).__init__()
+        super().__init__()
         self.threshold = threshold
         self.exploration_weight = exploration_weight
 
@@ -370,16 +370,29 @@ class DveLoss(nn.Module):
         selector_input: torch.Tensor,
         reward_input: float,
     ) -> torch.Tensor:
-        """Computes the loss for the Value Estimator, uses the reward signal from the
-        prediction model, BCE loss, and whether Value Estimator is getting stuck
-        outside of the threshold bounds
+        """Compute the loss for the Value Estimator.
+
+        Uses REINFORCE Algorithm to compute a loss for the Value Estimator.
+        `pred_dataval` is the data values. `selector_input` is a bernoulli random
+        variable with `p=pred_dataval`. Computes a BCE between `pred_dataval` and
+        `selector_input` and multiplies by the reward signal. Adds an additional loss
+        if the Value Estimator is getting stuck outside the threshold.
+
+        References
+        ----------
+        .. [1] R. J. Williams,
+        Simple statistical gradient-following algorithms for connectionist
+        reinforcement learning,
+        Machine Learning, vol. 8, no. 3-4, pp. 229-256, May 1992,
+        doi: https://doi.org/10.1007/bf00992696. [Online].
+
 
         Parameters
         ----------
         pred_dataval : torch.Tensor
             Predicted values from value estimator
         selector_input : torch.Tensor
-            `1` for selected `0` for not selected
+            `1` for selected `0` for not selected, bernoulli random variable
         reward_input : float
             Reward/performance signal of prediction model trained on `selector_input`.
             If positive, indicates better than naive model of full sample.

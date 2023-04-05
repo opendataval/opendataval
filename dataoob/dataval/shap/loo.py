@@ -3,7 +3,7 @@ import torch
 import tqdm
 from torch.utils.data import Dataset, Subset
 
-from dataoob.dataval import DataEvaluator
+from dataoob.dataval.api import DataEvaluator
 
 
 class LeaveOneOut(DataEvaluator):
@@ -28,7 +28,7 @@ class LeaveOneOut(DataEvaluator):
         x_valid: torch.Tensor | Dataset,
         y_valid: torch.Tensor,
     ):
-        """Stores and transforms input data for Leave-One-Out data valuation
+        """Store and transform input data for Leave-One-Out data valuation.
 
         Parameters
         ----------
@@ -52,10 +52,11 @@ class LeaveOneOut(DataEvaluator):
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """Computes the data values using the Leave-One-Out data valuation.
+        """Trains model to predict data values.
 
+        Compute the data values using the Leave-One-Out data valuation.
         Equivalently, LOO can be computed from the marginal contributions as it's a
-        semivalue
+        semivalue.
 
         Parameters
         ----------
@@ -91,7 +92,7 @@ class LeaveOneOut(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values using Leave One Out data valuation
+        """Compute data values using Leave One Out data valuation.
 
         Returns
         -------

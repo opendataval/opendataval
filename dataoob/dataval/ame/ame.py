@@ -7,11 +7,11 @@ from sklearn.linear_model import LassoCV
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
-from dataoob.dataval import DataEvaluator
+from dataoob.dataval.api import DataEvaluator
 
 
 class AME(DataEvaluator):
-    """Implementation of Average Marginal Effect Data Valuation
+    """Implementation of Average Marginal Effect Data Valuation.
 
     References
     ----------
@@ -33,7 +33,9 @@ class AME(DataEvaluator):
         self.random_state = check_random_state(random_state)
 
     def train_data_values(self, *args, **kwargs):
-        """Trains the AME model by fitting bagging models on different proprotions
+        """Trains model to predict data values.
+
+        Trains the AME model by fitting bagging models on different proportions
         and aggregating the subsets and the performance metrics
 
         Parameters
@@ -62,7 +64,9 @@ class AME(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values using the coefficients of the Lasso regression
+        """Return data values for each training data point.
+
+        Compute data values using the coefficients of the Lasso regression
         according to Lin et al.
 
         Returns
@@ -80,7 +84,7 @@ class AME(DataEvaluator):
 
 
 class BaggingEvaluator(DataEvaluator):
-    """Bagging Data Evaluator, samples data points from :math:`Bernouli(proportion)`
+    """Bagging Data Evaluator, samples data points from :math:`Bernouli(proportion)`.
 
     References
     ----------
@@ -94,7 +98,7 @@ class BaggingEvaluator(DataEvaluator):
     num_models : int, optional
         Number of models to bag/aggregate, by default 1000
     proportion : float, optional
-        Proportion for bernuoli which data points are sampled, by default 1.0
+        Proportion for bernoulli which data points are sampled, by default 1.0
     random_state : RandomState, optional
         Random initial state, by default None
     """
@@ -116,7 +120,7 @@ class BaggingEvaluator(DataEvaluator):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """Stores and transforms input data for Bagging Evaluator
+        """Store and transform input data for Bagging Evaluator.
 
         Parameters
         ----------
@@ -138,7 +142,9 @@ class BaggingEvaluator(DataEvaluator):
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """Trains the Bagging model to get subsets and corresponding evaluations of
+        """Trains model to predict data values.
+
+        Trains the Bagging model to get subsets and corresponding evaluations of
         the performance of those subsets to compute the data values
 
         Parameters
@@ -170,8 +176,10 @@ class BaggingEvaluator(DataEvaluator):
         return self
 
     def evaluate_data_values(self):
-        """Returns data values using the coefficients of the Lasso regression,
-        as used by Lin et al. for the AME evaluator
+        """Return data values for each training data point.
+
+        Compute data values using the coefficients of the Lasso regression,
+        as used by Lin et al. for the AME evaluator.
 
         Returns
         -------
@@ -187,5 +195,5 @@ class BaggingEvaluator(DataEvaluator):
         return dv_ame.coef_
 
     def get_subset_perf(self):
-        """Returns the subsets and performance, used by AME DataEvaluator"""
+        """Return the subsets and performance, used by AME DataEvaluator."""
         return self.subsets, self.performance

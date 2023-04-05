@@ -1,17 +1,26 @@
+"""Experiments to test :py:class:`~dataoob.dataval.api.DataEvaluator`.
+
+Experiments to pass into :py:meth:`~dataoob.evaluator.api.ExperimentMediator.evaluate`
+and :py:meth:`~dataoob.evaluator.api.ExperimentMediator.plot` evaluate performance of
+one :py:class:`~dataoob.dataval.api.DataEvaluator` at a a time.
+"""
+from typing import Any, Literal
+
 import numpy as np
 from matplotlib.axes import Axes
 from sklearn.cluster import KMeans
 from sklearn.metrics import f1_score
 from torch.utils.data import Subset
-from typing import Any, Literal
 
-from dataoob.dataval import DataEvaluator
 from dataoob.dataloader import DataLoader
+from dataoob.dataval import DataEvaluator
 
 
 def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, float]:
-    """Computes recall and F1 score (of 2NN classifier) of the data evaluator
-    on the noisy indices
+    """Evaluate ability to identify noisy indices.
+
+    Compute recall and F1 score (of 2NN classifier) of the data evaluator
+    on the noisy indices.
 
     Parameters
     ----------
@@ -57,7 +66,9 @@ def point_addition(
     metric_name: str = "accuracy",
     train_kwargs: dict[str, Any] = None,
 ) -> dict[str, list[float]]:
-    """Repeatedly add `percentile` of data points and evaluates performance
+    """Evaluate performance after adding points according to `order`.
+
+    Repeatedly adds `percentile` of data points and trains/evaluates performance.
 
     Parameters
     ----------
@@ -79,7 +90,7 @@ def point_addition(
     Returns
     -------
     dict[str, list[float]]
-        dict containing list of performance after adding (i * percentile) data points
+        dict containing performance list after adding ``(i * percentile)`` data points
     """
     x_train, y_train, x_valid, y_valid = loader.datapoints
     data_values = evaluator.evaluate_data_values()
@@ -138,8 +149,10 @@ def remove_high_low(
     metric_name: str = "accuracy",
     train_kwargs: dict[str, Any] = None,
 ) -> dict[str, list[float]]:
-    """Repeatedly removes ``percentile`` of most valuable/least valuable data points
-    and computes the performance
+    """Evaluate performance after removing high/low points determined by data valuator.
+
+    Repeatedly removes ``percentile`` of most valuable/least valuable data points
+    and computes the performance of the metric.
 
     Parameters
     ----------
@@ -160,7 +173,7 @@ def remove_high_low(
     -------
     dict[str, list[float]]
         dict containing list of the performance of the DataEvaluator
-        (i * percentile) valuable/most valuable data points are removed
+        ``(i * percentile)`` valuable/most valuable data points are removed
     """
     x_train, y_train, x_valid, y_valid = loader.datapoints
     data_values = evaluator.evaluate_data_values()
@@ -233,7 +246,9 @@ def discover_corrupted_sample(
     percentile: float = 0.05,
     plot: Axes = None,
 ) -> dict[str, list[float]]:
-    """Repeatedly explores ``percentile`` of the data values and determines
+    """Evaluate discovery of noisy indices in low data value points.
+
+    Repeatedly explores ``percentile`` of the data values and determines
     if within that total percentile, what proportion of the noisy indices are found.
 
     Parameters
@@ -251,7 +266,7 @@ def discover_corrupted_sample(
     -------
     Dict[str, list[float]]
         dict containing list of the proportion of noisy indices found after exploring
-        the (i * percentile) least valuable data points. If plot is not None,
+        the ``(i * percentile)`` least valuable data points. If plot is not None,
         also returns optimal and random search performances as lists
     """
     x_train, *_ = loader.datapoints

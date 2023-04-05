@@ -6,12 +6,22 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.model import Model
 from dataoob.dataloader import DataLoader
+from dataoob.model import Model
 
 
 class DataEvaluator(ABC):
     """Abstract class of Data Evaluators. Facilitates Data Evaluation computation.
+
+    The following is an example of how the api would work:
+    ::
+        dataval = (
+            DataEvaluator(*args, **kwargs)
+            .input_model_metric(model, metric)
+            .input_data(x_train, y_train, x_valid, y_valid)
+            .train_data_values(batch_size, epochs)
+            .evaluate_data_values()
+        )
 
     Parameters
     ----------
@@ -22,23 +32,18 @@ class DataEvaluator(ABC):
     kwargs : Dict[str, Any]
         DavaEvaluator key word arguments
 
-    The following is an example of how the api would work
-    .. highlight:: python
-    ::
-        dataval = (
-            DataEvaluator(*args, **kwargs)
-            .input_model_metric(model, metric)
-            .input_data(x_train, y_train, x_valid, y_valid)
-            .train_data_values(batch_size, epochs)
-            .evaluate_data_values()
-        )
+    Raises
+    ------
+    ValueError
+        If metric is not specified either by the ``self.input_model_metric()`` or
+        as an argument
     """
 
     def __init__(self, random_state: RandomState = None, *args, **kwargs):
         self.random_state = check_random_state(random_state)
 
     def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor, metric: Callable = None):
-        """Evaluates performance
+        """Evaluate performance of the specified metric between label and predictions.
 
         Parameters
         ----------
@@ -60,53 +65,16 @@ class DataEvaluator(ABC):
             If metric is not specified either by the ``self.input_model_metric()`` or
             as an argument
         """
-        if metric is None:
+        if metric is None and hasattr(self, "metric"):
             return self.metric(y, y_hat)
         elif callable(metric):
             return metric(y, y_hat)
-        raise ValueError("Metric not specified")
-
-    def train(
-        self,
-        x_train: torch.Tensor,
-        y_train: torch.Tensor,
-        x_valid: torch.Tensor,
-        y_valid: torch.Tensor,
-        *args,
-        **kwargs,
-    ):
-        """Trains the Data Evaluator and the underlying prediction model. Wrapper for
-        ``self.input_data`` and ``self.train_data_values`` under one method
-
-        Parameters
-        ----------
-        x_train : torch.Tensor
-            Data covariates
-        y_train : torch.Tensor
-            Data labels
-        x_valid : torch.Tensor
-            Test+Held-out covariates
-        y_valid : torch.Tensor
-            Test+Held-out labels
-        args : tuple[Any], optional
-            Training positional args
-        kwargs : dict[str, Any], optional
-            Training key word arguments
-
-        Returns
-        -------
-        self : object
-            Returns a Data Evaluator.
-        """
-        self.input_data(x_train, y_train, x_valid, y_valid)
-        self.train_data_values(*args, **kwargs)
-
-        return self
+        raise ValueError("Metric not specified.")
 
     def input_model_metric(
         self, pred_model: Model, metric: Callable[[torch.Tensor, torch.Tensor], float]
     ):
-        """Inputs the prediction model and the evaluation metric
+        """Input the prediction model and the evaluation metric.
 
         Parameters
         ----------
@@ -125,11 +93,6 @@ class DataEvaluator(ABC):
 
         return self
 
-    def input_dataloader(self, loader: DataLoader):
-        """Inputs data from a DataLoader object"""
-        x_train, y_train, x_valid, y_valid = loader.datapoints
-        return self.input_data(x_train, y_train, x_valid, y_valid)
-
     def input_data(
         self,
         x_train: torch.Tensor,
@@ -137,7 +100,7 @@ class DataEvaluator(ABC):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """Stores and processes the data for DataEvaluator
+        """Store and transform input data for DataEvaluator.
 
         Parameters
         ----------
@@ -164,7 +127,7 @@ class DataEvaluator(ABC):
 
     @abstractmethod
     def train_data_values(self, *args, **kwargs):
-        """Trains the DataEvaluator to compute data values
+        """Trains model to predict data values.
 
         Parameters
         ----------
@@ -182,17 +145,60 @@ class DataEvaluator(ABC):
 
     @abstractmethod
     def evaluate_data_values(self) -> np.ndarray:
-        """Computes the data values of the training data set.
+        """Return data values for each training data point.
 
         Returns
         -------
         np.ndarray
             Predicted data values/selection for training input data point
         """
-        pass
+
+    def input_dataloader(self, loader: DataLoader):
+        """Input data from a DataLoader object. Alternative way of adding data."""
+        x_train, y_train, x_valid, y_valid = loader.datapoints
+        return self.input_data(x_train, y_train, x_valid, y_valid)
+
+    def train(
+        self,
+        x_train: torch.Tensor,
+        y_train: torch.Tensor,
+        x_valid: torch.Tensor,
+        y_valid: torch.Tensor,
+        *args,
+        **kwargs,
+    ):
+        """Store and transform data, then train model to predict data values.
+
+        Trains the Data Evaluator and the underlying prediction model. Wrapper for
+        ``self.input_data`` and ``self.train_data_values`` under one method.
+
+        Parameters
+        ----------
+        x_train : torch.Tensor
+            Data covariates
+        y_train : torch.Tensor
+            Data labels
+        x_valid : torch.Tensor
+            Test+Held-out covariates
+        y_valid : torch.Tensor
+            Test+Held-out labels
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
+
+        Returns
+        -------
+        self : object
+            Returns a Data Evaluator.
+        """
+        self.input_data(x_train, y_train, x_valid, y_valid)
+        self.train_data_values(*args, **kwargs)
+
+        return self
 
     def __new__(cls, *args, **kwargs):
-        """Saves the input arguments for better plot ttiles"""
+        """Record the input arguments for unique identifier of DataEvaluator."""
         obj = object.__new__(cls)
         obj.__inputs = [str(arg) for arg in args]
         obj.__inputs.extend(f"{arg_name}={value}" for arg_name, value in kwargs.items())
@@ -201,4 +207,5 @@ class DataEvaluator(ABC):
 
     @property
     def plot_title(self) -> str:  # For publication keep it simple
+        """Unique title string representation for a DataEvaluator."""
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"

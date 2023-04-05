@@ -1,18 +1,20 @@
 from itertools import accumulate
+from typing import Any, Callable, Self
 
 import numpy as np
+import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
-import torch
 from torch.utils.data import Dataset, Subset
 
 from dataoob.dataloader.datasets import Register
-from typing import Any, Callable, Self
 
 
 class DataLoader:
-    """DataLoader for dataoob, given input dataset name, prepares the data and provides
-    an API for subsequent splitting and adding noise
+    """Load data for an experiment from an input data set name.
+
+    Facade for Register object, prepares the data and provides an API for subsequent
+    splitting, adding noise, and transforming into a tensor.
 
     Parameters
     ----------
@@ -30,6 +32,15 @@ class DataLoader:
     KeyError
         In order to use a data set, you must register it by creating a
         :py:class:`Register`
+    AttributeError
+        No specified Covariates or labels. Ensure that the Register object
+        has loaded your data set correctly
+    ValueError
+        Splits must not exceed the length of the data set. In other words, if
+        the splits are ints, the values must be less than the length. If they are
+        floats they must be less than 1.0. If they are anything else, raises error.
+    ValueError
+
     """
 
     def __init__(
@@ -48,9 +59,14 @@ class DataLoader:
         self.device = device
         self.random_state = check_random_state(random_state)
 
+    @staticmethod
+    def datasets_available() -> list[str]:
+        """Get list of available data set names."""
+        return list(Register.Datasets.keys())
+
     @property
     def datapoints(self):
-        """Returns split data points to be input into a DataEvaluator as tensors
+        """Return split data points to be input into a DataEvaluator as tensors.
 
         Returns
         -------
@@ -71,7 +87,7 @@ class DataLoader:
         return x_train, y_train, x_valid, y_valid
 
     def split_dataset(self, train_count: int | float = 0, valid_count: int | float = 0):
-        """Splits the covariates and labels to the specified counts/proportions
+        """Split the covariates and labels to the specified counts/proportions.
 
         Parameters
         ----------
@@ -87,12 +103,21 @@ class DataLoader:
 
         Raises
         ------
+        AttributeError
+            No specified Covariates or labels. Ensure that the Register object
+            has loaded your data set correctly
         ValueError
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
         """
-        assert hasattr(self, "covar") and hasattr(self, "labels")
-        assert len(self.covar) == len(self.labels)
+        if not (hasattr(self, "covar") and hasattr(self, "labels")):
+            raise AttributeError(
+                "No attribute covar, labels found make sure Register object is valid."
+            )
+
+        if not len(self.covar) == len(self.labels):
+            raise ValueError("covariates and labels must be of same length.")
+
         num_points = len(self.covar)
 
         match (train_count, valid_count):
@@ -102,7 +127,7 @@ class DataLoader:
                 splits = (round(num_points * prob) for prob in (train, valid))
                 splits = accumulate(splits)
             case _:
-                raise ValueError("Invalid split")
+                raise ValueError("Invalid split, split must not exceed length")
 
         # Extra underscore to unpack any remainders
         indices = self.random_state.permutation(num_points)
@@ -123,7 +148,9 @@ class DataLoader:
         *noise_args,
         **noise_kwargs
     ):
-        """Adds noise to the data set and saves the indices of the noisy data.
+        """Add noise to the data points.
+
+        Adds noise to the data set and saves the indices of the noisy data.
         Return object of `add_noise_func` is a dict with keys to signify how the
         data are updated: {'x_train', 'y_train', 'x_test', 'y_test', 'noisy_indices'}
 
@@ -153,7 +180,7 @@ class DataLoader:
 
 
 def mix_labels(loader: DataLoader, noise_rate: float) -> dict[str, np.ndarray]:
-    """Mixes y_train labels of a DataLoader, adding noise to data
+    """Mixes y_train labels of a DataLoader, adding noise to data.
 
     Parameters
     ----------

@@ -5,11 +5,11 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
-from dataoob.dataval import DataEvaluator
+from dataoob.dataval.api import DataEvaluator
 
 
 class DataBanzhaf(DataEvaluator):
-    """Data Banzhaf implementation
+    """Data Banzhaf implementation.
 
     References
     ----------
@@ -36,7 +36,7 @@ class DataBanzhaf(DataEvaluator):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """Stores and transforms input data for Data Banzhaf
+        """Store and transform input data for Data Banzhaf.
 
         Parameters
         ----------
@@ -62,8 +62,10 @@ class DataBanzhaf(DataEvaluator):
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """Trains the Data Banzhaf value by sampling from the powerset. We compute
-        average perfromance of all subsets including and not including a data point.
+        """Trains model to predict data values.
+
+        Trains the Data Banzhaf value by sampling from the powerset. We compute
+        average performance of all subsets including and not including a data point.
 
         References
         ----------
@@ -100,8 +102,10 @@ class DataBanzhaf(DataEvaluator):
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Returns data values using the Data Banzhaf data valuator. Finds difference
-        between average performance of all sets including data point minus not-including
+        """Return data values for each training data point.
+
+        Compute data values using the Data Banzhaf data valuator. Finds difference
+        of average performance of all sets including data point minus not-including.
 
         Returns
         -------

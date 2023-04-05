@@ -1,6 +1,9 @@
-"""This is a file of configurations for experiment presets, linting and black formatting
-is turned off in this file because so much config. No good code found below
-# TODO look into how openxai does these presets"""
+"""Presets for data valuation.
+
+Configurations for experiment presets, linting and black formatting
+is turned off in this file. No good code found below
+# TODO look into how openxai does these presets
+"""
 import torch
 
 # Data Evaluators
@@ -15,19 +18,36 @@ from dataoob.dataval.shap.datashap import DataShapley
 from dataoob.dataval.shap.loo import LeaveOneOut
 
 # Data classes for wrapping EvaluatorMediator Args
-from dataoob.evaluator import ExperimentMediator
 from dataoob.evaluator import DataEvaluatorFactoryArgs as DEFA
 from dataoob.evaluator import DataLoaderArgs as DLA
+from dataoob.evaluator import ExperimentMediator
 
 # Models
 from dataoob.model.ann import ANN, BinaryANN
-from dataoob.model.logistic_regression import (
-    LogisticRegression as LR,
-    BinaryLogisticRegression as BLR,
-)
+from dataoob.model.logistic_regression import BinaryLogisticRegression as BLR
+from dataoob.model.logistic_regression import LogisticRegression as LR
+
 
 # API functions to be interacted with
 def new_evaluator(preset_name: str, new_evaluator: DataEvaluator) -> ExperimentMediator:
+    """Load preset model and data set to test an evaluator.
+
+    For a new DataEvaluator, trains the DataEvaluator on the preset model and data set
+    and returns an ExperimentMediator to run experiments on
+
+    Parameters
+    ----------
+    preset_name : str
+        Name of preset for the data set and the model
+    new_evaluator : DataEvaluator
+        A new DataEvaluator to be trained using the pred_model and data set form above.
+
+    Returns
+    -------
+    ExperimentMediator
+        New ExperimentMediator with a single DataValuator, the specified input
+        trained on the preset data set and model.
+    """
     data_evaluators = [new_evaluator]
     loader_args, evaluator_args = experiment_presets[preset_name]
 
@@ -35,6 +55,26 @@ def new_evaluator(preset_name: str, new_evaluator: DataEvaluator) -> ExperimentM
 
 
 def from_presets(preset_name: str, evaluators_name: str) -> ExperimentMediator:
+    """Load preset model, data sets, and data evaluator.
+
+    Loads existing presets for model, data set and data evaluator. These default
+    arguments represent values we believe would be relevant in determining evaluator's
+    performance. NOTE make sure to test with evaluators_name=``'dummy'`` to make sure
+    the data set is valid for your evaluator
+
+    Parameters
+    ----------
+    preset_name : str
+        Name of preset for the data set and the model
+    evaluators_name : str
+        Name of preset for data valuators
+
+    Returns
+    -------
+    ExperimentMediator
+        New ExperimentMediator with DataValuators specified by ``evaluator_name``
+        trained on the preset data set and model.
+    """
     data_evaluators = data_evaluator_presets[evaluators_name]
     loader_args, evaluator_args = experiment_presets[preset_name]
 
@@ -42,7 +82,7 @@ def from_presets(preset_name: str, evaluators_name: str) -> ExperimentMediator:
 
 
 # fmt: off
-# ruff: noqa: E501
+# ruff: noqa: E501 D103
 def ann_class_fac(covar_dim: int, label_dim: int, device: torch.Tensor) -> ANN:
     if label_dim == 2:
         return BinaryANN(covar_dim).to(device)
@@ -86,6 +126,6 @@ data_evaluators = data_evaluators = [  # actual run through of experiments
 
 data_evaluator_presets = {
     'experiment': data_evaluators,
-    'model_less': data_evaluators + [KNNShapley],
+    'model_less': [*data_evaluators, KNNShapley],
     'dummy': dummy_evaluators
 }
