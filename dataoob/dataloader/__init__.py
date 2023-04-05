@@ -18,6 +18,7 @@ Creating/Loading data sets
 
     Register
     DataLoader
+    datasets
 
 Utils
 -----
@@ -29,6 +30,8 @@ Utils
     one_hot_encode
     CatDataset
 """
-from dataoob.dataloader.datasets import Register, cache, one_hot_encode
+from dataoob.dataloader import datasets
+from dataoob.dataloader.datasets import cache
 from dataoob.dataloader.loader import DataLoader, mix_labels
+from dataoob.dataloader.register import Register, one_hot_encode
 from dataoob.dataloader.util import CatDataset

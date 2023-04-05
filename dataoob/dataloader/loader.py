@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Dataset, Subset
 
-from dataoob.dataloader.datasets import Register
+from dataoob.dataloader.register import Register
 
 
 class DataLoader:

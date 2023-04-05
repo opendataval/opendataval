@@ -46,7 +46,8 @@ dev = [
     "pre-commit~=3.2"
 ]
 test = [
-    "pytest-cov~=3.0.0",  # TODO
+    "pytest~=7.2.2",
+    "pytest-cov~=4.0.0"
 ]
 
 [tool.setuptools]

@@ -27,6 +27,7 @@ from dataoob.model.ann import ANN, BinaryANN
 from dataoob.model.logistic_regression import BinaryLogisticRegression as BLR
 from dataoob.model.logistic_regression import LogisticRegression as LR
 
+RANDOM_STATE = 10  # NOTE this random state should be changed, for now it's a constant
 
 # API functions to be interacted with
 def new_evaluator(preset_name: str, new_evaluator: DataEvaluator) -> ExperimentMediator:
@@ -100,8 +101,6 @@ experiment_presets = {
     'iris_mid_noise_ann': (DLA("iris", noise_kwargs={'noise_rate': 0.20}), DEFA(ann_class_fac, train_kwargs={ 'batch_size': 25, 'epochs': 25})),
     'iris_high_noise_ann': (DLA("iris", noise_kwargs={'noise_rate': 0.30}), DEFA(ann_class_fac, train_kwargs={ 'batch_size': 25, 'epochs': 25})),
 }
-
-RANDOM_STATE = 10
 
 dummy_evaluators = [  # Used for quick testing and run throughs
     DataOob(10, random_state=RANDOM_STATE),
