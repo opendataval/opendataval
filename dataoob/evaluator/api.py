@@ -145,7 +145,7 @@ class ExperimentMediator:
 
         return ExperimentMediator(
             loader=loader,
-            data_evaluator=data_evaluators,
+            data_evaluators=data_evaluators,
             pred_model=pred_model,
             train_kwargs=train_kwargs,
             metric_name=metric_name,
