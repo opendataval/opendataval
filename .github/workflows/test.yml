@@ -27,5 +27,4 @@ jobs:
         black --check dataoob        
     - name: Test with pytest
       run: |
-        conda install pytest
-        pytest
+        python -m pytest
