@@ -1,9 +1,9 @@
-name: Build and test check
+name: Build and Test
 
 on: [push]
 
 jobs:
-  build-linux:
+  test:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
@@ -11,9 +11,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.11
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: "3.11"
+        cache: 'pip' # caching pip dependencies
+        cache-dependency-path: setup.py
     - name: Add conda to system path
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
@@ -24,7 +26,7 @@ jobs:
     - name: Lint with ruff
       run: |
         ruff dataoob/
-        black --check dataoob        
+        black --check dataoob/
     - name: Test with pytest
       run: |
-        python -m pytest
+        python -m pytest test/

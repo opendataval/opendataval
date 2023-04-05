@@ -15,7 +15,7 @@ import opendatasets as od
 import pandas as pd
 import requests
 import sklearn.datasets as ds
-from sklearn.preprocessing import minmax_scale
+from sklearn.preprocessing import StandardScaler, minmax_scale
 
 from dataoob.dataloader.register import Register
 
@@ -67,7 +67,10 @@ def gaussian_classifier(n: int = 10000, input_dim: int = 10):
     return covar, labels
 
 
-@Register("adult", categorical=True, cacheable=True).from_covar_label_func
+adult_dataset = Register("adult", categorical=True, cacheable=True)
+
+
+@adult_dataset.add_covar_transform(StandardScaler().fit_transform).from_covar_label_func
 def download_adult(cache_dir: str, force_download: bool = False):
     """Adult Income data set. Implementation from DVRL repository.
 

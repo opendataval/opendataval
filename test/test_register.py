@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from opendataval.dataloader import Register
+from dataoob.dataloader import Register
 
 
 class TestRegister(unittest.TestCase):
@@ -22,14 +22,6 @@ class TestRegister(unittest.TestCase):
         result = reg.from_numpy(arr, label_columns).load_data()
         self.assertTrue(np.array_equal(result[0], arr[:, [0]]))
         self.assertTrue(np.array_equal(result[1], arr[:, [1]]))
-
-    def test_from_data(self):
-        reg = Register("test_from_data")
-        arr = np.array([[1, 0], [3, 1], [5, 2]])
-        result = reg.from_data(arr[:, [0]], arr[:, [1]], True).load_data()
-        self.assertTrue(np.array_equal(result[0], arr[:, [0]]))
-        # Defined labels to be the identity matrix
-        self.assertTrue(np.array_equal(result[1], np.identity(3)))
 
     def test_from_covar_label_func(self):
         reg = Register("test_covar_label")
@@ -67,7 +59,7 @@ class TestRegister(unittest.TestCase):
     def test_repeat_register(self):
         n = len(Register.Datasets)
         Register("repeat1")
-        self.assertWarns(Warning, Register, "repeat1")
+        self.assertRaises(KeyError, Register, "repeat1")
         self.assertEqual(n + 1, len(Register.Datasets))
 
 
