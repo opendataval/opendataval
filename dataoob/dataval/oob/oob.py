@@ -90,9 +90,10 @@ class DataOob(DataEvaluator):
             (0, self.label_dim), requires_grad=False, device=self.device
         )
         self.oob_indices = GroupingIndex()
+        subsets = self.random_state.randint(0, self.num_points, self.max_samples)
 
-        for _ in tqdm.tqdm(range(self.num_models)):
-            in_bag = self.random_state.randint(0, self.num_points, self.max_samples)
+        for i in tqdm.tqdm(range(self.num_models)):
+            in_bag = subsets[i]
             # out_bag is the indices where the bincount is zero.
             out_bag = (np.bincount(in_bag, minlength=self.num_points) == 0).nonzero()[0]
 

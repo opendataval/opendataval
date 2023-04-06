@@ -17,7 +17,7 @@ from dataoob.model import Model
 
 def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
     """Compute accuracy of two one-hot encoding tensors."""
-    return (torch.argmax(a, axis=1) == torch.argmax(b, axis=1)).float().mean().item()
+    return (a.argmax(dim=1) == b.argmax(dim=1)).float().mean().item()
 
 
 metrics_dict = {  # TODO add metrics and change this implementation
@@ -36,8 +36,9 @@ class DataLoaderArgs:
     device: torch.device = torch.device("cpu")
     random_state: RandomState = None
 
-    train_count: int | float = 0.8  # 80-20 split is relatively standard
+    train_count: int | float = 0.7  # 70-20-10 split is relatively standard
     valid_count: int | float = 0.2
+    test_count: int | float = 0.1
 
     noise_kwargs: dict[str, Any] = field(default_factory=dict)
     add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels
@@ -124,6 +125,7 @@ class ExperimentMediator:
         force_download: bool = False,
         train_count: int | float = 0,
         valid_count: int | float = 0,
+        test_count: int | float = 0,
         noise_kwargs: dict[str, Any] = None,
         add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels,
         device: torch.device = torch.device("cpu"),
@@ -139,7 +141,7 @@ class ExperimentMediator:
 
         loader = (
             DataLoader(dataset, force_download, device, random_state)
-            .split_dataset(train_count, valid_count)
+            .split_dataset(train_count, valid_count, test_count)
             .noisify(add_noise_func, **noise_kwargs)
         )
 
@@ -176,9 +178,13 @@ class ExperimentMediator:
             raise Exception("All tensors must be on same device")
         device = loader_args.device
 
+        train_count = loader_args.train_count
+        valid_count = loader_args.valid_count
+        test_count = loader_args.test_count
+
         loader = (
             DataLoader(loader_args.dataset, loader_args.force_download, device, rs)
-            .split_dataset(loader_args.train_count, loader_args.valid_count)
+            .split_dataset(train_count, valid_count, test_count)
             .noisify(loader_args.add_noise_func, **loader_args.noise_kwargs)
         )
 

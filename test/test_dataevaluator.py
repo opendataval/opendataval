@@ -41,8 +41,8 @@ class DummyDataEvaluator(DataEvaluator):
 
 
 class DummyDataLoader:
-    def __init__(self, x_train, y_train, x_valid, y_valid):
-        self.datapoints = x_train, y_train, x_valid, y_valid
+    def __init__(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
+        self.datapoints = x_train, y_train, x_valid, y_valid, x_test, y_test
 
 
 class TestDataEvaluator(unittest.TestCase):
@@ -52,11 +52,18 @@ class TestDataEvaluator(unittest.TestCase):
         self.y_train = torch.randn(100, 1)
         self.x_valid = torch.randn(20, 10)
         self.y_valid = torch.randn(20, 1)
+        self.x_test = torch.randn(20, 10)
+        self.y_test = torch.randn(20, 1)
 
         self.model = DummyModel(input_dim=10, output_dim=1)
         self.metric = MagicMock(return_value=1.0)
         self.loader = DummyDataLoader(
-            self.x_train, self.y_train, self.x_valid, self.y_valid
+            self.x_train,
+            self.y_train,
+            self.x_valid,
+            self.y_valid,
+            self.x_test,
+            self.y_test,
         )
 
     def test_init_(self):

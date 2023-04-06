@@ -129,6 +129,9 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         # Additional parameters
         self.num_points = len(x_train)
+        self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
+        self.marginal_count = np.zeros((self.num_points, self.num_points)) + 1e-8
+        self.marginal_increment_array_stack = np.zeros((0, self.num_points))
 
         return self
 
@@ -156,9 +159,6 @@ class ShapEvaluator(DataEvaluator, ABC):
             return self
 
         print("Start: marginal contribution computation", flush=True)
-        self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
-        self.marginal_count = np.zeros((self.num_points, self.num_points)) + 1e-8
-        self.marginal_increment_array_stack = np.zeros((0, self.num_points))
 
         gr_stat = ShapEvaluator.GR_MAX  # Converges when < gr_threshold
         iteration = 0  # Iteration wise terminator, in case MCMC goes on for too long
@@ -220,8 +220,8 @@ class ShapEvaluator(DataEvaluator, ABC):
             marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
-            self.marginal_contrib_sum[cutoff, idx] += curr_perf - prev_perf
-            self.marginal_count[cutoff, idx] += 1
+            self.marginal_contrib_sum[idx, cutoff] += curr_perf - prev_perf
+            self.marginal_count[idx, cutoff] += 1
 
             # if a new increment is not large enough, we terminate the valuation.
             distance = abs(curr_perf - prev_perf) / np.sum(marginal_increment)

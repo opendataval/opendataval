@@ -77,8 +77,9 @@ class TestDataLoaderArgs(unittest.TestCase):
 
     def test_data_loader_args_default(self):
         args = DataLoaderArgs(dataset="test_dataset")
-        self.assertEqual(args.train_count, 0.8)
+        self.assertEqual(args.train_count, 0.7)
         self.assertEqual(args.valid_count, 0.2)
+        self.assertEqual(args.test_count, 0.1)
 
 
 class TestDataEvaluatorArgs(unittest.TestCase):
@@ -113,7 +114,7 @@ class TestExperimentMediator(unittest.TestCase):
     def setUp(self):
         self.dataloader = DataLoader(
             "test_dataset", False, torch.device("cpu")
-        ).split_dataset(0.8, 0.2)
+        ).split_dataset(0.7, 0.2, 0.1)
         self.dataevaluator = DummyEvaluator()
 
     def test_experiment_mediator(self):
@@ -141,8 +142,9 @@ class TestExperimentMediator(unittest.TestCase):
         experimentmediator = ExperimentMediator.create_dataloader(
             dataset="test_dataset",
             force_download=False,
-            train_count=0.8,
+            train_count=0.7,
             valid_count=0.2,
+            test_count=0.1,
             add_noise_func=mix_labels,
             noise_kwargs={"noise_rate": 0.2},
             device=torch.device("cpu"),

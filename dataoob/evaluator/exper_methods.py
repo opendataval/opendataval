@@ -57,7 +57,7 @@ def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, f
     return {"recall": recall, "kmeans_f1": f1_kmeans_label}
 
 
-def point_addition(
+def point_removal(
     evaluator: DataEvaluator,
     loader: DataLoader,
     order: Literal["random", "ascending", "descending"] = "random",
@@ -66,9 +66,9 @@ def point_addition(
     metric_name: str = "accuracy",
     train_kwargs: dict[str, Any] = None,
 ) -> dict[str, list[float]]:
-    """Evaluate performance after adding points according to `order`.
+    """Evaluate performance after removing points according to `order`.
 
-    Repeatedly adds `percentile` of data points and trains/evaluates performance.
+    Repeatedly removes `percentile` of data points and trains/evaluates performance.
 
     Parameters
     ----------
@@ -92,7 +92,7 @@ def point_addition(
     dict[str, list[float]]
         dict containing performance list after adding ``(i * percentile)`` data points
     """
-    x_train, y_train, x_valid, y_valid = loader.datapoints
+    x_train, y_train, x_valid, y_valid, *_ = loader.datapoints
     data_values = evaluator.evaluate_data_values()
     curr_model = evaluator.pred_model.clone()
 
@@ -113,7 +113,7 @@ def point_addition(
 
     for bin_index in range(0, num_sample, num_period):
 
-        sorted_value_coalition = sorted_value_list[:bin_index]
+        sorted_value_coalition = sorted_value_list[bin_index:]
 
         new_model = curr_model.clone()
         new_model.fit(
@@ -175,7 +175,7 @@ def remove_high_low(
         dict containing list of the performance of the DataEvaluator
         ``(i * percentile)`` valuable/most valuable data points are removed
     """
-    x_train, y_train, x_valid, y_valid = loader.datapoints
+    x_train, y_train, *_, x_test, y_test = loader.datapoints
     data_values = evaluator.evaluate_data_values()
     curr_model = evaluator.pred_model.clone()
 
@@ -199,8 +199,8 @@ def remove_high_low(
             Subset(y_train, most_valuable_indices),
             **train_kwargs,
         )
-        y_hat_valid = valuable_model.predict(x_valid)
-        valuable_score = evaluator.evaluate(y_valid, y_hat_valid)
+        y_hat_valid = valuable_model.predict(x_test)
+        valuable_score = evaluator.evaluate(y_test, y_hat_valid)
         valuable_list.append(valuable_score)
 
         # Removing most valuable samples first
@@ -213,8 +213,8 @@ def remove_high_low(
             Subset(y_train, least_valuable_indices),
             **train_kwargs,
         )
-        iy_hat_valid = unvaluable_model.predict(x_valid)
-        unvaluable_score = evaluator.evaluate(y_valid, iy_hat_valid)
+        iy_hat_valid = unvaluable_model.predict(x_test)
+        unvaluable_score = evaluator.evaluate(y_test, iy_hat_valid)
         unvaluable_list.append(unvaluable_score)
 
     x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
@@ -315,3 +315,10 @@ def discover_corrupted_sample(
 
     # Returns True Positive Rate of corrupted label discovery
     return eval_results
+
+
+def save_dataval(evaluator: DataEvaluator, loader: DataLoader):
+    train_indices = loader.train_indices
+    data_values = evaluator.evaluate_data_values()
+
+    return {"indices": train_indices, "data_values": data_values}

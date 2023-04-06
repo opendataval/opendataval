@@ -183,11 +183,12 @@ class DVRL(DataEvaluator):
             if select_prob.sum().item() == 0:  # Exception (select probability is 0)
                 pred_dataval = 0.5 * torch.ones_like(pred_dataval)
                 select_prob = torch.bernoulli(pred_dataval, generator=gen)
-            select_prob = select_prob.detach()
 
             # Prediction and training
             new_model = self.pred_model.clone()
-            new_model.fit(x_batch, y_batch, *args, sample_weight=select_prob, **kwargs)
+            new_model.fit(
+                x_batch, y_batch, *args, sample_weight=select_prob.detach(), **kwargs
+            )
 
             # Reward computation
             y_valid_hat = new_model.predict(self.x_valid)
@@ -197,10 +198,6 @@ class DVRL(DataEvaluator):
 
             # Trains the VE
             loss = criterion(pred_dataval, select_prob, reward_curr)
-            if abs(loss.item()) < 1e-6:
-                # In the case where reward_crr ~ 0, meaning performance is same
-                # as validation such as when the accuracy is all predicting one label
-                continue
             loss.backward(retain_graph=True)
             optimizer.step()
 
@@ -404,7 +401,7 @@ class DveLoss(nn.Module):
         """
         loss = F.binary_cross_entropy(pred_dataval, selector_input, reduction="sum")
 
-        reward_loss = reward_input * loss
+        reward_loss = -reward_input * loss
         search_loss = (  # Additional loss when VE is stuck outside threshold range
             F.relu(torch.mean(pred_dataval) - self.threshold)
             + F.relu((1 - self.threshold) - torch.mean(pred_dataval))

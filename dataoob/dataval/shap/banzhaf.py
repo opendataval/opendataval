@@ -1,3 +1,5 @@
+from itertools import accumulate
+
 import numpy as np
 import torch
 import tqdm
@@ -6,6 +8,7 @@ from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
 from dataoob.dataval.api import DataEvaluator
+from dataoob.dataval.shap.shap import ShapEvaluator
 
 
 class DataBanzhaf(DataEvaluator):
@@ -119,3 +122,79 @@ class DataBanzhaf(DataEvaluator):
             where=self.sample_counts != 0,
         )
         return msr[:, 1] - msr[:, 0]  # Diff of subsets including/excluding i data point
+
+
+class DataBanzhafMargContrib(ShapEvaluator):
+    """Data Banzhaf implementation using the marginal contributions.
+
+    Data Banzhaf implementation using the ShapEvaluator, which already computes the
+    marginal contributions for other evaluators. This approach may not be as efficient
+    as the previous approach, but is reccomended to minimize compute time if
+    you cache a previous computation.
+
+    References
+    ----------
+    .. [1] J. T. Wang and R. Jia,
+        Data Banzhaf: A Robust Data Valuation Framework for Machine Learning,
+        arXiv.org, 2022. Available: https://arxiv.org/abs/2205.15466.
+
+    Parameters
+    ----------
+    gr_threshold : float, optional
+        Convergence threshold for the Gelman-Rubin statistic.
+        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.01
+    max_iterations : int, optional
+        Max number of outer iterations of MCMC sampling, by default 100
+    min_samples : int, optional
+        Minimum samples before checking MCMC convergence, by default 1000
+    model_name : str, optional
+        Unique name of the model, caches marginal contributions, by default None
+    random_state : RandomState, optional
+        Random initial state, by default None
+    """
+
+    def __init__(
+        self,
+        gr_threshold: float = 1.01,
+        max_iterations: int = 100,
+        min_samples: int = 1000,
+        model_name: str = None,
+        random_state: RandomState = None,
+    ):
+        super().__init__(
+            gr_threshold, max_iterations, min_samples, model_name, random_state
+        )
+
+    def compute_weight(self) -> float:
+        """Compute weights for each cardinality of training set.
+
+        Banzhaf weights each data point according to the number of combinations of
+        :math:`j` cardinality to number of data points
+
+        Returns
+        -------
+        np.ndarray
+            Weights by cardinality of subset
+        """
+
+        def pascals(prev: int, position: int):  # Get level of pascal's traingle
+            return (prev * (self.num_points - position + 1)) // position
+
+        weights = np.fromiter(
+            accumulate(range(2, self.num_points + 1), pascals, initial=self.num_points),
+            dtype=float,
+        )
+        return weights / weights.sum()
+
+    def evaluate_data_values(self) -> np.ndarray:
+        """Return data values for each training data point.
+
+        Multiplies the marginal contribution with their respective weights to get
+        Data Banzhaf
+
+        Returns
+        -------
+        np.ndarray
+            Predicted data values/selection for every training data point
+        """
+        return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)

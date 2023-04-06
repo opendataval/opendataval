@@ -73,20 +73,29 @@ class DataLoader:
         (torch.Tensor | Dataset, torch.Tensor)
             Training Covariates, Training Labels
         (torch.Tensor | Dataset, torch.Tensor)
-            Validation+Test Covariates, Valid+test Labels
+            Validation Covariates, Valid Labels
+        (torch.Tensor | Dataset, torch.Tensor)
+            Test Covariates, Test Labels
         """
         if isinstance(self.covar, Dataset):
-            x_train, x_valid = self.x_train, self.x_valid
+            x_train, x_valid, x_test = self.x_train, self.x_valid, self.x_test
         else:
             x_train = torch.tensor(self.x_train, device=self.device, dtype=torch.float)
             x_valid = torch.tensor(self.x_valid, device=self.device, dtype=torch.float)
+            x_test = torch.tensor(self.x_test, device=self.device, dtype=torch.float)
 
         y_train = torch.tensor(self.y_train, device=self.device, dtype=torch.float)
         y_valid = torch.tensor(self.y_valid, device=self.device, dtype=torch.float)
+        y_test = torch.tensor(self.y_test, device=self.device, dtype=torch.float)
 
-        return x_train, y_train, x_valid, y_valid
+        return x_train, y_train, x_valid, y_valid, x_test, y_test
 
-    def split_dataset(self, train_count: int | float = 0, valid_count: int | float = 0):
+    def split_dataset(
+        self,
+        train_count: int | float = 0,
+        valid_count: int | float = 0,
+        test_count: int | float = 0,
+    ):
         """Split the covariates and labels to the specified counts/proportions.
 
         Parameters
@@ -95,6 +104,8 @@ class DataLoader:
             Number/proportion training points
         valid_count : int | float
             Number/proportion validation points
+        test_count : int | float
+            Number/proportion test points
 
         Returns
         -------
@@ -120,26 +131,37 @@ class DataLoader:
 
         num_points = len(self.covar)
 
-        match (train_count, valid_count):
-            case int(train), int(valid) if sum((train, valid)) <= num_points:
-                splits = accumulate((train, valid))
-            case float(train), float(valid) if sum((train, valid)) <= 1.0:
-                splits = (round(num_points * prob) for prob in (train, valid))
+        match (train_count, valid_count, test_count):
+            case int(tr), int(val), int(tes) if sum((tr, val, tes)) <= num_points:
+                splits = accumulate((tr, val, tes))
+            case float(tr), float(val), float(tes) if sum((tr, val, tes)) <= 1.0:
+                splits = (round(num_points * prob) for prob in (tr, val, tes))
                 splits = accumulate(splits)
             case _:
-                raise ValueError("Invalid split, split must not exceed length")
+                raise ValueError(
+                    "Split can't exceed length and must be same type, def type is int."
+                )
 
         # Extra underscore to unpack any remainders
         indices = self.random_state.permutation(num_points)
-        train_idx, valid_idx, _ = np.split(indices, list(splits))
+        train_indices, valid_indices, test_indices, _ = np.split(indices, list(splits))
 
         if isinstance(self.covar, Dataset):
-            self.x_train = Subset(self.covar, train_idx)
-            self.x_valid = Subset(self.covar, valid_idx)
+            self.x_train = Subset(self.covar, train_indices)
+            self.x_valid = Subset(self.covar, valid_indices)
+            self.x_test = Subset(self.covar, test_indices)
         else:
-            self.x_train, self.x_valid = self.covar[train_idx], self.covar[valid_idx]
-        self.y_train, self.y_valid = self.labels[train_idx], self.labels[valid_idx]
+            self.x_train = self.covar[train_indices]
+            self.x_valid = self.covar[valid_indices]
+            self.x_test = self.covar[test_indices]
 
+        self.y_train = self.labels[train_indices]
+        self.y_valid = self.labels[valid_indices]
+        self.y_test = self.labels[test_indices]
+
+        self.train_indices = train_indices
+        self.valid_indices = valid_indices
+        self.test_indices = test_indices
         return self
 
     def noisify(
@@ -152,7 +174,8 @@ class DataLoader:
 
         Adds noise to the data set and saves the indices of the noisy data.
         Return object of `add_noise_func` is a dict with keys to signify how the
-        data are updated: {'x_train', 'y_train', 'x_test', 'y_test', 'noisy_indices'}
+        data are updated:
+        {'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_indices'}
 
         Parameters
         ----------
@@ -160,7 +183,8 @@ class DataLoader:
             Takes as argument required arguments x_train, y_train, x_valid, y_valid
             and adds noise to those data points as needed. Returns dict[str, np.ndarray]
             that has the updated np.ndarray in a dict to update the data loader with the
-            following keys: {'x_train', 'y_train', 'x_test', 'y_test', 'noisy_indices'}
+            following keys:
+            {'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_indices'}
 
         Returns
         -------
@@ -174,6 +198,8 @@ class DataLoader:
         self.y_train = noisy_datapoints.get("y_train", self.y_train)
         self.x_valid = noisy_datapoints.get("x_valid", self.x_valid)
         self.y_valid = noisy_datapoints.get("y_valid", self.y_valid)
+        self.x_test = noisy_datapoints.get("x_test", self.x_test)
+        self.y_test = noisy_datapoints.get("y_test", self.y_test)
         self.noisy_indices = noisy_datapoints.get("noisy_indices", np.array([]))
 
         return self

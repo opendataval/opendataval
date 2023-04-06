@@ -32,14 +32,20 @@ class TestDataLoader(unittest.TestCase):
         self.assertTrue(n + 1 == len(DataLoader.datasets_available()))
 
     def test_split_dataset(self):
-        self.loader.split_dataset(train_count=0.8, valid_count=0.2)
-        x_train, y_train, x_valid, y_valid = self.loader.datapoints
+        self.loader.split_dataset(train_count=0.7, valid_count=0.2, test_count=0.1)
+        x_train, y_train, x_valid, y_valid, x_test, y_test = self.loader.datapoints
         self.assertIsInstance(x_train, torch.Tensor)
         self.assertIsInstance(y_train, torch.Tensor)
         self.assertIsInstance(x_valid, torch.Tensor)
         self.assertIsInstance(y_valid, torch.Tensor)
-        self.assertEqual(x_train.shape[0], 80)
+        self.assertIsInstance(x_test, torch.Tensor)
+        self.assertIsInstance(y_test, torch.Tensor)
+        self.assertEqual(x_train.shape[0], 70)
+        self.assertEqual(y_train.ndim, 2)
         self.assertEqual(x_valid.shape[0], 20)
+        self.assertEqual(y_valid.ndim, 2)
+        self.assertEqual(x_test.shape[0], 10)
+        self.assertEqual(y_test.ndim, 2)
 
     def test_noisify(self):
         # Test with no noise
@@ -63,14 +69,26 @@ class TestDataLoader(unittest.TestCase):
     def test_invalid_split(self):
         self.assertRaises(KeyError, DataLoader, dataset_name="nonexistent")
         self.assertRaises(
-            ValueError, self.loader.split_dataset, train_count=80, valid_count=100
+            ValueError,
+            self.loader.split_dataset,
+            train_count=80,
+            valid_count=100,
+            test_count=100,
         )
         self.assertRaises(
-            ValueError, self.loader.split_dataset, train_count=0.8, valid_count=0.3
+            ValueError,
+            self.loader.split_dataset,
+            train_count=0.8,
+            valid_count=0.3,
+            test_count=0.1,
         )
         self.loader.covar = np.array([1])
         self.assertRaises(
-            ValueError, self.loader.split_dataset, train_count=0.8, valid_count=0.0
+            ValueError,
+            self.loader.split_dataset,
+            train_count=0.8,
+            valid_count=0.0,
+            test_count=0.0,
         )
 
 

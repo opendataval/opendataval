@@ -155,7 +155,7 @@ class DataEvaluator(ABC):
 
     def input_dataloader(self, loader: DataLoader):
         """Input data from a DataLoader object. Alternative way of adding data."""
-        x_train, y_train, x_valid, y_valid = loader.datapoints
+        x_train, y_train, x_valid, y_valid, *_ = loader.datapoints
         return self.input_data(x_train, y_train, x_valid, y_valid)
 
     def train(

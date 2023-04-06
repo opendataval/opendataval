@@ -16,7 +16,7 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-<h3 align="center">Data Oob</h3>
+<h3 align="center">Open Data Valuation</h3>
 
   <p align="center">
     Data Valuation Meta-Meta Framework
@@ -90,7 +90,7 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `kevinfjiang`, `data-oob`, `twitter_handle`, `yahoo`, `kevinfjiang`, `Data Oob`, `Data Valuation Meta-Meta Framework`
+Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `kevinfjiang`, `data-oob`, `twitter_handle`, `yahoo`, `kevinfjiang`, `Open Data Val`, `Data Valuation Meta-Meta Framework`
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
