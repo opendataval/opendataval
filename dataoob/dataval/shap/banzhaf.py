@@ -129,7 +129,7 @@ class DataBanzhafMargContrib(ShapEvaluator):
 
     Data Banzhaf implementation using the ShapEvaluator, which already computes the
     marginal contributions for other evaluators. This approach may not be as efficient
-    as the previous approach, but is reccomended to minimize compute time if
+    as the previous approach, but is recommended to minimize compute time if
     you cache a previous computation.
 
     References
@@ -181,7 +181,7 @@ class DataBanzhafMargContrib(ShapEvaluator):
             return (prev * (self.num_points - position + 1)) // position
 
         weights = np.fromiter(
-            accumulate(range(2, self.num_points + 1), pascals, initial=self.num_points),
+            accumulate(range(1, self.num_points), func=pascals, initial=1),
             dtype=float,
         )
         return weights / weights.sum()
