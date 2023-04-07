@@ -12,7 +12,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/kevinfjiang/data-oob">
+  <a href="https://github.com/kevinfjiang/opendataval">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -21,14 +21,14 @@
   <p align="center">
     Data Valuation Meta-Meta Framework
     <br />
-    <a href="https://github.com/kevinfjiang/data-oob"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/kevinfjiang/opendataval"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/kevinfjiang/data-oob">View Demo</a>
+    <a href="https://github.com/kevinfjiang/opendataval">View Demo</a>
     ·
-    <a href="https://github.com/kevinfjiang/data-oob/issues">Report Bug</a>
+    <a href="https://github.com/kevinfjiang/opendataval/issues">Report Bug</a>
     ·
-    <a href="https://github.com/kevinfjiang/data-oob/issues">Request Feature</a>
+    <a href="https://github.com/kevinfjiang/opendataval/issues">Request Feature</a>
   </p>
 </div>
 
@@ -72,12 +72,16 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#usage">Usage</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#architecture">Architecture</a></li><li>
+    <a href="#opendataval-leaderboards">Leaderboards</a></li>
+    <li><a href="#contributing">Contributing</a></li><ul>
+            <li><a href="#roadmap">Roadmap</a></li>
+    </ul></li>
     <li><a href="#license">License</a></li>
+    <li><a href="#cite-us">Cite Us</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
@@ -90,7 +94,7 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `kevinfjiang`, `data-oob`, `twitter_handle`, `yahoo`, `kevinfjiang`, `Open Data Val`, `Data Valuation Meta-Meta Framework`
+<!-- Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `kevinfjiang`, `opendataval`, `twitter_handle`, `yahoo`, `kevinfjiang`, `Open Data Val`, `Data Valuation Meta-Meta Framework` -->
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -132,7 +136,7 @@ Install Python3.10 or Python 3.11.
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/kevinfjiang/data-oob.git
+   git clone https://github.com/kevinfjiang/opendataval.git
    ```
 2. Install dependencies
    ```sh
@@ -153,7 +157,126 @@ Install Python3.10 or Python 3.11.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+### Quick Start
+To set up an experiment on DataEvaluators
+```python
+from dataoob.evaluator import preset
+from dataoob.eval_method import discover_corrupted_sample, noisy
+
+eval_med = preset.from_presets('iris_low_noise_ann', 'experiment')  # Allocate 20+ min
+
+# Runs a discover the noisy data experiment for each DataLoader
+# Plots the results in figure (if has plot arg), and returns the results as a DataFrame
+data, fig = eval_med.plot(discover_corrupted_sample)
+
+# If not plot: Axes argument, we can still evaluate the function with the following
+# Any function with arguments (DataEvaluator, DataLoader, ...) -> dict is valid.
+data = eval_method.evaluate(noisy_detection)
+```
+
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
+### Overview
+Here are the 4 interacting parts of opendataval
+1. `DataEvaluator`, Measures the data values of input data point for a specified model.
+2. `DataLoader`, Loads data and holds meta data regarding splits
+3. `Model`, trainable prediction model.
+4. `ExperimentMediator`, facilitates experiments regarding data values across several `DataEvaluator`s
+```python
+loader = (
+    DataLoader(dataset_name='name')
+    .split_dataset(train_count=.7, valid_count=.2, test_count=.1)
+    .noisify(noise_func)  # (DataLoader, ...) -> dict
+)
+
+evaluator = ChildEvaluator()  # DataEvaluator is abstract
+model = ChildModel()  # Model is abstract
+
+expermed = ExperimentMediator(
+    loader=loader,
+    data_evaluators=[evaluator],
+    pred_model=model,
+    metric_name='accuracy'
+)
+
+expermed.evaluate(exper_func)
+```
+
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
+### `Model`
+`Model` is an abstract base class that requires the implementation of three methods: `.train(x, y)`, `.predict(x)`, `.clone()`.
+
+`Model` was primarily designed with PyTorch models in mind, which is why there are additional mixins to inherit for PyTorch models. However, there is support for sk-learn models through a wrapper:
+```python
+from dataoob.model import ClassifierSkLearnWrapper
+from sklearn.linear_model import LogisticRegression
+
+wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression(), label_dim, device=torch.device('...'))
+
+wrapped_lr.fit(x, y)
+wrapped_lr.predict(x)  # equiv of `.predict_proba()`
+```
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
+### `DataEvaluator`
+We have a catalog of `DataEvaluator` with many default arguments. Many DataEvaluators will do well with default arguments for data points `n`<100. To pull one in do the following
+```python
+from dataoob.dataval.ame import AME
+
+dataval = AME()
+```
+To inject model, metrics, and data points for training
+```python
+dataval = (
+    dataval
+    .input_model_metric(model, metric)
+    .input_data(x_train, y_train, x_valid, y_valid)
+    .train_data_values()
+)
+
+data_values = dataval.evaluate_data_values()
+```
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+### `DataLoader`
+The DataLoader accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
+```python
+DataLoader.datasets_available()  # ['name1', 'name2']
+```
+
+A dataloader first takes a data set name to be loaded.
+```python
+from dataoob.dataloader import DataLoader
+
+loader = DataLoader(dataset_name='name1', device=torch.device('...'))
+```
+
+From there we must define how we will split the data set into train/valid/test splits
+```python
+loader = loader.split_dataset(70, 20, 10)  # Data set counts
+loader = loader.split_dataset(.7, .2, .1)  # Replits on proportions
+```
+
+To get data points
+```python
+x_train, y_train, x_valid, y_valid, x_test, y_test = loader.datapoints
+```
+
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
+### `ExperimentMediator`
+`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and faciliatate additional experiments. NOTE when training `DataEvaluator`, errors might be raised and caught. A warning will be raised but training will continue because training can often take a long time.
+```python
+expermed = ExperimentrMediator(
+    loader, data_evaluators, model, train_kwargs, metric_name
+)
+```
+
+From here we can run experiments by passing in an experiment function `(DataEvaluator, DataLoader) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable. All returns include a pandas `DataFrame`.
+```python
+df = expermed.evaluate(noisy_detection)
+df, figure = expermed.plot(discover_corrupted_sample)
+```
 
 _For more examples, please refer to the [Documentation](https://example.com)_
 
@@ -163,15 +286,19 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 ## Architecture
 [![](https://mermaid.ink/img/pako:eNqdVdtu2zAM_RVBe3FaJ7Pr5mYUBbZentaXrtvDYMBQbCUV4EiGLXfxiuTbR0mJrThxByxAEok8pMhDinrHiUgpDnGSkbK8Z2RVkDVSn4ir32e6YqWkBRoOL9A9keSbIClsQ3Qn1rkomWSCf34kCUiNhXbU2L0boVaIN1IwImnZyjKyoJm132XgPk7hHGdgpNuImwVJ05gLVtJ4WfEE3QyHt1ZAIfqRp8o3UsboN5OvSKPtoI5dWKHd3CiBSuX2FrVix0o4038DSDxliTzQ00Rnfi18hP0IA2tCrUajC9go7cMbySoihWLwy2pV0BVRxxrzJyhF9l-WJj_reCu5poSKmZLKVsNTUhSkRptYFoTxU0Xdp9jEEA1Lz1n0KBTvdcw4sGc3wGWZZ0zG-9AcfVyciIpLF2lPZjOwLJQntqydTkMsuw3TctJQZ7FiuM4LmsZrtWw1L1We0d0L5aUodpq0XDAu7aAZzytp7BzjSK8HJxDdyaddZOFMxgqnmKto6dhaaiKnxwCkKT2bro7GSvNyyaRjckEbF-1XtX2G4gBaukEN9qiO_77ehtXDJqcFW1Mun8CVIro1adu26eZ_G3YvQi9cXTw7_VOExcVJHVrVN7ghu6NwTeVjetiXH7XOmYo5VIVyaE199iOMVmoTnwnZD-vQfyZ3PQJb-xA9V7w0Ag1Egh-XwGaqteuZg50x2NaxocS1GHU7A7KJHiHs4jUt1oSl8MzowyIsXynkiENYLuDiR9i15D_VM7HIYEwAYB9dhHNIihT1ncggEW35KV3QgC72xhbmhW6kjQu8YBwkp7ivooCQP0RqspS_PkBJE6Fm3FFgnjfxPc9CwfiVrAMaJ7PrxVlX_XEpKJC6BU5JJcX3mic4lEVFXVzp92__gh-E0CpQqKf9Ey_4kq3ANCf8lxANCLY4fMcbHF75s5HvT725N_bn1-PZ3MU1DoP5yPcmQRCMp17gj6-mWxf_0fbeaHblT64n09nMh-_2L3G-nKE?type=png)](https://mermaid.live/edit#pako:eNqdVdtu2zAM_RVBe3FaJ7Pr5mYUBbZentaXrtvDYMBQbCUV4EiGLXfxiuTbR0mJrThxByxAEok8pMhDinrHiUgpDnGSkbK8Z2RVkDVSn4ir32e6YqWkBRoOL9A9keSbIClsQ3Qn1rkomWSCf34kCUiNhXbU2L0boVaIN1IwImnZyjKyoJm132XgPk7hHGdgpNuImwVJ05gLVtJ4WfEE3QyHt1ZAIfqRp8o3UsboN5OvSKPtoI5dWKHd3CiBSuX2FrVix0o4038DSDxliTzQ00Rnfi18hP0IA2tCrUajC9go7cMbySoihWLwy2pV0BVRxxrzJyhF9l-WJj_reCu5poSKmZLKVsNTUhSkRptYFoTxU0Xdp9jEEA1Lz1n0KBTvdcw4sGc3wGWZZ0zG-9AcfVyciIpLF2lPZjOwLJQntqydTkMsuw3TctJQZ7FiuM4LmsZrtWw1L1We0d0L5aUodpq0XDAu7aAZzytp7BzjSK8HJxDdyaddZOFMxgqnmKto6dhaaiKnxwCkKT2bro7GSvNyyaRjckEbF-1XtX2G4gBaukEN9qiO_77ehtXDJqcFW1Mun8CVIro1adu26eZ_G3YvQi9cXTw7_VOExcVJHVrVN7ghu6NwTeVjetiXH7XOmYo5VIVyaE199iOMVmoTnwnZD-vQfyZ3PQJb-xA9V7w0Ag1Egh-XwGaqteuZg50x2NaxocS1GHU7A7KJHiHs4jUt1oSl8MzowyIsXynkiENYLuDiR9i15D_VM7HIYEwAYB9dhHNIihT1ncggEW35KV3QgC72xhbmhW6kjQu8YBwkp7ivooCQP0RqspS_PkBJE6Fm3FFgnjfxPc9CwfiVrAMaJ7PrxVlX_XEpKJC6BU5JJcX3mic4lEVFXVzp92__gh-E0CpQqKf9Ey_4kq3ANCf8lxANCLY4fMcbHF75s5HvT725N_bn1-PZ3MU1DoP5yPcmQRCMp17gj6-mWxf_0fbeaHblT64n09nMh-_2L3G-nKE)
 
-<!-- ROADMAP -->
-## Roadmap
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+## Opendataval Leaderboards
+For every `DataEvaluator`, we will provide its performance compared to the other
+`DataEvaluators` for a specific preset specified in `presets`.
 
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
+Submitting a new `DataEvaluator` and a list of `presets` and `experiments` to test it on
+will be trained and tested several times. We will always use the same seeds, with one
+seed used public: `42`.
 
-See the [open issues](https://github.com/kevinfjiang/data-oob/issues) for a full list of proposed features (and known issues).
+Submitting a new `Register` data set is very helpful as that will increases the number
+of different presets.
+
+Submitting a new `exper_func` increases the number of metrics for evaluation.
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -180,7 +307,7 @@ See the [open issues](https://github.com/kevinfjiang/data-oob/issues) for a full
 <!-- CONTRIBUTING -->
 ## Contributing
 
-If you have a quick suggestion, reccomendation, bug-fixes please open an [issue](https://github.com/kevinfjiang/data-oob/issues).
+If you have a quick suggestion, reccomendation, bug-fixes please open an [issue](https://github.com/kevinfjiang/opendataval/issues).
 If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](CONTRIBUTING.md).
 If you have created a new `DataEvaluator`, and would like to get it implemented and
 evaluated, please see our [Contribution page](CONTRIBUTING.md). TODO i haven't figured out how to evaluate but we'll leave it like this for now.
@@ -193,7 +320,19 @@ evaluated, please see our [Contribution page](CONTRIBUTING.md). TODO i haven't f
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
+<!-- ROADMAP -->
+## Roadmap
 
+- [ ] Feature 1
+- [ ] Feature 2
+- [ ] Feature 3
+    - [ ] Nested Feature
+
+See the [open issues](https://github.com/kevinfjiang/opendataval/issues) for a full list of proposed features (and known issues).
+## Cite us
+TODO
+
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 <!-- LICENSE -->
 ## License
@@ -226,19 +365,19 @@ Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - kevinfjiang@
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/kevinfjiang/data-oob.svg?style=for-the-badge
-[contributors-url]: https://github.com/kevinfjiang/data-oob/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/kevinfjiang/data-oob.svg?style=for-the-badge
-[forks-url]: https://github.com/kevinfjiang/data-oob/network/members
-[stars-shield]: https://img.shields.io/github/stars/kevinfjiang/data-oob.svg?style=for-the-badge
-[stars-url]: https://github.com/kevinfjiang/data-oob/stargazers
-[issues-shield]: https://img.shields.io/github/issues/kevinfjiang/data-oob.svg?style=for-the-badge
-[issues-url]: https://github.com/kevinfjiang/data-oob/issues
-[license-shield]: https://img.shields.io/github/license/kevinfjiang/data-oob.svg?style=for-the-badge
-[license-url]: https://github.com/kevinfjiang/data-oob/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/kevinfjiang/opendataval.svg?style=for-the-badge
+[contributors-url]: https://github.com/kevinfjiang/opendataval/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/kevinfjiang/opendataval.svg?style=for-the-badge
+[forks-url]: https://github.com/kevinfjiang/opendataval/network/members
+[stars-shield]: https://img.shields.io/github/stars/kevinfjiang/opendataval.svg?style=for-the-badge
+[stars-url]: https://github.com/kevinfjiang/opendataval/stargazers
+[issues-shield]: https://img.shields.io/github/issues/kevinfjiang/opendataval.svg?style=for-the-badge
+[issues-url]: https://github.com/kevinfjiang/opendataval/issues
+[license-shield]: https://img.shields.io/github/license/kevinfjiang/opendataval.svg?style=for-the-badge
+[license-url]: https://github.com/kevinfjiang/opendataval/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[test-url]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/data-oob/test?style=for-the-badge
-[test-shield]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/data-oob/test?style=for-the-badge
+[test-url]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test?style=for-the-badge
+[test-shield]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test?style=for-the-badge
 [product-screenshot]: images/screenshot.png
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/

@@ -59,9 +59,9 @@ class DataOob(DataEvaluator):
         y_train : torch.Tensor
             Data labels
         x_valid : torch.Tensor
-            Test+Held-out covariates, unused by data-oob
+            Test+Held-out covariates, unused by DataOob
         y_valid : torch.Tensor
-            Test+Held-out labels, unused by data-oob
+            Test+Held-out labels, unused by DataOob
         """
         self.x_train = x_train
         self.y_train = y_train

@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
+from torch.utils.data import Dataset
 
 from dataoob.dataloader import DataLoader
 from dataoob.model import Model
@@ -95,9 +96,9 @@ class DataEvaluator(ABC):
 
     def input_data(
         self,
-        x_train: torch.Tensor,
+        x_train: torch.Tensor | Dataset,
         y_train: torch.Tensor,
-        x_valid: torch.Tensor,
+        x_valid: torch.Tensor | Dataset,
         y_valid: torch.Tensor,
     ):
         """Store and transform input data for DataEvaluator.

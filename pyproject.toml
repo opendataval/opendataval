@@ -43,7 +43,7 @@ dev = [
     "ruff~=0.0.2",
     "black~=22.10",
     "sphinx~=6.1",
-    "pre-commit~=3.2"
+    "pre-commit~=3.2",
 ]
 test = [
     "pytest~=7.2.2",
