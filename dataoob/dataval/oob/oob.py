@@ -71,6 +71,11 @@ class DataOob(DataEvaluator):
         self.label_dim = 1 if self.y_train.dim() == 1 else self.y_train.size(dim=1)
         self.max_samples = round(self.proportion * self.num_points)
         self.device = x_train.device
+
+        self.oob_pred = torch.zeros(
+            (0, self.label_dim), requires_grad=False, device=self.device
+        )
+        self.oob_indices = GroupingIndex()
         return self
 
     def train_data_values(self, *args, **kwargs):
@@ -86,11 +91,8 @@ class DataOob(DataEvaluator):
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
-        self.oob_pred = torch.zeros(
-            (0, self.label_dim), requires_grad=False, device=self.device
-        )
-        self.oob_indices = GroupingIndex()
-        subsets = self.random_state.randint(0, self.num_points, self.max_samples)
+        sample_dim = (self.num_models, self.max_samples)
+        subsets = self.random_state.randint(0, self.num_points, size=sample_dim)
 
         for i in tqdm.tqdm(range(self.num_models)):
             in_bag = subsets[i]
