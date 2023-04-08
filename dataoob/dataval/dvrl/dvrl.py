@@ -166,7 +166,7 @@ class DVRL(DataEvaluator):
         criterion = DveLoss(threshold=self.threshold)
 
         dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
-        gen = torch.Generator(self.device).manual_seed(self.random_state.tomaxint())
+        gen = torch.Generator().manual_seed(self.random_state.tomaxint())
         rs = RandomSampler(dataset, True, self.rl_epochs * batch_size, generator=gen)
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
