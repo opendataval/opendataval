@@ -1,16 +1,13 @@
-
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = [
-    "setuptools ~=63.2.0",
-    "wheel ~=0.37.1",
-]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dataoob"
 authors = [
+    {name = "Kevin Jiang", email = "kfj2112@columbia.edu"},
     {name = "Yongchan Kwon", email = "yk3012@columbia.edu"},
-    {name = "Kevin Jiang", email = "kfj2112@columbia.edu"}
+
 ]
 description = "Transparent Data Valuation"  # TODO
 readme = "README.md"
@@ -34,7 +31,8 @@ dependencies = [
     "tqdm~=4.64",
     "opendatasets~=0.1.22",
     "jupyterlab~=3.6.1",
-    "notebook~=6.5.2"
+    "notebook~=6.5.2",
+    "pip-tools~=6.13.0"
 ]
 dynamic = ["version"]
 
@@ -43,18 +41,18 @@ dev = [
     "ruff~=0.0.2",
     "black~=22.10",
     "sphinx~=6.1",
-    "pre-commit~=3.2",
+    "pre-commit~=3.2"
 ]
 test = [
     "pytest~=7.2.2",
     "pytest-cov~=4.0.0"
 ]
 
-[tool.setuptools]
+[tool.hatch]
 packages = ["dataoob"]  # TODO
 
-[tool.setuptools.dynamic]
-version = {attr = "dataoob.__version__"}
+[tool.hatch.version]
+path = "dataoob/__init__.py"
 
 [tool.black]
 line-length = 88

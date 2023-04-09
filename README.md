@@ -140,12 +140,11 @@ Install Python3.10 or Python 3.11.
    ```
 2. Install dependencies
    ```sh
-   pip install -e .
+   make install
    ```
     a. Install optional dependencies if you're contributing  TODO contributing.md
     ```sh
-    pip install -e '.[dev, test]'
-    pre-commit install
+    make install-dev
     ```
     b. If you want to pull in kaggle datasets, I'd reccomend looking how to add a kaggle folder to the current directory. Tutorial [here](https://www.analyticsvidhya.com/blog/2021/04/how-to-download-kaggle-datasets-using-jupyter-notebook/)
 3. Open demo.ipynb to see presets and the training workflow
@@ -361,7 +360,15 @@ Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - kevinfjiang@
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
+## Sharing TODO delete me
+To share this repository with non-contributers prior to making this public, run the following command.
+Expiration date:
+![Token expiration](https://img.shields.io/date/1683432000?style=for-the-badge)
+```sh
+git clone https://oauth2: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@github.com/kevinfjiang/opendataval.git
+```
 
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->

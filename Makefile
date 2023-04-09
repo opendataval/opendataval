@@ -10,7 +10,6 @@ install:
 install-dev: install
 	@echo ">> Installing dev dependencies"
 	python -m pip install -e ".[dev, test]"
-	pre-commit install
 
 ## Delete all temporary files
 clean:
@@ -25,12 +24,12 @@ clean:
 	rm -rf dist
 
 format:
-	ruff --fix --exit-non-zero-on-fix opendataval/
-	black opendataval/
+	ruff --fix --exit-non-zero-on-fix dataoob/
+	black dataoob/
 
 ## Run tests
 test:
-	pytest --cov=opendataval/ --cov-report xml --log-level=WARNING --disable-pytest-warnings
+	python -m pytest --cov=dataoob/ --cov-report xml --log-level=WARNING --disable-pytest-warnings
 
 ## Build dependencies
 build:
