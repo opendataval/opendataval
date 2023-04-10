@@ -186,7 +186,7 @@ class ClassifierNNMixin(Model, nn.Module):
         self.train()
         for _ in range(int(epochs)):
             # *weights helps check if we passed weights into the Dataloader
-            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size):
+            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
                 optimizer.zero_grad()
                 outputs = self.__call__(x_batch)
 
