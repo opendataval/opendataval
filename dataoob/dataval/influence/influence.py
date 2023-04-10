@@ -93,7 +93,7 @@ class InfluenceFunctionEval(DataEvaluator):
         for i in tqdm.tqdm(range(self.samples)):
             subset = self.random_state.choice(
                 self.num_points, round(self.proportion * self.num_points), replace=False
-            )
+            )  # Random subset of cardinality `round(self.proportion * self.num_points)`
 
             curr_model = self.pred_model.clone()
             curr_model.fit(
