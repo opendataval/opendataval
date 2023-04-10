@@ -33,6 +33,13 @@ class DataEvaluator(ABC):
     kwargs : Dict[str, Any]
         DavaEvaluator key word arguments
 
+    Attributes
+    ----------
+    pred_model : Model
+        Prediction model to find how much each training datum contributes towards it.
+    plot_title: str
+        Name of the DataEvaluator with non-default arguments
+
     Raises
     ------
     ValueError

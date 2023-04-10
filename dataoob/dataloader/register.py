@@ -107,7 +107,7 @@ class Register:
     def from_covar_label_func(self, func: DatasetCallable) -> DatasetCallable:
         """Register data set from Callable -> (covariates, labels)."""
         self.covar_label_func = func
-        return Self
+        return func
 
     def from_covar_func(self, func: DatasetCallable) -> DatasetCallable:
         """Register data set from 2 Callables, registers covariates Callable."""

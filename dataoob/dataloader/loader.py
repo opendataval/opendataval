@@ -1,5 +1,5 @@
-from itertools import accumulate
-from typing import Any, Callable, Self
+from itertools import accumulate, chain
+from typing import Any, Callable, Self, Sequence
 
 import numpy as np
 import torch
@@ -27,20 +27,35 @@ class DataLoader:
     device : int, optional
         Tensor device for acceleration, by default torch.device("cpu")
 
+    Attributes
+    ----------
+    datapoints : tuple[torch.Tensor, ...]
+        Train+Valid+Test covariates and labels as Tensors loaded on input device
+    train_indices : np.ndarray[int]
+        The indices of the original data set used to make the training data set.
+    valid_indices : np.ndarray[[int]
+        The indices of the original data set used to make the validation data set.
+    test_indices : np.ndarray[[int]
+        The indices of the original data set used to make the test data set.
+    noisy_indices : np.ndarray[[int]
+        The indices of training data points with noise added to them.
+    [x/y]_[train/valid/test] : np.ndarray
+        Access to the raw split of the [covariate/label] [train/valid/test] data set
+        prior being transformed into a tensor. Useful for adding noise to functions.
+
     Raises
     ------
     KeyError
         In order to use a data set, you must register it by creating a
         :py:class:`Register`
-    AttributeError
-        No specified Covariates or labels. Ensure that the Register object
-        has loaded your data set correctly
+    ValueError
+        Loaded Data set covariates and labels must be of same length.
     ValueError
         Splits must not exceed the length of the data set. In other words, if
         the splits are ints, the values must be less than the length. If they are
-        floats they must be less than 1.0. If they are anything else, raises error.
+        floats they must be less than 1.0. If they are anything else, raises error
     ValueError
-
+        Specified indices must not repeat and must not be outside range of the data set
     """
 
     def __init__(
@@ -55,6 +70,8 @@ class DataLoader:
 
         dataset = Register.Datasets[dataset_name]
         self.covar, self.labels = dataset.load_data(force_download)
+        if not len(self.covar) == len(self.labels):
+            raise ValueError("Covariates and Labels must be of same length.")
 
         self.device = device
         self.random_state = check_random_state(random_state)
@@ -110,7 +127,7 @@ class DataLoader:
         Returns
         -------
         self : object
-            Returns a DataLoader with covariates, labels split into train/valid.
+            Returns a DataLoader with covariates, labels split into train/valid/test.
 
         Raises
         ------
@@ -121,30 +138,74 @@ class DataLoader:
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
         """
-        if not (hasattr(self, "covar") and hasattr(self, "labels")):
-            raise AttributeError(
-                "No attribute covar, labels found make sure Register object is valid."
-            )
-
-        if not len(self.covar) == len(self.labels):
-            raise ValueError("covariates and labels must be of same length.")
-
         num_points = len(self.covar)
 
         match (train_count, valid_count, test_count):
             case int(tr), int(val), int(tes) if sum((tr, val, tes)) <= num_points:
-                splits = accumulate((tr, val, tes))
+                sp = list(accumulate((tr, val, tes)))
             case float(tr), float(val), float(tes) if sum((tr, val, tes)) <= 1.0:
                 splits = (round(num_points * prob) for prob in (tr, val, tes))
-                splits = accumulate(splits)
+                sp = list(accumulate(splits))
             case _:
-                raise ValueError(
-                    "Split can't exceed length and must be same type, def type is int."
-                )
+                raise ValueError("Splits must be < length and same type (default int)")
 
         # Extra underscore to unpack any remainders
-        indices = self.random_state.permutation(num_points)
-        train_indices, valid_indices, test_indices, _ = np.split(indices, list(splits))
+        idx = self.random_state.permutation(num_points)
+        self.train_indices, self.valid_indices, self.test_indices, _ = np.split(idx, sp)
+
+        if isinstance(self.covar, Dataset):
+            self.x_train = Subset(self.covar, self.train_indices)
+            self.x_valid = Subset(self.covar, self.valid_indices)
+            self.x_test = Subset(self.covar, self.test_indices)
+        else:
+            self.x_train = self.covar[self.train_indices]
+            self.x_valid = self.covar[self.valid_indices]
+            self.x_test = self.covar[self.test_indices]
+
+        self.y_train = self.labels[self.train_indices]
+        self.y_valid = self.labels[self.valid_indices]
+        self.y_test = self.labels[self.test_indices]
+
+        return self
+
+    def split_dataset_by_indices(
+        self,
+        train_indices: Sequence[int] = None,
+        valid_indices: Sequence[int] = None,
+        test_indices: Sequence[int] = None,
+    ):
+        """Split the covariates and labels to the specified indices.
+
+        Parameters
+        ----------
+        train_indices : Sequence[int]
+            Indices of training data set
+        valid_indices : Sequence[int]
+            Indices of valid data set
+        test_indices : Sequence[int]
+            Indices of test data set
+
+        Returns
+        -------
+        self : object
+            Returns a DataLoader with covariates, labels split into train/valid/test.
+
+        Raises
+        ------
+        ValueError
+            Invalid input for indices of the train, valid, or split data set, leak
+            of at least 1 data point in the indices.
+        """
+        train_indices = [] if train_indices is None else train_indices
+        valid_indices = [] if valid_indices is None else valid_indices
+        test_indices = [] if test_indices is None else test_indices
+
+        idx = chain(train_indices, valid_indices, test_indices)
+        seen = set()
+        for index in idx:
+            if not (0 <= index < len(self.covar)) or index in seen:
+                raise ValueError(f"{index=} is repeated or is out of range for dataset")
+            seen.add(index)
 
         if isinstance(self.covar, Dataset):
             self.x_train = Subset(self.covar, train_indices)
@@ -159,16 +220,16 @@ class DataLoader:
         self.y_valid = self.labels[valid_indices]
         self.y_test = self.labels[test_indices]
 
-        self.train_indices = train_indices
-        self.valid_indices = valid_indices
-        self.test_indices = test_indices
+        self.train_indices = np.array(train_indices, dtype=int)
+        self.valid_indices = np.array(valid_indices, dtype=int)
+        self.test_indices = np.array(test_indices, dtype=int)
         return self
 
     def noisify(
         self,
         add_noise_func: Callable[[Self, Any, ...], dict[str, np.ndarray | Dataset]],
         *noise_args,
-        **noise_kwargs
+        **noise_kwargs,
     ):
         """Add noise to the data points.
 
