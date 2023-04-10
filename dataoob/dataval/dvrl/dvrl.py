@@ -166,11 +166,13 @@ class DVRL(DataEvaluator):
         criterion = DveLoss(threshold=self.threshold)
 
         dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
-        gen = torch.Generator().manual_seed(self.random_state.tomaxint())
+        gen = torch.Generator(self.device).manual_seed(self.random_state.tomaxint())
+        # No idea why the DataLoader Generator has to be on the cpu, likely a bug
+        cpu_gen = torch.Generator().manual_seed(self.random_state.tomaxint())
         rs = RandomSampler(dataset, True, self.rl_epochs * batch_size, generator=gen)
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
-            DataLoader(dataset, sampler=rs, batch_size=batch_size, generator=gen)
+            DataLoader(dataset, sampler=rs, batch_size=batch_size, generator=cpu_gen)
         ):
             optimizer.zero_grad()
 
