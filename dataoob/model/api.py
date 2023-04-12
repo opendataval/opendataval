@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import Self
+from typing import TypeVar
 
 import numpy as np
 import torch
@@ -10,6 +10,8 @@ from sklearn.dummy import DummyClassifier
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler, default_collate
 
 from dataoob.dataloader.util import CatDataset
+
+Self = TypeVar("Self")
 
 
 class Model(ABC):

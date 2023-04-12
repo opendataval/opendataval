@@ -11,7 +11,7 @@ authors = [
 ]
 description = "Transparent Data Valuation"  # TODO
 readme = "README.md"
-requires-python = ">=3.11.0"
+requires-python = ">=3.10.0"
 keywords = ["Data Valuation", "Data Centric", "Machine Learning"]
 license = {text = "MIT"}
 classifiers = [

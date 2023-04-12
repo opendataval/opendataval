@@ -1,10 +1,11 @@
 import os
-from typing import Any, Callable, Self
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 
+Self = TypeVar("Self")
 DatasetCallable = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
 
 

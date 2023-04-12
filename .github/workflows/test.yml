@@ -4,22 +4,23 @@ on: [push]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11"]
       max-parallel: 5
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.11
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: "3.11"
-        cache: 'pip' # caching pip dependencies
-        cache-dependency-path: requirements-dev.txt
-    - name: Add conda to system path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
+        python-version: ${{ matrix.python-version }}
+    - uses: actions/cache@v3
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements-dev.txt') }}
     - name: Install dependencies
       run: |
         make install-dev

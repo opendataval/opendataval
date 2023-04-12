@@ -1,5 +1,5 @@
 from itertools import accumulate, chain
-from typing import Any, Callable, Self, Sequence
+from typing import Any, Callable, Sequence, TypeVar
 
 import numpy as np
 import torch
@@ -8,6 +8,8 @@ from sklearn.utils import check_random_state
 from torch.utils.data import Dataset, Subset
 
 from dataoob.dataloader.register import Register
+
+Self = TypeVar("Self")
 
 
 class DataLoader:
