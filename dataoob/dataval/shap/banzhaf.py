@@ -88,6 +88,8 @@ class DataBanzhaf(DataEvaluator):
 
         for i in tqdm.tqdm(range(self.samples)):
             subset = subsets[i].nonzero()[0]
+            if not subset.any():
+                continue
 
             curr_model = self.pred_model.clone()
             curr_model.fit(

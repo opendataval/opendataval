@@ -253,7 +253,7 @@ class DataLoader:
             Returns a DataLoader with noise added to the data set.
         """
         # Passes the DataLoader to the noise_func, has access to all instance variables
-        noisy_datapoints = add_noise_func(*noise_args, loader=self, **noise_kwargs)
+        noisy_datapoints = add_noise_func(loader=self, *noise_args, **noise_kwargs)
 
         self.x_train = noisy_datapoints.get("x_train", self.x_train)
         self.y_train = noisy_datapoints.get("y_train", self.y_train)

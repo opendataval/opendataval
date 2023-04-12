@@ -96,8 +96,11 @@ class DataOob(DataEvaluator):
 
         for i in tqdm.tqdm(range(self.num_models)):
             in_bag = subsets[i]
+
             # out_bag is the indices where the bincount is zero.
             out_bag = (np.bincount(in_bag, minlength=self.num_points) == 0).nonzero()[0]
+            if not out_bag.any():
+                continue
 
             curr_model = self.pred_model.clone()
             curr_model.fit(

@@ -165,14 +165,14 @@ class DVRL(DataEvaluator):
         optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=self.lr)
         criterion = DveLoss(threshold=self.threshold)
 
-        dataset = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
+        data = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
         gen = torch.Generator(self.device).manual_seed(self.random_state.tomaxint())
         # No idea why the DataLoader Generator has to be on the cpu, likely a bug
-        cpu_gen = torch.Generator().manual_seed(self.random_state.tomaxint())
-        rs = RandomSampler(dataset, True, self.rl_epochs * batch_size, generator=gen)
+        cpu_gen = torch.Generator("cpu").manual_seed(self.random_state.tomaxint())
+        rs = RandomSampler(data, True, self.rl_epochs * batch_size, generator=cpu_gen)
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
-            DataLoader(dataset, sampler=rs, batch_size=batch_size, generator=cpu_gen)
+            DataLoader(data, sampler=rs, batch_size=batch_size, generator=cpu_gen)
         ):
             optimizer.zero_grad()
 
@@ -183,7 +183,7 @@ class DVRL(DataEvaluator):
             select_prob = torch.bernoulli(pred_dataval, generator=gen)
 
             if select_prob.sum().item() == 0:  # Exception (select probability is 0)
-                pred_dataval = 0.5 * torch.ones_like(pred_dataval)
+                pred_dataval = 0.5 * torch.ones_like(pred_dataval, requires_grad=True)
                 select_prob = torch.bernoulli(pred_dataval, generator=gen)
 
             # Prediction and training

@@ -39,10 +39,7 @@ def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, f
     noisy_indices = loader.noisy_indices
 
     num_points = len(data_values)
-    num_noisy = len(noisy_indices)
-
     sorted_indices = np.argsort(data_values)
-    recall = len(np.intersect1d(sorted_indices[:num_noisy], noisy_indices)) / num_noisy
 
     # Computes F1 of a KMeans(k=2) classifier of the data values
     kmeans = KMeans(n_clusters=2, n_init="auto").fit(data_values.reshape(-1, 1))
@@ -54,7 +51,7 @@ def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, f
 
     f1_kmeans_label = f1_score(kmeans.labels_, validation)
 
-    return {"recall": recall, "kmeans_f1": f1_kmeans_label}
+    return {"kmeans_f1": f1_kmeans_label}
 
 
 def point_removal(
@@ -96,9 +93,9 @@ def point_removal(
     data_values = evaluator.evaluate_data_values()
     curr_model = evaluator.pred_model.clone()
 
-    num_sample = len(data_values)
-    num_period = max(round(num_sample * percentile), 5)  # Add at least 5 per bin
-    num_bins = int(num_sample // num_period)
+    num_points = len(data_values)
+    num_period = max(round(num_points * percentile), 5)  # Add at least 5 per bin
+    num_bins = int(num_points // num_period)
 
     match order:
         case "ascending":
@@ -106,12 +103,12 @@ def point_removal(
         case "descending":
             sorted_value_list = np.argsort(-data_values)
         case "random":
-            sorted_value_list = np.random.permutation(num_sample)
+            sorted_value_list = np.random.permutation(num_points)
 
     metric_list = []
     train_kwargs = train_kwargs if train_kwargs is not None else {}
 
-    for bin_index in range(0, num_sample, num_period):
+    for bin_index in range(0, num_points, num_period):
 
         sorted_value_coalition = sorted_value_list[bin_index:]
 
@@ -179,15 +176,15 @@ def remove_high_low(
     data_values = evaluator.evaluate_data_values()
     curr_model = evaluator.pred_model.clone()
 
-    num_sample = len(x_train)
-    num_period = max(round(num_sample * percentile), 5)  # Add at least 5/bin
-    num_bins = int(num_sample // num_period) + 1
+    num_points = len(x_train)
+    num_period = max(round(num_points * percentile), 5)  # Add at least 5/bin
+    num_bins = int(num_points // num_period)
     sorted_value_list = np.argsort(data_values)
 
     valuable_list, unvaluable_list = [], []
     train_kwargs = train_kwargs if train_kwargs is not None else {}
 
-    for bin_index in range(0, num_sample + num_period, num_period):
+    for bin_index in range(0, num_points, num_period):
 
         # Removing least valuable samples first
         most_valuable_indices = sorted_value_list[bin_index:]
@@ -204,7 +201,7 @@ def remove_high_low(
         valuable_list.append(valuable_score)
 
         # Removing most valuable samples first
-        least_valuable_indices = sorted_value_list[: max(num_sample - bin_index, 0)]
+        least_valuable_indices = sorted_value_list[: num_points - bin_index]
 
         # Fitting on unvaluable subset
         unvaluable_model = curr_model.clone()
@@ -273,9 +270,9 @@ def discover_corrupted_sample(
     noisy_indices = loader.noisy_indices
     data_values = evaluator.evaluate_data_values()
 
-    num_sample = len(x_train)
-    num_period = max(round(num_sample * percentile), 5)  # Add at least 5 per bin
-    num_bins = int(num_sample // num_period) + 1
+    num_points = len(x_train)
+    num_period = max(round(num_points * percentile), 5)  # Add at least 5 per bin
+    num_bins = int(num_points // num_period) + 1
 
     sorted_value_list = np.argsort(data_values, kind="stable")  # Order descending
     noise_rate = len(noisy_indices) / len(data_values)
@@ -284,7 +281,7 @@ def discover_corrupted_sample(
     found_rates = []
 
     # For each bin
-    for bin_index in range(0, num_sample + num_period, num_period):
+    for bin_index in range(0, num_points + num_period, num_period):
         # from low to high data values
         found_rates.append(
             len(np.intersect1d(sorted_value_list[:bin_index], noisy_indices))

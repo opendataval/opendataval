@@ -78,7 +78,7 @@ class AME(DataEvaluator):
         norm_subsets[np.isnan(norm_subsets)] = 0  # For when all elements are the same
         centered_perf = self.performance - np.mean(self.performance)
 
-        dv_ame = LassoCV()
+        dv_ame = LassoCV(random_state=self.random_state)
         dv_ame.fit(X=norm_subsets, y=centered_perf)
         return dv_ame.coef_
 
@@ -160,6 +160,8 @@ class BaggingEvaluator(DataEvaluator):
 
         for i in tqdm.tqdm(range(self.num_models)):
             subset = self.subsets[i].nonzero()[0]
+            if not subset.any():
+                continue
 
             curr_model = self.pred_model.clone()
             curr_model.fit(
@@ -190,7 +192,7 @@ class BaggingEvaluator(DataEvaluator):
         norm_subsets[np.isnan(norm_subsets)] = 0
         centered_perf = self.performance - np.mean(self.performance)
 
-        dv_ame = LassoCV()
+        dv_ame = LassoCV(random_state=self.random_state)
         dv_ame.fit(X=norm_subsets, y=centered_perf)
         return dv_ame.coef_
 
