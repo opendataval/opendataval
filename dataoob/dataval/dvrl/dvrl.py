@@ -98,9 +98,12 @@ class DVRL(DataEvaluator):
         self.x_valid = x_valid
         self.y_valid = y_valid
 
+        self.num_points, *self.feature_dim = len(x_train), x_train[0].shape
+        self.label_dim = 1 if self.y_train.ndim == 1 else self.y_train.size(dim=1)
+
         self.value_estimator = DataValueEstimatorRL(
-            x_dim=len(x_train[0]),  # In case x_train is a data set
-            y_dim=y_train.size(dim=1),
+            x_dim=np.prod(self.feature_dim),
+            y_dim=self.label_dim,
             hidden_dim=self.hidden_dim,
             layer_number=self.layer_number,
             comb_dim=self.comb_dim,
@@ -138,12 +141,9 @@ class DVRL(DataEvaluator):
         self.valid_perf = self.evaluate(self.y_valid, y_valid_hat)
 
         # Compute diff
-        y_train_valid_pred = self.val_model.predict(self.x_train)
+        y_pred = self.val_model.predict(self.x_train)
 
-        self.y_pred_diff = (  # Predicted differences as input to value estimator
-            torch.abs(self.y_train - y_train_valid_pred)
-            / torch.sum(self.y_train, axis=1, keepdim=True)
-        )
+        self.y_pred_diff = torch.abs(self.y_train - y_pred).view(-1, self.label_dim)
 
     def train_data_values(self, *args, **kwargs):
         """Trains model to predict data values.
@@ -170,7 +170,6 @@ class DVRL(DataEvaluator):
         # No idea why the DataLoader Generator has to be on the cpu, likely a bug
         cpu_gen = torch.Generator("cpu").manual_seed(self.random_state.tomaxint())
         rs = RandomSampler(data, True, self.rl_epochs * batch_size, generator=cpu_gen)
-
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
             DataLoader(data, sampler=rs, batch_size=batch_size, generator=cpu_gen)
         ):
@@ -181,7 +180,6 @@ class DVRL(DataEvaluator):
 
             # Samples the selection probability
             select_prob = torch.bernoulli(pred_dataval, generator=gen)
-
             if select_prob.sum().item() == 0:  # Exception (select probability is 0)
                 pred_dataval = 0.5 * torch.ones_like(pred_dataval, requires_grad=True)
                 select_prob = torch.bernoulli(pred_dataval, generator=gen)
@@ -223,10 +221,7 @@ class DVRL(DataEvaluator):
             Predicted data values/selection for training input data point
         """
         y_valid_pred = self.final_model.predict(self.x_train)
-        y_hat = (  # Computes the diff from predicted as input to value estimator
-            torch.abs(self.y_train - y_valid_pred)
-            / torch.sum(self.y_train, axis=1, keepdim=True)
-        )
+        y_hat = torch.abs(self.y_train - y_valid_pred).view(-1, self.label_dim)
 
         # Estimates data value
         with torch.no_grad():  # No dropout layers so no need to set to eval
@@ -335,9 +330,10 @@ class DataValueEstimatorRL(nn.Module):
         torch.Tensor
             Selection probabilities per covariate data point
         """
-        x = torch.concat((x, y), axis=1)
+        x = x.flatten(start_dim=1)
+        x = torch.concat((x, y), dim=1)
         x = self.mlp(x)
-        x = torch.cat((x, y_hat), axis=1)
+        x = torch.cat((x, y_hat), dim=1)
         x = self.yhat_comb(x)
         return x
 
@@ -403,7 +399,7 @@ class DveLoss(nn.Module):
         """
         loss = F.binary_cross_entropy(pred_dataval, selector_input, reduction="sum")
 
-        reward_loss = -reward_input * loss
+        reward_loss = reward_input * loss
         search_loss = (  # Additional loss when VE is stuck outside threshold range
             F.relu(torch.mean(pred_dataval) - self.threshold)
             + F.relu((1 - self.threshold) - torch.mean(pred_dataval))
