@@ -257,7 +257,7 @@ def discover_corrupted_sample(
     percentile : float, optional
         Percentile of data points to additionally search per iteration, by default .05
     plot : Axes, optional
-        Matplotlib Axes to plot data output, by default None, by default None
+        Matplotlib Axes to plot data output, by default None
 
     Returns
     -------
@@ -315,6 +315,7 @@ def discover_corrupted_sample(
 
 
 def save_dataval(evaluator: DataEvaluator, loader: DataLoader):
+    """Saves the indices and the respective data values of the DataEvaluator."""
     train_indices = loader.train_indices
     data_values = evaluator.evaluate_data_values()
 

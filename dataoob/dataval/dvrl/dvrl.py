@@ -99,11 +99,11 @@ class DVRL(DataEvaluator):
         self.y_valid = y_valid
 
         self.num_points, *self.feature_dim = len(x_train), x_train[0].shape
-        self.label_dim = 1 if self.y_train.ndim == 1 else self.y_train.size(dim=1)
+        self.label_dim = (1,) if self.y_train.ndim == 1 else self.y_train[0].shape
 
         self.value_estimator = DataValueEstimatorRL(
             x_dim=np.prod(self.feature_dim),
-            y_dim=self.label_dim,
+            y_dim=np.prod(self.label_dim),
             hidden_dim=self.hidden_dim,
             layer_number=self.layer_number,
             comb_dim=self.comb_dim,
@@ -143,7 +143,7 @@ class DVRL(DataEvaluator):
         # Compute diff
         y_pred = self.val_model.predict(self.x_train)
 
-        self.y_pred_diff = torch.abs(self.y_train - y_pred).view(-1, self.label_dim)
+        self.y_pred_diff = torch.abs(self.y_train - y_pred)
 
     def train_data_values(self, *args, **kwargs):
         """Trains model to predict data values.
@@ -221,7 +221,7 @@ class DVRL(DataEvaluator):
             Predicted data values/selection for training input data point
         """
         y_valid_pred = self.final_model.predict(self.x_train)
-        y_hat = torch.abs(self.y_train - y_valid_pred).view(-1, self.label_dim)
+        y_hat = torch.abs(self.y_train - y_valid_pred)
 
         # Estimates data value
         with torch.no_grad():  # No dropout layers so no need to set to eval
@@ -256,9 +256,9 @@ class DataValueEstimatorRL(nn.Module):
     Parameters
     ----------
     x_dim : int
-        Data covariates dimension
+        Data covariates dimension, can be flatten dimension size
     y_dim : int
-        Data labels dimension
+        Data labels dimension, can be flatten dimension size
     hidden_dim : int
         Hidden dimensions for the Value Estimator
     layer_number : int
@@ -330,12 +330,16 @@ class DataValueEstimatorRL(nn.Module):
         torch.Tensor
             Selection probabilities per covariate data point
         """
+        # Flattens input dimension in case it is more than 2D
         x = x.flatten(start_dim=1)
-        x = torch.concat((x, y), dim=1)
-        x = self.mlp(x)
-        x = torch.cat((x, y_hat), dim=1)
-        x = self.yhat_comb(x)
-        return x
+        y = y.flatten(start_dim=1)
+        y_hat = y_hat.flatten(start_dim=1)
+
+        out = torch.concat((x, y), dim=1)
+        out = self.mlp(out)
+        out = torch.cat((out, y_hat), dim=1)
+        out = self.yhat_comb(out)
+        return out
 
 
 class DveLoss(nn.Module):

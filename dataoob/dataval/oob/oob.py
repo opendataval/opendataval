@@ -68,12 +68,12 @@ class DataOob(DataEvaluator):
         _ = x_valid, y_valid  # Unused parameters
 
         self.num_points = len(x_train)
-        self.label_dim = 1 if self.y_train.dim() == 1 else self.y_train.size(dim=1)
+        [*self.label_dim] = (1,) if self.y_train.ndim == 1 else self.y_train[0].shape
         self.max_samples = round(self.proportion * self.num_points)
-        self.device = x_train.device
+        self.device = y_train.device
 
         self.oob_pred = torch.zeros(
-            (0, self.label_dim), requires_grad=False, device=self.device
+            (0, *self.label_dim), requires_grad=False, device=self.device
         )
         self.oob_indices = GroupingIndex()
         return self
