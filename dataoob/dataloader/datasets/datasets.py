@@ -1,61 +1,21 @@
-"""Predefined data sets, registered with :py:class:`Register`.
-
-Data sets
-=========
-
-Catalog of registered data sets that can be used with
-:py:class:`~dataoob.dataloader.loader.DataLoader`. Pass in the ``str`` name registering
-the data set to load the data set as needed.
-"""
+"""Default data sets."""
 import os
 
 import numpy as np
 import opendatasets as od
 import pandas as pd
-import requests
 import sklearn.datasets as ds
 from sklearn.preprocessing import StandardScaler, minmax_scale
 
-from dataoob.dataloader.register import Register
+from dataoob.dataloader.register import Register, cache
 
 
-def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str:
-    """Download a file if it it is not present and returns the file_path.
-
-    Parameters
-    ----------
-    url : str
-        URL of the file to be downloaded
-    cache_dir : str
-        Directory to cache downloaded files
-    file_name : str, optional
-        File name within the cache directory of the downloaded file, by default ""
-    force_download : bool, optional
-        Forces a download regardless if file is present, by default False
-
-    Returns
-    -------
-    str
-        File path to the downloaded file
-    """
-    if file_name is None:
-        file_name = os.path.basename(url)
-
-    if not os.path.isdir(cache_dir):
-        os.mkdir(cache_dir)
-
-    filepath = os.path.join(cache_dir, file_name)
-
-    if not os.path.isfile(filepath) or force_download:
-        with requests.get(url, stream=True, timeout=60) as r, open(filepath, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):  # In case file is large
-                f.write(chunk)
-
-    return filepath
-
-
-@Register("gaussian_classifier", categorical=True).from_covar_label_func
+@Register("gaussian_classifier", categorical=True)
 def gaussian_classifier(n: int = 10000, input_dim: int = 10):
+    """Binary category data set registered as ``"gaussian_classifier"``.
+
+    Artificially generated gaussian noise data set.
+    """
     covar = np.random.normal(size=(n, input_dim))
 
     beta_true = np.random.normal(size=input_dim).reshape(input_dim, 1)
@@ -69,9 +29,11 @@ def gaussian_classifier(n: int = 10000, input_dim: int = 10):
 adult_dataset = Register("adult", categorical=True, cacheable=True)
 
 
-@adult_dataset.add_covar_transform(StandardScaler().fit_transform).from_covar_label_func
+@adult_dataset.add_covar_transform(StandardScaler().fit_transform)
 def download_adult(cache_dir: str, force_download: bool = False):
-    """Adult Income data set. Implementation from DVRL repository.
+    """Binary category data set registered as ``"adult"``. Adult Income data set.
+
+    Implementation from DVRL repository.
 
     References
     ----------
@@ -144,33 +106,33 @@ def download_adult(cache_dir: str, force_download: bool = False):
     return df.drop("Income", axis=1).values, df["Income"].values
 
 
-@Register("iris", categorical=True).from_covar_label_func
+@Register("iris", categorical=True)
 def download_iris():
+    """Categorical data set registered as ``"iris"``."""
     return ds.load_iris(return_X_y=True)
 
 
-@Register("diabetes", categorical=True).from_covar_label_func
-def download_diabetes():
-    return ds.load_diabetes(return_X_y=True)
-
-
-@Register("digits", categorical=True).from_covar_label_func
+@Register("digits", categorical=True)
 def download_digits():
+    """Categorical data set registered as ``"digits"``."""
     return ds.load_digits(return_X_y=True)
 
 
-@Register("breast_cancer", True).add_covar_transform(minmax_scale).from_covar_label_func
+@Register("breast_cancer", True).add_covar_transform(minmax_scale)
 def download_breast_cancer():
+    """Categorical data set registered as ``"digits"``."""
     return ds.load_breast_cancer(return_X_y=True)
 
 
-@Register("election", categorical=True, cacheable=True).from_covar_label_func
+@Register("election", categorical=True, cacheable=True)
 def download_election(cache_dir: str, force_download: bool):
-    """Presidential election results by state since 1976 courtesy of Bojan Tunguz.
+    """Categorical data set registered as ``"election"``.
+
+    Presidential election results by state since 1976 courtesy of Bojan Tunguz.
 
     References
     ----------
-    Kaggle source: https://www.kaggle.com/datasets/tunguz/us-elections-dataset
+    Bojan Tunguz: https://www.kaggle.com/datasets/tunguz/us-elections-dataset
     """
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
@@ -196,10 +158,14 @@ Register(
 ).from_covar_label_func(gaussian_classifier)
 """Registers gaussian classifier, but the input_dim is changed."""
 
-Register(
-    "gaussian_only_zeroes", categorical=True, dataset_kwargs={"input_dim": 100}
-).add_label_transform(np.zeros_like).from_covar_label_func(gaussian_classifier)
-"""Adds a transform to gaussian classifier, such that the labels are all zero."""
+# Regression data sets.
+@Register("diabetes")
+def download_diabetes():
+    """Regression data set registered as ``"diabetes"``."""
+    return ds.load_diabetes(return_X_y=True)
 
-Register("adult_csv", True).from_csv(Register.CACHE_DIR + "/adult/train.csv", [-1, -2])
-"""NOTE below, data is not cleaned."""
+
+@Register("linnerud")
+def download_linnerud():
+    """Regression data set registered as ``"linnerud"``."""
+    return ds.load_linnerud(return_X_y=True)

@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader.loader import DataLoader, mix_labels
+from dataoob.dataloader import DataLoader, mix_labels
 from dataoob.dataval import DataEvaluator
 from dataoob.model import Model
 

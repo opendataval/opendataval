@@ -1,5 +1,5 @@
 from itertools import accumulate, chain
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, Callable, Self, Sequence
 
 import numpy as np
 import torch
@@ -8,8 +8,6 @@ from sklearn.utils import check_random_state
 from torch.utils.data import Dataset, Subset
 
 from dataoob.dataloader.register import Register
-
-Self = TypeVar("Self")
 
 
 class DataLoader:
@@ -99,15 +97,20 @@ class DataLoader:
         if isinstance(self.covar, Dataset):
             x_train, x_valid, x_test = self.x_train, self.x_valid, self.x_test
         else:
-            x_train = torch.tensor(self.x_train, device=self.device, dtype=torch.float)
-            x_valid = torch.tensor(self.x_valid, device=self.device, dtype=torch.float)
-            x_test = torch.tensor(self.x_test, device=self.device, dtype=torch.float)
+            x_train = self._tensorify(self.x_train)
+            x_valid = self._tensorify(self.x_valid)
+            x_test = self._tensorify(self.x_test)
 
-        y_train = torch.tensor(self.y_train, device=self.device, dtype=torch.float)
-        y_valid = torch.tensor(self.y_valid, device=self.device, dtype=torch.float)
-        y_test = torch.tensor(self.y_test, device=self.device, dtype=torch.float)
+        y_train = self._tensorify(self.y_train)
+        y_valid = self._tensorify(self.y_valid)
+        y_test = self._tensorify(self.y_test)
 
         return x_train, y_train, x_valid, y_valid, x_test, y_test
+
+    def _tensorify(self, data: np.ndarray) -> torch.Tensor:
+        """Helper method to convert array to tensor."""
+        dim = (1,) if data.ndim == 1 else data[0].shape
+        return torch.tensor(data, dtype=torch.float, device=self.device).view(-1, *dim)
 
     def split_dataset(
         self,
@@ -225,6 +228,7 @@ class DataLoader:
         self.train_indices = np.array(train_indices, dtype=int)
         self.valid_indices = np.array(valid_indices, dtype=int)
         self.test_indices = np.array(test_indices, dtype=int)
+
         return self
 
     def noisify(
@@ -266,28 +270,3 @@ class DataLoader:
         self.noisy_indices = noisy_datapoints.get("noisy_indices", np.array([]))
 
         return self
-
-
-def mix_labels(loader: DataLoader, noise_rate: float) -> dict[str, np.ndarray]:
-    """Mixes y_train labels of a DataLoader, adding noise to data.
-
-    Parameters
-    ----------
-    loader : DataLoader
-        DataLoader object housing the data to have noise added to
-    noise_rate : float
-        Proportion of labels to add noise to
-
-    Returns
-    -------
-    dict[str, np.ndarray]
-        dictionary of updated data points
-    """
-    y_train = loader.y_train
-    rs = check_random_state(loader.random_state)
-    num_points = len(y_train)
-    replace = rs.choice(num_points, round(num_points * noise_rate), replace=False)
-    target = rs.choice(num_points, round(num_points * noise_rate), replace=False)
-    y_train[replace] = y_train[target]
-
-    return {"y_train": y_train, "noisy_indices": replace}

@@ -1,12 +1,48 @@
 import os
-from typing import Any, Callable, TypeVar
+import warnings
+from typing import Any, Callable, Self
 
 import numpy as np
 import pandas as pd
+import requests
 from torch.utils.data import Dataset
 
-Self = TypeVar("Self")
 DatasetCallable = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
+
+
+def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str:
+    """Download a file if it it is not present and returns the file_path.
+
+    Parameters
+    ----------
+    url : str
+        URL of the file to be downloaded
+    cache_dir : str
+        Directory to cache downloaded files
+    file_name : str, optional
+        File name within the cache directory of the downloaded file, by default ""
+    force_download : bool, optional
+        Forces a download regardless if file is present, by default False
+
+    Returns
+    -------
+    str
+        File path to the downloaded file
+    """
+    if file_name is None:
+        file_name = os.path.basename(url)
+
+    if not os.path.isdir(cache_dir):
+        os.mkdir(cache_dir)
+
+    filepath = os.path.join(cache_dir, file_name)
+
+    if not os.path.isfile(filepath) or force_download:
+        with requests.get(url, stream=True, timeout=60) as r, open(filepath, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):  # In case file is large
+                f.write(chunk)
+
+    return filepath
 
 
 def one_hot_encode(data: np.ndarray) -> np.ndarray:
@@ -72,7 +108,7 @@ class Register:
         dataset_kwargs: dict[str, Any] = None,
     ):
         if dataset_name in Register.Datasets:
-            raise KeyError(f"{dataset_name} has been registered, names must be unique")
+            warnings.warn(f"{dataset_name} has been registered, names must be unique")
 
         self.dataset_name = dataset_name
         self.dataset_kwargs = dataset_kwargs if dataset_kwargs else {}
@@ -85,7 +121,7 @@ class Register:
 
         if cacheable:
             self.download_dir = os.path.join(
-                os.getcwd(), f"{Register.CACHE_DIR}/{dataset_name}"
+                os.getcwd(), f"{Register.CACHE_DIR}/{dataset_name}/"
             )
 
         Register.Datasets[dataset_name] = self
@@ -104,6 +140,10 @@ class Register:
         """Register data set from numpy array."""
         self.covar_label_func = _from_numpy(df, label_columns)
         return self
+
+    def __call__(self, func: DatasetCallable) -> DatasetCallable:
+        """Majority of provided datasets are in `from_covar_label_func` format."""
+        return self.from_covar_label_func(func)
 
     def from_covar_label_func(self, func: DatasetCallable) -> DatasetCallable:
         """Register data set from Callable -> (covariates, labels)."""

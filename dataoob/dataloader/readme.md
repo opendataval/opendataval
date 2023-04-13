@@ -47,7 +47,7 @@ def image_labels() -> np.ndarray:
     ...
 ```
 
-To ensure that these two seperate functions are loaded together, we define a `Register` object to link these two.
+To ensure that these two separate functions are loaded together, we define a `Register` object to link these two.
 
 ```python
 image_dataset = Register('image', categorical=True, cacheable=True)
@@ -58,6 +58,19 @@ class ImageDataset(Dataset):
 @image_dataset.from_label_func
 def image_labels() -> np.ndarray:
     ...
+```
+
+The typical way is to have a callable return a tuple of `(covariates, labels)`. If
+that's the case the api is as follows
+```python
+@Register('name_of_dataset')
+def covariate_label_func(...)
+    ...
+
+@Register('name_of_other_dataset').from_covar_label_func  # More explicitly
+def other_covariate_label_func(...)
+    ...
+
 ```
 
 We also define transformations whenever, the
