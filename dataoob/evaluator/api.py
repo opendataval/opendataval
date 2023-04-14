@@ -111,7 +111,7 @@ class ExperimentMediator:
                     f"""
                     An error occured during training, however training all evaluators
                     takes a long time, so we will be ignoring the evaluator:
-                    {data_val.plot_title} and proceeding.
+                    {str(data_val)} and proceeding.
 
                     The error is as follows: {str(ex)}
                     """,
@@ -230,11 +230,11 @@ class ExperimentMediator:
         -------
         pd.DataFrame
             DataFrame containing the results for each DataEvaluator experiment.
-            DataFrame is indexed: [result_title, DataEvaluator.plot_title]
+            DataFrame is indexed: [result_title, DataEvaluator]
             Any 1-D experiment result is expanded into columns: list(range(len(result)))
 
             To get the results by result_title, df.loc[result_title]
-            To get the results by DataEvaluator, use df.ax(plot_title, level=1)
+            To get the results by DataEvaluator, use df.ax(DataEvaluator, level=1)
         """
         data_eval_perf = {}
         if include_train:
@@ -244,9 +244,9 @@ class ExperimentMediator:
 
         for data_val in self.data_evaluators:
             eval_resp = exper_func(data_val, self.loader, **exper_kwargs)
-            data_eval_perf[data_val.plot_title] = eval_resp
+            data_eval_perf[str(data_val)] = eval_resp
 
-        # index=[result_title, plot_title] columns=[range(len(axis))]
+        # index=[result_title, DataEvaluator] columns=[range(len(axis))]
         return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series)
 
     def plot(
@@ -286,11 +286,11 @@ class ExperimentMediator:
         -------
         tuple[pd.DataFrame, Figure]
             DataFrame containing the results for each DataEvaluator experiment.
-            DataFrame is indexed: [result_title, DataEvaluator.plot_title]
+            DataFrame is indexed: [result_title, DataEvaluator.DataEvaluator]
             Any 1-D experiment result is expanded into columns: list(range(len(result)))
 
             To get the results by result_title, df.loc[result_title]
-            To get the results by DataEvaluator, use df.ax(plot_title, level=1)
+            To get the results by DataEvaluator, use df.ax(DataEvaluator, level=1)
 
             Figure is a plotted version of the results dict.
         """
@@ -310,7 +310,7 @@ class ExperimentMediator:
             plot = figure.add_subplot(row, col, i)
             eval_resp = exper_func(data_val, self.loader, plot=plot, **exper_kwargs)
 
-            data_eval_perf[data_val.plot_title] = eval_resp
+            data_eval_perf[str(data_val)] = eval_resp
 
-        # index=[result_title, plot_title] columns=[range(len(axis))]
+        # index=[result_title, DataEvaluator] columns=[range(len(axis))]
         return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series), figure

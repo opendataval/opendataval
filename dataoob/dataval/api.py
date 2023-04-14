@@ -37,8 +37,6 @@ class DataEvaluator(ABC):
     ----------
     pred_model : Model
         Prediction model to find how much each training datum contributes towards it.
-    plot_title: str
-        Name of the DataEvaluator with non-default arguments
 
     Raises
     ------
@@ -213,7 +211,6 @@ class DataEvaluator(ABC):
 
         return obj
 
-    @property
-    def plot_title(self) -> str:  # For publication keep it simple
-        """Unique title string representation for a DataEvaluator."""
+    def __str__(self) -> str:  # For publication keep it simple
+        """Unique string representation for a DataEvaluator."""
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"

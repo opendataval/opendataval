@@ -202,10 +202,10 @@ class TestExperimentMediator(unittest.TestCase):
             ]
         )
 
-        self.assertTrue(res.loc["a", dummies[0].plot_title].eq([1, 2]).all())
-        self.assertTrue(res.loc["b", dummies[0].plot_title][0] == 3)
-        self.assertTrue(res.loc["a", dummies[1].plot_title].eq([4, 5]).all())
-        self.assertTrue(res.loc["b", dummies[1].plot_title][0] == 6)
+        self.assertTrue(res.loc["a", str(dummies[0])].eq([1, 2]).all())
+        self.assertTrue(res.loc["b", str(dummies[0])][0] == 3)
+        self.assertTrue(res.loc["a", str(dummies[1])].eq([4, 5]).all())
+        self.assertTrue(res.loc["b", str(dummies[1])][0] == 6)
 
 
 if __name__ == "__main__":

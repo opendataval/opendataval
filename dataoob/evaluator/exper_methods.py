@@ -131,9 +131,7 @@ def point_removal(
 
         plot.set_xlabel("Fraction Added")
         plot.set_ylabel(metric_name)
-        plot.set_title(
-            evaluator.plot_title
-        )  # Figure out a better way to find instance variable
+        plot.set_title(str(evaluator))
 
     return eval_results
 
@@ -232,7 +230,7 @@ def remove_high_low(
         plot.set_ylabel(metric_name)
         plot.legend(["Removing low value data", "Removing high value data"])
 
-        plot.set_title(evaluator.plot_title)
+        plot.set_title(str(evaluator))
 
     return eval_results
 
@@ -308,7 +306,7 @@ def discover_corrupted_sample(
         plot.set_ylabel("Prop of discovered corrupted samples")
         plot.legend(["Evaluator", "Optimal", "Random"])
 
-        plot.set_title(evaluator.plot_title)
+        plot.set_title(str(evaluator))
 
     # Returns True Positive Rate of corrupted label discovery
     return eval_results

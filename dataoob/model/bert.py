@@ -7,7 +7,6 @@ import torch.nn.functional as F
 import tqdm
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 from transformers import (
-    AdamW,
     DistilBertModel,
     DistilBertTokenizerFast,
     get_linear_schedule_with_warmup,
@@ -145,7 +144,7 @@ class BertClassifier(Model, nn.Module):
         dataset = CatDataset(bert_inputs, y_train, sample_weight)
 
         # Optimizer and scheduler specified for BERT per Huggingface
-        optimizer = AdamW(self.parameters(), lr=0.001, eps=1e-8)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=0.001, eps=1e-8)
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=0, num_training_steps=len(dataset) * epochs
         )
