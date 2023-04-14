@@ -20,7 +20,7 @@ class DVRL(DataEvaluator):
     ----------
     .. [1] J. Yoon, Arik, Sercan O, and T. Pfister,
         Data Valuation using Reinforcement Learning,
-        arXiv.org, 2019. [Online]. Available: https://arxiv.org/abs/1909.11671.
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1909.11671.
 
     Parameters
     ----------
@@ -251,7 +251,7 @@ class DataValueEstimatorRL(nn.Module):
     ----------
     .. [1] J. Yoon, Arik, Sercan O, and T. Pfister,
         Data Valuation using Reinforcement Learning,
-        arXiv.org, 2019. [Online]. Available: https://arxiv.org/abs/1909.11671.
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1909.11671.
 
     Parameters
     ----------
@@ -383,7 +383,7 @@ class DveLoss(nn.Module):
         Simple statistical gradient-following algorithms for connectionist
         reinforcement learning,
         Machine Learning, vol. 8, no. 3-4, pp. 229-256, May 1992,
-        doi: https://doi.org/10.1007/bf00992696. [Online].
+        doi: https://doi.org/10.1007/bf00992696.
 
 
         Parameters

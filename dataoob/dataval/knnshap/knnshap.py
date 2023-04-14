@@ -15,7 +15,7 @@ class KNNShapley(DataEvaluator):
     ----------
     .. [1] R. Jia et al.,
         Efficient Task-Specific Data Valuation for Nearest Neighbor Algorithms,
-        arXiv.org, 2019. [Online]. Available: https://arxiv.org/abs/1908.08619.
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1908.08619.
 
     Parameters
     ----------

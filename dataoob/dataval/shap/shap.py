@@ -29,13 +29,16 @@ class ShapEvaluator(DataEvaluator, ABC):
     ----------
     gr_threshold : float, optional
         Convergence threshold for the Gelman-Rubin statistic.
-        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.01
+        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
     max_iterations : int, optional
         Max number of outer iterations of MCMC sampling, by default 100
+    samples_per_iteration : int, optional
+        Number of samples to take per iteration prior to checking GR convergence,
+        by default 100
     min_samples : int, optional
         Minimum samples before checking MCMC convergence, by default 1000
-    model_name : str, optional
-        Unique name of the model, caches marginal contributions, by default None
+    cache_name : str, optional
+        Unique cache_name of the model, caches marginal contributions, by default None
     random_state : RandomState, optional
         Random initial state, by default None
     """
@@ -46,17 +49,19 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     def __init__(
         self,
-        gr_threshold: float = 1.01,
+        gr_threshold: float = 1.05,
         max_iterations: int = 100,
+        samples_per_iteration: int = 100,
         min_samples: int = 1000,
-        model_name: str = None,
+        cache_name: str = None,
         random_state: RandomState = None,
     ):
         self.max_iterations = max_iterations
         self.gr_threshold = gr_threshold
+        self.samples_per_iteration = samples_per_iteration
         self.min_samples = min_samples
 
-        self.model_name = model_name
+        self.cache_name = cache_name
 
         self.random_state = check_random_state(random_state)
 
@@ -79,13 +84,13 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     @staticmethod
     def marginal_cache(
-        model_name: str, marginal_contrib: np.ndarray = None
+        cache_name: str, marginal_contrib: np.ndarray = None
     ) -> Optional[np.ndarray]:
         """Cache marginal contributions based on a unique model name.
 
         Parameters
         ----------
-        model_name : str
+        cache_name : str
             Unique name of the model, caches marginal contributions
         marginal_contrib : np.ndarray, optional
             Sampled marginal contributions by cardinality, by default None
@@ -96,10 +101,10 @@ class ShapEvaluator(DataEvaluator, ABC):
             Returns cached marginal contributions of model name is in dict,
             otherwise returns None.
         """
-        if model_name and marginal_contrib is not None:
-            ShapEvaluator.marg_contrib_dict[model_name] = marginal_contrib
-        elif model_name:
-            return ShapEvaluator.marg_contrib_dict.get(model_name)
+        if cache_name and marginal_contrib is not None:
+            ShapEvaluator.marg_contrib_dict[cache_name] = marginal_contrib
+        elif cache_name:
+            return ShapEvaluator.marg_contrib_dict.get(cache_name)
         return None
 
     def input_data(
@@ -154,8 +159,8 @@ class ShapEvaluator(DataEvaluator, ABC):
             Marginal increments when one data point is added.
         """
         # Checks cache if model name has been computed prior
-        if self.marginal_cache(self.model_name) is not None:
-            self.marginal_contribution = self.marginal_cache(self.model_name)
+        if self.marginal_cache(self.cache_name) is not None:
+            self.marginal_contribution = self.marginal_cache(self.cache_name)
             return self
 
         print("Start: marginal contribution computation", flush=True)
@@ -168,11 +173,10 @@ class ShapEvaluator(DataEvaluator, ABC):
             # we terminate iteration if Shapley value is converged.
             samples_array = [
                 self._calculate_marginal_contributions(*args, **kwargs)
-                for _ in tqdm.tqdm(range(100))  # 100 random samples
+                for _ in tqdm.tqdm(range(self.samples_per_iteration))
             ]
-            self.marginal_increment_array_stack = np.concatenate(
+            self.marginal_increment_array_stack = np.vstack(
                 [self.marginal_increment_array_stack, *samples_array],
-                axis=0,
             )
 
             gr_stat = self._compute_gr_statistic(self.marginal_increment_array_stack)
@@ -180,7 +184,7 @@ class ShapEvaluator(DataEvaluator, ABC):
             print(f"{gr_stat=}")
 
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
-        self.marginal_cache(self.model_name, self.marginal_contribution)
+        self.marginal_cache(self.cache_name, self.marginal_contribution)
         print("Done: marginal contribution computation", flush=True)
 
         return self

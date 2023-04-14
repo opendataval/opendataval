@@ -18,7 +18,7 @@ class AME(DataEvaluator):
     .. [1] J. Lin, A. Zhang, M. Lecuyer, J. Li, A. Panda, and S. Sen,
         Measuring the Effect of Training Data on Deep Learning Predictions via
         Randomized Experiments,
-        arXiv.org, 2022. [Online]. Available: https://arxiv.org/abs/2206.10013.
+        arXiv.org, 2022. Available: https://arxiv.org/abs/2206.10013.
 
     Parameters
     ----------
@@ -91,7 +91,7 @@ class BaggingEvaluator(DataEvaluator):
     .. [1] J. Lin, A. Zhang, M. Lecuyer, J. Li, A. Panda, and S. Sen,
         Measuring the Effect of Training Data on Deep Learning Predictions via
         Randomized Experiments,
-        arXiv.org, 2022. [Online]. Available: https://arxiv.org/abs/2206.10013.
+        arXiv.org, 2022. Available: https://arxiv.org/abs/2206.10013.
 
     Parameters
     ----------

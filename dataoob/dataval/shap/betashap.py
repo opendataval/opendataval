@@ -15,17 +15,20 @@ class BetaShapley(ShapEvaluator):
         Machine Learning,
         arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
-    Parameters
-    ----------
     gr_threshold : float, optional
         Convergence threshold for the Gelman-Rubin statistic.
-        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.01
+        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
     max_iterations : int, optional
         Max number of outer iterations of MCMC sampling, by default 100
+    samples_per_iteration : int, optional
+        Number of samples to take per iteration prior to checking GR convergence,
+        by default 100
     min_samples : int, optional
         Minimum samples before checking MCMC convergence, by default 1000
-    model_name : str, optional
-        Unique name of the model, caches marginal contributions, by default None
+    cache_name : str, optional
+        Unique cache_name of the model, caches marginal contributions, by default None
+    random_state : RandomState, optional
+        Random initial state, by default None
     alpha : int, optional
         Alpha parameter for beta distribution used in the weight function, by default 16
     beta : int, optional
@@ -36,16 +39,22 @@ class BetaShapley(ShapEvaluator):
 
     def __init__(
         self,
-        gr_threshold: float = 1.01,
+        gr_threshold: float = 1.05,
         max_iterations: int = 100,
+        samples_per_iteration: int = 100,
         min_samples: int = 1000,
-        model_name: str = None,
+        cache_name: str = None,
         alpha: int = 16,
         beta: int = 1,
         random_state: RandomState = None,
     ):
         super().__init__(
-            gr_threshold, max_iterations, min_samples, model_name, random_state
+            gr_threshold=gr_threshold,
+            max_iterations=max_iterations,
+            samples_per_iteration=samples_per_iteration,
+            min_samples=min_samples,
+            cache_name=cache_name,
+            random_state=random_state,
         )
         self.alpha, self.beta = alpha, beta  # Beta distribution parameters
 

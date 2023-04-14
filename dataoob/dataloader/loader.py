@@ -157,7 +157,10 @@ class DataLoader:
                 splits = (round(num_points * prob) for prob in (tr, val, tes))
                 sp = list(accumulate(splits))
             case _:
-                raise ValueError("Splits must be < length and same type (default int)")
+                raise ValueError(
+                    f"Splits must be < {num_points=} and of the same type: "
+                    f"{type(train_count)}, {type(valid_count)}, and {type(test_count)}."
+                )
 
         # Extra underscore to unpack any remainders
         idx = self.random_state.permutation(num_points)
@@ -206,6 +209,7 @@ class DataLoader:
             Invalid input for indices of the train, valid, or split data set, leak
             of at least 1 data point in the indices.
         """
+        num_points = len(self.covar)
         train_indices = [] if train_indices is None else train_indices
         valid_indices = [] if valid_indices is None else valid_indices
         test_indices = [] if test_indices is None else test_indices
@@ -214,7 +218,9 @@ class DataLoader:
         seen = set()
         for index in idx:
             if not (0 <= index < len(self.covar)) or index in seen:
-                raise ValueError(f"{index=} is repeated or is out of range for dataset")
+                raise ValueError(
+                    f"{index=} is repeated or is out of range for {num_points=}"
+                )
             seen.add(index)
 
         if isinstance(self.covar, Dataset):

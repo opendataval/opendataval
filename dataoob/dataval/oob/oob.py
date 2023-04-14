@@ -20,7 +20,7 @@ class DataOob(DataEvaluator):
     ----------
     .. [1] Y. Kwon,
         #TODO,
-        arXiv.org, 2023. [Online]. Available: #TODO.
+        arXiv.org, 2023. Available: #TODO.
 
     Parameters
     ----------

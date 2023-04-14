@@ -42,7 +42,7 @@ def download_adult(cache_dir: str, force_download: bool = False):
         and Data Mining, 1996
     .. [2] J. Yoon, Arik, Sercan O, and T. Pfister,
         Data Valuation using Reinforcement Learning,
-        arXiv.org, 2019. [Online]. Available: https://arxiv.org/abs/1909.11671.
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1909.11671.
     """
     uci_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
     train_url = cache(uci_url + "/adult.data", cache_dir, "train.csv", force_download)
