@@ -212,5 +212,5 @@ class DataEvaluator(ABC):
         return obj
 
     def __str__(self) -> str:  # For publication keep it simple
-        """Unique string representation for a DataEvaluator."""
+        """Get unique string representation for a DataEvaluator."""
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"

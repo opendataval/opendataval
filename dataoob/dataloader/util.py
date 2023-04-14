@@ -67,14 +67,14 @@ class IndexTransformDataset(Dataset[T_co]):
 
     @transform.setter
     def transform(self, index_transformation: Callable[[T_co, Sequence[int]], T_co]):
-        """Assigns new transform to the dataset."""
+        """Assign new transform to the dataset."""
         self._transform = index_transformation
 
     def __len__(self) -> int:
         return len(self.dataset)
 
     def __getitem__(self, index) -> T_co:
-        """Applies specified transform at indices onto data and returns it."""
+        """Apply specified transform at indices onto data and returns it."""
         data = self.dataset.__getitem__(index)
         return self.transform(data, index)
 

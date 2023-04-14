@@ -113,7 +113,7 @@ class DataLoader:
         return x_train, y_train, x_valid, y_valid, x_test, y_test
 
     def _tensorify(self, data: np.ndarray) -> torch.Tensor:
-        """Helper method to convert array to tensor."""
+        """Convert array to tensor with helper method."""
         dim = (1,) if data.ndim == 1 else data.shape[1:]
         return torch.tensor(data, dtype=torch.float, device=self.device).view(-1, *dim)
 

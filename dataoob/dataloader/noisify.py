@@ -37,7 +37,7 @@ def mix_labels(loader: DataLoader, noise_rate: float = 0.2) -> dict[str, np.ndar
 def add_gauss_noise(
     loader: DataLoader, noise_rate: float = 0.2, mu: float = 0.0, sigma: float = 1.0
 ) -> dict[str, np.ndarray]:
-    """Adds gaussian noise to covariates.
+    """Add gaussian noise to covariates.
 
     Parameters
     ----------

@@ -313,7 +313,7 @@ def discover_corrupted_sample(
 
 
 def save_dataval(evaluator: DataEvaluator, loader: DataLoader):
-    """Saves the indices and the respective data values of the DataEvaluator."""
+    """Save the indices and the respective data values of the DataEvaluator."""
     train_indices = loader.train_indices
     data_values = evaluator.evaluate_data_values()
 

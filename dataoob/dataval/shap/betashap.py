@@ -15,6 +15,8 @@ class BetaShapley(ShapEvaluator):
         Machine Learning,
         arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
+    Parameters
+    ----------
     gr_threshold : float, optional
         Convergence threshold for the Gelman-Rubin statistic.
         Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05

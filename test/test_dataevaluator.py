@@ -15,9 +15,7 @@ class DummyModel(Model):
         self.random_state = check_random_state(random_state)
 
     def __eq__(self, rhs):
-        """Since a unique identifier on creation is random state. We also will copy
-        the random state, so to make sure they're the same we just check the next number
-        """
+        """Check equality with unique identifier random state."""
         return self.random_state.tomaxint() == rhs.random_state.tomaxint()
 
     def fit(self, *args, **kwargs):
