@@ -1,6 +1,11 @@
+import pandas as pd
 import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
+
+
+def load_mediator_output(file_path: str):
+    return pd.read_csv(file_path, index_col=[0, 1])
 
 
 def set_random_state(random_state: RandomState = None) -> RandomState:

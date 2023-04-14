@@ -159,7 +159,7 @@ class DataLoader:
             case _:
                 raise ValueError(
                     f"Splits must be < {num_points=} and of the same type: "
-                    f"{type(train_count)}, {type(valid_count)}, and {type(test_count)}."
+                    f"{type(train_count)=}|{type(valid_count)=}|{type(test_count)=}."
                 )
 
         # Extra underscore to unpack any remainders

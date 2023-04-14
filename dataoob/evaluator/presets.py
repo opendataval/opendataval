@@ -10,6 +10,7 @@ import torch
 from dataoob.dataval import DataEvaluator
 from dataoob.dataval.ame.ame import AME
 from dataoob.dataval.dvrl.dvrl import DVRL
+from dataoob.dataval.influence.influence import InfluenceFunctionEval
 from dataoob.dataval.knnshap.knnshap import KNNShapley
 from dataoob.dataval.oob.oob import DataOob
 from dataoob.dataval.shap.banzhaf import DataBanzhaf
@@ -104,24 +105,25 @@ experiment_presets = {
 }
 
 dummy_evaluators = [  # Used for quick testing and run throughs
-    DataOob(10, random_state=RANDOM_STATE),
-    DVRL(10, rl_epochs=10, random_state=RANDOM_STATE),
+    AME(2, random_state=RANDOM_STATE),  # For lasso, minimum needs 5 for split
+    DVRL(1, rl_epochs=1, random_state=RANDOM_STATE),
+    DataOob(1, random_state=RANDOM_STATE),
+    InfluenceFunctionEval(1, random_state=RANDOM_STATE),
     LeaveOneOut(random_state=RANDOM_STATE),
-    AME(10, random_state=RANDOM_STATE),
-    DataBanzhaf(samples=10, random_state=RANDOM_STATE),
-    BetaShapley(100, min_samples=99, model_name="t", random_state=RANDOM_STATE),
-    DataShapley(model_name="t", random_state=RANDOM_STATE),
-    DataShapley(100, min_samples=99, model_name="r", random_state=RANDOM_STATE),
+    DataBanzhaf(samples=1, random_state=RANDOM_STATE),
+    BetaShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="t", random_state=RANDOM_STATE),
+    DataShapley(cache_name="t", random_state=RANDOM_STATE),
+    DataShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="r", random_state=RANDOM_STATE),
 ]
 
-data_evaluators = data_evaluators = [  # actual run through of experiments
-    DataOob(random_state=RANDOM_STATE),
-    DVRL(rl_epochs=3000, random_state=RANDOM_STATE),
-    LeaveOneOut(random_state=RANDOM_STATE),
-    AME(num_models=2000, random_state=RANDOM_STATE),
-    DataBanzhaf(samples=15000, random_state=RANDOM_STATE),
-    BetaShapley(gr_threshold=1.005, min_samples=500, model_name="model_1", random_state=RANDOM_STATE),
-    DataShapley(model_name="model_1", random_state=RANDOM_STATE),
+data_evaluators = [
+    AME(num_models=1500, random_state=RANDOM_STATE),
+    DataOob(random_state=RANDOM_STATE),  # 1000 samples
+    DVRL(rl_epochs=3000, random_state=RANDOM_STATE),  # RL requires torch device
+    InfluenceFunctionEval(5000, random_state=RANDOM_STATE),
+    DataBanzhaf(5000, random_state=RANDOM_STATE),
+    BetaShapley(gr_threshold=1.05, min_samples=500, cache_name="cached", random_state=RANDOM_STATE),
+    DataShapley(gr_threshold=1.05, min_samples=500, cache_name="cached", random_state=RANDOM_STATE),
 ]
 
 data_evaluator_presets = {
