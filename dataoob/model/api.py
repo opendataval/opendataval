@@ -80,7 +80,7 @@ class Model(ABC):
         return copy.deepcopy(self)
 
 
-class BinaryClassifierNNMixin(Model, nn.Module):
+class TorchBinClassMixin(Model, nn.Module):
     """Binary Classifier Mixin for Torch Neural Networks."""
 
     def fit(
@@ -130,28 +130,8 @@ class BinaryClassifierNNMixin(Model, nn.Module):
 
         return self
 
-    def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
-        """Predicts output from input tensor/data set.
 
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input covariates
-
-        Returns
-        -------
-        torch.Tensor
-            Predicted tensor output
-        """
-        if isinstance(x, Dataset):
-            x = next(iter(DataLoader(x, batch_size=len(x))))
-        self.eval()
-        with torch.no_grad():
-            y_hat = self.forward(x)
-        return y_hat
-
-
-class ClassifierNNMixin(Model, nn.Module):
+class TorchClassMixin(Model, nn.Module):
     """Classifier Mixin for Torch Neural Networks."""
 
     def fit(
@@ -201,7 +181,65 @@ class ClassifierNNMixin(Model, nn.Module):
 
                 loss.backward()  # Compute gradient
                 optimizer.step()  # Updates weights
+
         return self
+
+
+class TorchRegressMixin(Model, nn.Module):
+    """Regressor Mixin for Torch Neural Networks."""
+
+    def fit(
+        self,
+        x_train: torch.Tensor | Dataset,
+        y_train: torch.Tensor,
+        sample_weight: torch.Tensor = None,
+        batch_size: int = 32,
+        epochs: int = 1,
+    ):
+        """Fits the regression model on the training data.
+
+        Fits a torch regression Model object using ADAM optimizer and MSE loss.
+
+        Parameters
+        ----------
+        x_train : torch.Tensor
+            Data covariates
+        y_train : torch.Tensor
+            Data labels
+        batch_size : int, optional
+            Training batch size, by default 32
+        epochs : int, optional
+            Number of training epochs, by default 1
+        sample_weight : torch.Tensor, optional
+            Weights associated with each data point, by default None
+        """
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
+
+        criterion = F.mse_loss
+        dataset = CatDataset(x_train, y_train, sample_weight)
+
+        self.train()
+        for _ in range(int(epochs)):
+            # *weights helps check if we passed weights into the Dataloader
+            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
+                optimizer.zero_grad()
+                y_hat = self.__call__(x_batch)
+
+                if sample_weight is not None:
+                    # F.cross_entropy doesn't support sample_weight
+                    loss = criterion(y_hat, y_batch, reduction="none")
+                    loss = (loss * weights[0]).mean()
+                else:
+                    loss = criterion(y_hat, y_batch, reduction="mean")
+
+                loss.backward()  # Compute gradient
+                optimizer.step()  # Updates weights
+
+        return self
+
+
+class TorchPredictMixin(Model, nn.Module):
+    """Torch ``.predict()`` method mixin for Torch Neural Networks."""
 
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
         """Predicts output from input tensor/data set.
@@ -288,7 +326,7 @@ class ClassifierSkLearnWrapper(Model):
         num_samples = len(dataset)
         if num_samples == 0:
             self.model = DummyClassifier(strategy="constant", constant=0).fit([0], [0])
-            return
+            return self
         dataloader = DataLoader(dataset, batch_size=num_samples, collate_fn=to_cpu)
 
         # *weights helps check if we passed weights into the Dataloader

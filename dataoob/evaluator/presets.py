@@ -21,9 +21,10 @@ from dataoob.dataval.shap.loo import LeaveOneOut
 from dataoob.evaluator import DataEvaluatorFactoryArgs as DEFA
 from dataoob.evaluator import DataLoaderArgs as DLA
 from dataoob.evaluator import ExperimentMediator
+from dataoob.model.ann import BinaryANN, ClassifierANN
 
 # Models
-from dataoob.model.ann import ANN, BinaryANN
+from dataoob.model.api import Model
 from dataoob.model.logistic_regression import BinaryLogisticRegression as BLR
 from dataoob.model.logistic_regression import LogisticRegression as LR
 
@@ -84,11 +85,11 @@ def from_presets(preset_name: str, evaluators_name: str) -> ExperimentMediator:
 
 # fmt: off
 # ruff: noqa: E501 D103
-def ann_class_fac(covar_dim: int, label_dim: int, device: torch.Tensor) -> ANN:
+def ann_class_fac(covar_dim: int, label_dim: int, device: torch.Tensor) -> Model:
     if label_dim == 2:
         return BinaryANN(covar_dim).to(device)
     else:
-        return ANN(covar_dim, label_dim).to(device)
+        return ClassifierANN(covar_dim, label_dim).to(device)
 
 def lr_class_fac(covar_dim: int, label_dim: int, device: torch.Tensor) -> LR:
     if label_dim == 2:

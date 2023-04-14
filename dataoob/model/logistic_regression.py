@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dataoob.model import BinaryClassifierNNMixin, ClassifierNNMixin
+from dataoob.model.api import TorchBinClassMixin, TorchClassMixin, TorchPredictMixin
 
 
-class LogisticRegression(ClassifierNNMixin):
+class LogisticRegression(TorchClassMixin, TorchPredictMixin):
     """Initialize LogisticRegression."""
 
     def __init__(self, input_dim: int, num_classes: int):
@@ -30,12 +30,12 @@ class LogisticRegression(ClassifierNNMixin):
             Output Tensor of logistic regression
         """
         x = self.linear(x)
-        x = F.softmax(x, dim=1)
+        x = F.sigmoid(x)
         return x
 
 
-class BinaryLogisticRegression(BinaryClassifierNNMixin, LogisticRegression):
-    """Initialize BinaryLogisticRegression. BinaryClassifierNNMixin defines `.fit()`."""
+class BinaryLogisticRegression(TorchBinClassMixin, LogisticRegression):
+    """Initialize BinaryLogisticRegression. TorchBinClassMixin defines `.fit()`."""
 
     def __init__(self, input_dim: int):
         super().__init__(input_dim, 2)

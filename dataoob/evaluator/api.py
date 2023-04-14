@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 import pandas as pd
 import torch
+import torch.nn.functional as F
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -23,7 +24,7 @@ def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
 metrics_dict = {  # TODO add metrics and change this implementation
     "accuracy": accuracy_metric,
     "l2": lambda a, b: torch.square(a - b).sum().sqrt().item(),
-    "mse": lambda a, b: torch.square(a - b).mean().item(),
+    "mse": lambda a, b: F.mse_loss(a, b).item(),
 }
 
 

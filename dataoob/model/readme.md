@@ -9,8 +9,8 @@ assert y_hat.size(dim=1) == y.size(dim=1)  # for classification
 ```
 `Model` was primarily designed with PyTorch models in mind, which is why there are additional mixins to inherit for PyTorch models. The mixins implement the fit and predict functions for you. So long as the child class is a valid nn.Module.
 ```python
-from dataoob.model import ClassifierNNMixin
-class TorchNN(ClassifierNNMixin):
+from dataoob.model import TorchPredictMixin, TorchClassMixin
+class TorchNN(TorchPredictMixin, TorchClassMixin):
     def __init__(self, *args, **kwargs):
         ...
     def forward(self, x):
