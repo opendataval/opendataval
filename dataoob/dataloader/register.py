@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Any, Callable, Self
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,7 @@ import requests
 from torch.utils.data import Dataset
 
 DatasetCallable = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
+Self = TypeVar("Self")
 
 
 def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str:
@@ -88,11 +89,11 @@ class Register:
     dataset_kwargs : dict[str, Any], optional
         Keyword arguments to pass to the data set functions, by default None
 
-    Raises
+    Warns
     ------
-    KeyError
+    Warning
         :py:class:`Register` keeps track of all data set names registered and all must
-        be unique. If there are any duplicates, raises KeyError.
+        be unique. If there are any duplicates, warns user.
     """
 
     CACHE_DIR = "data_files"

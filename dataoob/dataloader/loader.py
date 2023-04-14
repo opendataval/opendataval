@@ -1,5 +1,5 @@
 from itertools import accumulate, chain
-from typing import Any, Callable, Self, Sequence
+from typing import Any, Callable, Sequence, TypeVar
 
 import numpy as np
 import torch
@@ -8,6 +8,8 @@ from sklearn.utils import check_random_state
 from torch.utils.data import Dataset, Subset
 
 from dataoob.dataloader.register import Register
+
+Self = TypeVar("Self")
 
 
 class DataLoader:
@@ -109,7 +111,7 @@ class DataLoader:
 
     def _tensorify(self, data: np.ndarray) -> torch.Tensor:
         """Helper method to convert array to tensor."""
-        dim = (1,) if data.ndim == 1 else data[0].shape
+        dim = (1,) if data.ndim == 1 else data.shape[1:]
         return torch.tensor(data, dtype=torch.float, device=self.device).view(-1, *dim)
 
     def split_dataset(

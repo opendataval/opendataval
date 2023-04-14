@@ -98,8 +98,8 @@ class DVRL(DataEvaluator):
         self.x_valid = x_valid
         self.y_valid = y_valid
 
-        self.num_points, *self.feature_dim = len(x_train), x_train[0].shape
-        self.label_dim = (1,) if self.y_train.ndim == 1 else self.y_train[0].shape
+        self.num_points, [*self.feature_dim] = len(x_train), x_train[0].shape
+        [*self.label_dim] = (1,) if self.y_train.ndim == 1 else self.y_train[0].shape
 
         self.value_estimator = DataValueEstimatorRL(
             x_dim=np.prod(self.feature_dim),

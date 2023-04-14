@@ -4,8 +4,7 @@
 `.predict(x)` should return a tensor with the same dimensionality, not same length, as the input label `y` into `.train(x, y)`
 ```python
 y_hat = child_model.fit(x, y).predict(x_valid)
-assert y_hat.ndim == y.ndim == 1 # for regression
-assert y_hat.size(dim=1) == y.size(dim=1)  # for classification
+assert y_hat.shape == y_valid.shape
 ```
 `Model` was primarily designed with PyTorch models in mind, which is why there are additional mixins to inherit for PyTorch models. The mixins implement the fit and predict functions for you. So long as the child class is a valid nn.Module.
 ```python

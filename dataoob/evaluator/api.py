@@ -189,9 +189,9 @@ class ExperimentMediator:
             .noisify(loader_args.add_noise_func, **loader_args.noise_kwargs)
         )
 
-        covar_dim = len(loader.x_train[0])
-        label_dim = loader.y_train.shape[1] if loader.y_train.ndim == 2 else 1
-        pred_model = de_factory_args.pred_model_factory(covar_dim, label_dim, device)
+        covar_dim = (1,) if loader.x_train.ndim == 1 else loader.x_train[0].shape
+        label_dim = (1,) if loader.y_train.ndim == 1 else loader.y_train[0].shape
+        pred_model = de_factory_args.pred_model_factory(*covar_dim, *label_dim, device)
 
         return ExperimentMediator(
             loader=loader,

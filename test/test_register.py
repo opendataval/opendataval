@@ -59,7 +59,7 @@ class TestRegister(unittest.TestCase):
     def test_repeat_register(self):
         n = len(Register.Datasets)
         Register("repeat1")
-        self.assertRaises(KeyError, Register, "repeat1")
+        self.assertWarns(Warning, Register, "repeat1")
         self.assertEqual(n + 1, len(Register.Datasets))
 
 
