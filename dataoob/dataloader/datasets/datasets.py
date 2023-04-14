@@ -2,7 +2,6 @@
 import os
 
 import numpy as np
-import opendatasets as od
 import pandas as pd
 import sklearn.datasets as ds
 from sklearn.preprocessing import StandardScaler, minmax_scale
@@ -37,8 +36,13 @@ def download_adult(cache_dir: str, force_download: bool = False):
 
     References
     ----------
-    DVRL paper: https://arxiv.org/abs/1909.11671.
-    UCI Adult data link: https://archive.ics.uci.edu/ml/datasets/Adult
+    .. [1] R. Kohavi, Scaling Up the Accuracy of
+        Naive-Bayes Classifiers: a Decision-Tree Hybrid,
+        Proceedings of the Second International Conference on Knowledge Discovery
+        and Data Mining, 1996
+    .. [2] J. Yoon, Arik, Sercan O, and T. Pfister,
+        Data Valuation using Reinforcement Learning,
+        arXiv.org, 2019. [Online]. Available: https://arxiv.org/abs/1909.11671.
     """
     uci_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
     train_url = cache(uci_url + "/adult.data", cache_dir, "train.csv", force_download)
@@ -128,27 +132,37 @@ def download_breast_cancer():
 def download_election(cache_dir: str, force_download: bool):
     """Categorical data set registered as ``"election"``.
 
-    Presidential election results by state since 1976 courtesy of Bojan Tunguz.
+    Presidential election results by MIT Election Data and Science Lab.
 
     References
     ----------
-    Bojan Tunguz: https://www.kaggle.com/datasets/tunguz/us-elections-dataset
+    .. [1] M. E. Data and S. Lab,
+        U.S. President 1976-2020.
+        Harvard Dataverse, 2017. doi: 10.7910/DVN/42MVDX.
     """
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
 
-    dataset_url = "https://www.kaggle.com/tunguz/us-elections-dataset"
-    od.download(dataset_url, data_dir=cache_dir, force=force_download)
+    url = "https://dataverse.harvard.edu/api/access/datafile/4299753?gbrecs=false"
+    cache(url, cache_dir, "1976-2020-president.tab", force_download)
 
-    df = pd.read_csv(f"{cache_dir}/us-elections-dataset/1976-2020-president.csv")
-    df = df.drop(
-        ["notes", "party_detailed", "candidate", "state_po", "version", "office"],
-        axis=1,
-    )
+    df = pd.read_csv(f"{cache_dir}/1976-2020-president.tab", delimiter="\t")
+    drop_col = [
+        "notes",
+        "party_detailed",
+        "candidate",
+        "version",
+        "state_po",
+        "writein",
+        "office",
+    ]
+
+    df = df.drop(drop_col, axis=1)
     df = pd.get_dummies(df, columns=["state"])
 
     covar = df.drop("party_simplified", axis=1).astype("float").values
     labels = df["party_simplified"].astype("category").cat.codes.values
+
     return covar, labels
 
 

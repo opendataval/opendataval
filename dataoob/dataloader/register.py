@@ -5,6 +5,7 @@ from typing import Any, Callable, TypeVar
 import numpy as np
 import pandas as pd
 import requests
+import tqdm
 from torch.utils.data import Dataset
 
 DatasetCallable = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
@@ -40,7 +41,7 @@ def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str
 
     if not os.path.isfile(filepath) or force_download:
         with requests.get(url, stream=True, timeout=60) as r, open(filepath, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):  # In case file is large
+            for chunk in tqdm.tqdm(r.iter_content(chunk_size=8192), "Downloading:"):
                 f.write(chunk)
 
     return filepath

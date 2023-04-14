@@ -68,7 +68,10 @@ class DataLoader:
         random_state: RandomState = None,
     ):
         if dataset_name not in Register.Datasets:
-            raise KeyError("Must register data set in register_dataset")
+            raise KeyError(
+                "Must register data set in register_dataset."
+                "Ensure the data set is imported and installed optional dependencies."
+            )
 
         dataset = Register.Datasets[dataset_name]
         self.covar, self.labels = dataset.load_data(force_download)

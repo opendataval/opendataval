@@ -9,7 +9,7 @@ authors = [
     {name = "Yongchan Kwon", email = "yk3012@columbia.edu"},
 
 ]
-description = "Transparent Data Valuation"  # TODO
+description = "Transparent Data Valuation"
 readme = "README.md"
 requires-python = ">=3.10.0"
 keywords = ["Data Valuation", "Data Centric", "Machine Learning"]
@@ -22,12 +22,11 @@ classifiers = [
 ]
 dependencies = [
     "matplotlib~=3.7",
-    "pandas~=1.5",
+    "pandas~=2.0",
     "numpy~=1.24",
     "scipy~=1.10",
     "scikit-learn~=1.2",
     "torch~=2.0.0",
-    "torchvision~=0.15",
     "tqdm~=4.64",
     "opendatasets~=0.1.22",
     "jupyterlab~=3.6.1",
@@ -47,6 +46,8 @@ test = [
     "pytest~=7.2.2",
     "pytest-cov~=4.0.0"
 ]
+nlp = ["transformers~=4.27"]
+image = ["torchvision~=0.15"]
 
 [tool.hatch]
 packages = ["dataoob"]  # TODO
@@ -82,5 +83,14 @@ convention = "numpy"
 [tool.ruff.isort]
 known-first-party = ["dataoob"]
 known-third-party = [
-    "torch", "numpy", "scipy", "pandas", "sklearn", "tqdm", "opendatasets"
+    "torch",
+    "numpy",
+    "scipy",
+    "pandas",
+    "sklearn",
+    "matplotlib",
+    "tqdm",
+    "opendatasets",
+    "transformers",
+    "torchvision"
 ]
