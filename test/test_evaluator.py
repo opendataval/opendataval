@@ -69,14 +69,16 @@ Register("test_dataset").from_numpy(np.array([[1, 2], [3, 4], [5, 6]]), 1)
 class TestDataLoaderArgs(unittest.TestCase):
     def test_data_loader_args(self):
         args = DataLoaderArgs(
-            dataset="test_dataset", force_download=False, device=torch.device("cpu")
+            dataset_name="test_dataset",
+            force_download=False,
+            device=torch.device("cpu"),
         )
-        self.assertEqual(args.dataset, "test_dataset")
+        self.assertEqual(args.dataset_name, "test_dataset")
         self.assertEqual(args.force_download, False)
         self.assertEqual(args.device.type, "cpu")
 
     def test_data_loader_args_default(self):
-        args = DataLoaderArgs(dataset="test_dataset")
+        args = DataLoaderArgs(dataset_name="test_dataset")
         self.assertEqual(args.train_count, 0.7)
         self.assertEqual(args.valid_count, 0.2)
         self.assertEqual(args.test_count, 0.1)
@@ -139,8 +141,8 @@ class TestExperimentMediator(unittest.TestCase):
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experminet_mediator_create_dataloader(self):
-        experimentmediator = ExperimentMediator.create_dataloader(
-            dataset="test_dataset",
+        experimentmediator = ExperimentMediator.setup(
+            dataset_name="test_dataset",
             force_download=False,
             train_count=0.7,
             valid_count=0.2,
@@ -158,8 +160,8 @@ class TestExperimentMediator(unittest.TestCase):
 
     def test_experiment_mediator_exceptions(self):
         with self.assertRaises(ValueError):
-            ExperimentMediator.create_dataloader(
-                dataset="test_dataset",
+            ExperimentMediator.setup(
+                dataset_name="test_dataset",
                 force_download=False,
                 train_count=0.8,
                 valid_count=1.1,
@@ -177,7 +179,7 @@ class TestExperimentMediator(unittest.TestCase):
             Warning,
             ExperimentMediator.preset_setup,
             DataLoaderArgs(
-                dataset="test_dataset",
+                dataset_name="test_dataset",
                 force_download=False,
                 device=torch.device("cpu"),
                 noise_kwargs={"noise_rate": 0.2},

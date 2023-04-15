@@ -32,7 +32,7 @@ metrics_dict = {  # TODO add metrics and change this implementation
 class DataLoaderArgs:
     """DataLoaderArgs dataclass for easier creation of ExperimentMediator."""
 
-    dataset: str
+    dataset_name: str
     force_download: bool = False
     device: torch.device = torch.device("cpu")
     random_state: RandomState = None
@@ -121,14 +121,14 @@ class ExperimentMediator:
         self.num_data_eval = len(self.data_evaluators)
 
     @staticmethod
-    def create_dataloader(
-        dataset: str,
+    def setup(
+        dataset_name: str,
         force_download: bool = False,
         train_count: int | float = 0,
         valid_count: int | float = 0,
         test_count: int | float = 0,
-        noise_kwargs: dict[str, Any] = None,
         add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels,
+        noise_kwargs: dict[str, Any] = None,
         device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
         pred_model: Model = None,
@@ -140,10 +140,16 @@ class ExperimentMediator:
         random_state = check_random_state(random_state)
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
-        loader = (
-            DataLoader(dataset, force_download, device, random_state)
-            .split_dataset(train_count, valid_count, test_count)
-            .noisify(add_noise_func, **noise_kwargs)
+        loader = DataLoader.setup(
+            dataset_name=dataset_name,
+            force_download=force_download,
+            device=device,
+            random_state=random_state,
+            train_count=train_count,
+            valid_count=valid_count,
+            test_count=test_count,
+            add_noise_func=add_noise_func,
+            noise_kwargs=noise_kwargs,
         )
 
         return ExperimentMediator(
@@ -155,7 +161,7 @@ class ExperimentMediator:
         )
 
     @staticmethod
-    def setup(
+    def from_dataclasses(
         loader_args: DataLoaderArgs,
         data_evaluator_args: DataEvaluatorArgs,
         data_evaluators: list[DataEvaluator] = None,
@@ -184,7 +190,7 @@ class ExperimentMediator:
         test_count = loader_args.test_count
 
         loader = (
-            DataLoader(loader_args.dataset, loader_args.force_download, device, rs)
+            DataLoader(loader_args.dataset_name, loader_args.force_download, device, rs)
             .split_dataset(train_count, valid_count, test_count)
             .noisify(loader_args.add_noise_func, **loader_args.noise_kwargs)
         )

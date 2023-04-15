@@ -86,6 +86,29 @@ class DataLoader:
         """Get list of available data set names."""
         return list(Register.Datasets.keys())
 
+    @staticmethod
+    def setup(
+        dataset_name: str,
+        force_download: bool = False,
+        device: torch.device = torch.device("cpu"),
+        random_state: RandomState = None,
+        train_count: int | float = 0,
+        valid_count: int | float = 0,
+        test_count: int | float = 0,
+        add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
+        noise_kwargs: dict[str, Any] = None,
+    ):
+        """Creates, splits, and adds noise to DataLoader from input arguments."""
+        # If noisy func is not defined, turns returns noise_kwargs as update value dict
+        add_noise_func = dict if add_noise_func is None else add_noise_func
+        noise_kwargs = {} if noise_kwargs is None else noise_kwargs
+
+        return (
+            DataLoader(dataset_name, force_download, device, random_state)
+            .split_dataset(train_count, valid_count, test_count)
+            .noisify(add_noise_func, **noise_kwargs)
+        )
+
     @property
     def datapoints(self):
         """Return split data points to be input into a DataEvaluator as tensors.

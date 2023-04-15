@@ -1,6 +1,6 @@
 
 ## `ExperimentMediator`
-`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and faciliatate additional experiments.
+`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and facilitate additional experiments.
 ```python
 expermed = ExperimentrMediator(
     loader, data_evaluators, model, train_kwargs, metric_name
@@ -45,14 +45,14 @@ dataval_args = DataEvaluatorArgs(
     metric_name='accuracy'
 )
 
-expermed = ExperimentMediator.setup(loader_args, dataval_args)
+exper_med = ExperimentMediator.from_dataclasses(loader_args, dataval_args)
 ```
 
 ## `presets.py`
 We define many presets to quickly get an `ExperimentMediator` and test `exper_methods.py`. To use call one of the following functions: `new_evaluator` if we're testing a new `DataEvaluator` with `DataLoader` `Model` presets or `from_presets` if you want to just specify strings to get the `DataEvaluator` as well.
 ```python
 from dataoob.evaluator import from_presets, new_evaluator
-expermed = from_presets('iris_ann_low_noise', 'dummy')
-df = expermed.evaluate(noisy_detection)
+exper_med = from_presets('iris_ann_low_noise', 'dummy')
+df = exper_med.evaluate(noisy_detection)
 
 ```

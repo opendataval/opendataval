@@ -14,7 +14,7 @@ loader = DataLoader(dataset_name='dataset', device=torch.device('...'))
 From there we must define how we will split the data set into train/valid/test splits
 ```python
 loader = loader.split_dataset(70, 20, 10)  # Data set counts
-loader = loader.split_dataset(.7, .2, .1)  # Replits on proportions
+loader = loader.split_dataset(.7, .2, .1)  # Splits on proportions
 ```
 
 Finally we can specify a function on how to add noise to the data points. The function should be allowed to access every instance variable of a dataloader.
@@ -29,6 +29,23 @@ The return type of this function is a dict with the following strings and the up
 
 To get data points
 ```python
+x_train, y_train, x_valid, y_valid, x_test, y_test = loader.datapoints
+```
+
+Alternatively, if you're unhappy with the above implementation, we present
+another way of constructing the DataLoader by passing all arguments in at once:
+```python
+loader = DataLoader.setup(
+    dataset_name=dataset_name,
+    force_download=force_download,
+    device=device,
+    random_state=random_state,
+    train_count=train_count,
+    valid_count=valid_count,
+    test_counttest_count=test_count,
+    add_noise_func=add_noise_func,
+    noise_kwargs=noise_kwargs
+)
 x_train, y_train, x_valid, y_valid, x_test, y_test = loader.datapoints
 ```
 
