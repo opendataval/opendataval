@@ -20,8 +20,10 @@ Torch Mixins
 .. autosummary::
     :toctree: generated/
 
-    BinaryClassifierNNMixin
-    ClassifierNNMixin
+    TorchBinClassMixin
+    TorchClassMixin
+    TorchRegressMixin
+    TorchPredictMixin
 
 Sci-kit learn wrappers
 ----------------------
