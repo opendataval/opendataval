@@ -14,6 +14,10 @@ install-dev:
 	pip-sync requirements-dev.txt
 	pre-commit install
 
+install-extra: install
+	@echo ">> Installing extra dependencies"
+	python -m pip install -e ".[nlp, image]"
+
 ## Delete all temporary files
 clean:
 	rm -rf .ipynb_checkpoints
@@ -37,7 +41,8 @@ test:
 # Build dependencies
 build:
 	pip-compile --resolver=backtracking --output-file=requirements.txt pyproject.toml
-	pip-compile --resolver=backtracking --extra=dev --output-file=requirements-dev.txt pyproject.toml
+	pip-compile --resolver=backtracking --extra=dev --extra=test --output-file=requirements-dev.txt pyproject.toml
+	pip-compile --resolver=backtracking --extra=nlp --extra=image --output-file=requirements-extra.txt pyproject.toml
 
 
 
