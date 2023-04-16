@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 import numpy as np
 from matplotlib.axes import Axes
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from sklearn.cluster import KMeans
 from sklearn.metrics import f1_score
 from torch.utils.data import Subset
@@ -32,8 +33,9 @@ def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, f
     Returns
     -------
     dict[str, float]
-        'recall', 'kmeans_f1' (F1 score of 2-means classifier) of the DataEvaluator
-        in detecting noisy indices
+        - **"kmeans_f1"** -- F1 score performance of a 1D KNN binary classifier
+            of the data points. Classifies the lower data value data points as
+            corrupted, and the higher value data points as correct.
     """
     data_values = evaluator.evaluate_data_values()
     noisy_indices = loader.noisy_indices
@@ -87,7 +89,11 @@ def point_removal(
     Returns
     -------
     dict[str, list[float]]
-        dict containing performance list after adding ``(i * percentile)`` data points
+        dict containing performance list after adding ``(i * percentile)`` data
+
+        - **"axis"** -- Proportion of data values removed currently
+        - **f"{order}_add_{metric_name}"** -- Performance of model after removing
+            a proportion of the data points with the highest/lowest/random data values
     """
     x_train, y_train, x_valid, y_valid, *_ = loader.datapoints
     data_values = evaluator.evaluate_data_values()
@@ -129,7 +135,7 @@ def point_removal(
     if plot:
         plot.plot(x_axis, metric_list[:num_bins], "o-")
 
-        plot.set_xlabel("Fraction Added")
+        plot.set_xlabel("Fraction Removed")
         plot.set_ylabel(metric_name)
         plot.set_title(str(evaluator))
 
@@ -169,6 +175,12 @@ def remove_high_low(
     dict[str, list[float]]
         dict containing list of the performance of the DataEvaluator
         ``(i * percentile)`` valuable/most valuable data points are removed
+
+        - **"axis"** -- Proportion of data values removed currently
+        - **f"remove_mostval_{metric_name}"** -- Performance of model after removing
+            a proportion of the data points with the highest data values
+        - **"f"remove_leastval_{metric_name}""** -- Performance of model after removing
+            a proportion of the data points with the lowest data values
     """
     x_train, y_train, *_, x_test, y_test = loader.datapoints
     data_values = evaluator.evaluate_data_values()
@@ -263,6 +275,15 @@ def discover_corrupted_sample(
         dict containing list of the proportion of noisy indices found after exploring
         the ``(i * percentile)`` least valuable data points. If plot is not None,
         also returns optimal and random search performances as lists
+
+        - **"axis"** -- Proportion of data values explored currently.
+        - **"corrupt_found"** -- Proportion of corrupted data values found currently
+        - **"optimal"** -- Optimal proportion of corrupted values found currently
+            meaning if the inspected **only** contained corrupted samples until
+            the number of corrupted samples are completely exhausted.
+        - **"random"** -- Random proportion of corrupted samples found, meaning
+            if the data points were explored randomly, we'd expect to find
+            corrupted_samples in proportion to the number of corruption in the data set.
     """
     x_train, *_ = loader.datapoints
     noisy_indices = loader.noisy_indices
@@ -318,3 +339,106 @@ def save_dataval(evaluator: DataEvaluator, loader: DataLoader):
     data_values = evaluator.evaluate_data_values()
 
     return {"indices": train_indices, "data_values": data_values}
+
+
+def increasing_bin_removal(
+    evaluator: DataEvaluator,
+    loader: DataLoader,
+    bin_size: int = 1,
+    plot: Axes = None,
+    metric_name: str = "accuracy",
+    train_kwargs: dict[str, Any] = None,
+) -> dict[str, list[float]]:
+    """Evaluate accuracy after removing data points with data values above threshold.
+
+    For each subplot, displays the proportion of the data set with data values less
+    than the specified data value (x-axis) and the performance of the model when all
+    data values greater than the specified data value is removed. This implementation
+    was inspired by V. Feldman and C. Zhang in their paper [1] where the same principle
+    was applied to memorization functions.
+
+    References
+    ----------
+    .. [1] V. Feldman and C. Zhang,
+        What Neural Networks Memorize and Why: Discovering the Long Tail via
+        Influence Estimation,
+        arXiv.org, 2020. Available: https://arxiv.org/abs/2008.03703.
+
+    Parameters
+    ----------
+    evaluator : DataEvaluator
+        DataEvaluator to be tested
+    loader : DataLoader
+        DataLoader containing training and valid data points
+    bin_size : float, optional
+        We look at bins of equal size and find the data values cutoffs for the x-axis,
+        by default 1
+    plot : Axes, optional
+        Matplotlib Axes to plot data output, by default None
+    metric_name : str, optional
+        Name of DataEvaluator defined performance metric, by default assumed "accuracy"
+    train_kwargs : dict[str, Any], optional
+        Training key word arguments for training the pred_model, by default None
+
+    Returns
+    -------
+    Dict[str, list[float]]
+        dict containing the thresholds of data values examined, proportion of training
+        data points removed, and performance after those data points were removed.
+
+        - **"axis"** -- Thresholds of data values examined. For a given threshold,
+            considers the subset of data points with data values below.
+        - **"frac_datapoints_explored"** -- Proportion of data points with data values
+            below the specified threshold
+        - **f"{metric_name}_at_datavalues"** -- Performance metric when data values
+            above the specified threshold are removed
+    """
+    data_values = evaluator.evaluate_data_values()
+    curr_model = evaluator.pred_model
+    x_train, y_train, *_, x_test, y_test = loader.datapoints
+
+    num_points = len(data_values)
+
+    # Starts with 10 data points
+    bins_indices = [*range(5, num_points - 1, bin_size), num_points - 1]
+    frac_datapoints_explored = [(i + 1) / num_points for i in bins_indices]
+
+    sorted_indices = np.argsort(data_values)
+    x_axis = data_values[sorted_indices[bins_indices]] / np.max(data_values)
+
+    perf = []
+    train_kwargs = train_kwargs if train_kwargs is not None else {}
+
+    for bin_end in bins_indices:
+        coalition = sorted_indices[:bin_end]
+
+        new_model = curr_model.clone()
+        new_model.fit(
+            Subset(x_train, coalition),
+            Subset(y_train, coalition),
+            **train_kwargs,
+        )
+        y_hat = new_model.predict(x_test)
+        perf.append(evaluator.evaluate(y_hat, y_test))
+
+    eval_results = {
+        "frac_datapoints_explored": frac_datapoints_explored,
+        f"{metric_name}_at_datavalues": perf,
+        "axis": x_axis,
+    }
+
+    if plot is not None:  # Removing everything above this threshold
+        plot.plot(x_axis, perf)
+
+        plot.set_xticks([])
+        plot.set_ylabel(metric_name)
+        plot.set_title(str(evaluator))
+
+        divider = make_axes_locatable(plot)
+        frac_inspected_plot = divider.append_axes("bottom", size="40%", pad="5%")
+
+        frac_inspected_plot.fill_between(x_axis, frac_datapoints_explored)
+        frac_inspected_plot.set_xlabel("Data Values Threshold")
+        frac_inspected_plot.set_ylabel("Trainset Fraction")
+
+    return eval_results

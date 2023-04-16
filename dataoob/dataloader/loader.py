@@ -98,7 +98,7 @@ class DataLoader:
         add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
         noise_kwargs: dict[str, Any] = None,
     ):
-        """Creates, splits, and adds noise to DataLoader from input arguments."""
+        """Create, split, and add noise to DataLoader from input arguments."""
         # If noisy func is not defined, turns returns noise_kwargs as update value dict
         add_noise_func = dict if add_noise_func is None else add_noise_func
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
@@ -285,7 +285,18 @@ class DataLoader:
             and adds noise to those data points as needed. Returns dict[str, np.ndarray]
             that has the updated np.ndarray in a dict to update the data loader with the
             following keys:
-            {'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_indices'}
+            - **"x_train"** -- Updated training covariates with noise, optional
+            - **"y_train"** -- Updated training labels with noise, optional
+            - **"x_valid"** -- Updated validation covariates with noise, optional
+            - **"y_valid"** -- Updated validation labels with noise, optional
+            - **"x_test"** -- Updated testing covariates with noise, optional
+            - **"y_test"** -- Updated testing labels with noise, optional
+            - **"noisy_indices"** -- Indices of data set with noise,
+                typically the training data set has noise added
+        args : tuple[Any]
+            Additional positional arguments passed to ``add_noise_func``
+        kwargs: dict[str, Any]
+            Additional key word arguments passed to ``add_noise_func``
 
         Returns
         -------

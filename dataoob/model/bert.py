@@ -231,19 +231,19 @@ class BertTokenizerWrapper(nn.Module):
             For more in-depth on what each these represent:
 
             - **input_ids** -- List of token ids to be fed to a model.
-              [Input IDs?](https://huggingface.co/transformers/glossary#input-ids)
+                [Input IDs?](https://huggingface.co/transformers/glossary#input-ids)
 
             - **attention_mask** -- List of indices specifying which tokens should
-              be attended to by the model (when `return_attention_mask=True` or if
-              *"attention_mask"* is in `self.model_input_names`).
-              [Attention?](https://huggingface.co/transformers/glossary#attention-mask)
+                be attended to by the model (when `return_attention_mask=True` or if
+                *"attention_mask"* is in `self.model_input_names`).
+                [Mask?](https://huggingface.co/transformers/glossary#attention-mask)
 
             If using a non-DistilBert tokenizier, see the below. The token type ids
             aren't needed for DistilBert models.
             - **token_type_ids** -- List of token type ids to be fed to a model
-              (when `return_token_type_ids=True` or if *"token_type_ids"* is in
-              `self.model_input_names`).
-              [Type IDs?](https://huggingface.co/transformers/glossary#token-type-ids)
+                (when `return_token_type_ids=True` or if *"token_type_ids"* is in
+                `self.model_input_names`).
+                [Type IDs?](https://huggingface.co/transformers/glossary#token-type-ids)
         """
         sentences = [sent for sent in sentences]  # Input must be list
         batch_encoding = self.tokenizer.__call__(

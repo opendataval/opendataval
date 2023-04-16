@@ -49,6 +49,8 @@
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
 [![Build][test-shield]][test-url]
+[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)
+
 
 **dataoob** is the first general-purpose lightweight library that provides a comprehensive list of functions to systematically evaluate the data valuations of several data valuation meta-frameworks. dataoob supports the development of new datasets (both synthetic and real-world) and explanation methods, with a strong bent towards promoting systematic, reproducible, and transparent evaluation of data values. TODO most of this is filler from OpenXAI, to change
 

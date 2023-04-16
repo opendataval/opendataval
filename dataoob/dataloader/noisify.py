@@ -21,6 +21,8 @@ def mix_labels(loader: DataLoader, noise_rate: float = 0.2) -> dict[str, np.ndar
     -------
     dict[str, np.ndarray]
         dictionary of updated data points
+        - **"y_train"** -- Updated training labels mixed
+        - **"noisy_indices"** -- Indices of training data set with mixed labels
     """
     rs = check_random_state(loader.random_state)
 
@@ -36,7 +38,7 @@ def mix_labels(loader: DataLoader, noise_rate: float = 0.2) -> dict[str, np.ndar
 
 def add_gauss_noise(
     loader: DataLoader, noise_rate: float = 0.2, mu: float = 0.0, sigma: float = 1.0
-) -> dict[str, np.ndarray]:
+) -> dict[str, Dataset | np.ndarray]:
     """Add gaussian noise to covariates.
 
     Parameters
@@ -54,6 +56,8 @@ def add_gauss_noise(
     -------
     dict[str, np.ndarray]
         dictionary of updated data points
+        - **"x_train"** -- Updated training covariates with added gaussian noise
+        - **"noisy_indices"** -- Indices of training data set with mixed labels
     """
     rs = check_random_state(loader.random_state)
 
