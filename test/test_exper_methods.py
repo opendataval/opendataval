@@ -7,19 +7,19 @@ from numpy.random import RandomState
 from sklearn.datasets import make_classification
 from sklearn.utils import check_random_state
 
-from opendataval.dataloader import DataFetcher
-from opendataval.dataloader.noisify import mix_labels
-from opendataval.dataval import DataEvaluator, ModelMixin
-from opendataval.experiment.exper_methods import (
+from dataoob.dataloader import DataLoader
+from dataoob.dataloader.noisify import mix_labels
+from dataoob.dataval import DataEvaluator
+from dataoob.evaluator.exper_methods import (
     discover_corrupted_sample,
     increasing_bin_removal,
     noisy_detection,
+    point_removal,
     remove_high_low,
     save_dataval,
 )
-from opendataval.metrics import Metrics
-from opendataval.model import Model
-from opendataval.util import get_name, set_random_state
+from dataoob.model import Model
+from dataoob.util import set_random_state
 
 
 class DummyModel(Model):
@@ -30,7 +30,7 @@ class DummyModel(Model):
         return torch.ones((len(x_train), 1))
 
 
-class DummyEvaluator(DataEvaluator, ModelMixin):
+class DummyEvaluator(DataEvaluator):
     def __init__(self, random_state: RandomState = None):
         self.pred_model = DummyModel()
         self.random_state = check_random_state(random_state)
@@ -46,6 +46,13 @@ class DummyEvaluator(DataEvaluator, ModelMixin):
         return self.data_values
 
 
+class DummyLoader(DataLoader):
+    def __init__(self, covar, labels, random_state: RandomState):
+        self.covar, self.labels = covar, labels
+        self.random_state = check_random_state(random_state)
+        self.device = torch.device("cpu")
+
+
 class TestExperiment(unittest.TestCase):
     def setUp(self):
         random_state = set_random_state(10)
@@ -57,49 +64,81 @@ class TestExperiment(unittest.TestCase):
             random_state=random_state,
         )
 
-        self.fetcher = (
-            DataFetcher.from_data(covar, labels, False, random_state=random_state)
+        self.loader = (
+            DummyLoader(covar, labels, random_state)
             .split_dataset_by_indices(range(20), range(20, 40), range(40, 60))
             .noisify(mix_labels, noise_rate=0.25)
         )
         self.data_evaluator = (
-            DummyEvaluator(random_state).input_fetcher(self.fetcher).train_data_values()
+            DummyEvaluator(random_state)
+            .input_dataloader(self.loader)
+            .train_data_values()
         )
         self.num_points = 20
         self.train_kwargs = {}
         self.plot = plt.subplot(1, 1, 1)
 
     def test_noisy_detection(self):
-        result = noisy_detection(self.data_evaluator, self.fetcher)
+        result = noisy_detection(self.data_evaluator, self.loader)
         self.assertIn("kmeans_f1", result)
         self.assertIsInstance(result["kmeans_f1"], float)
         self.assertGreaterEqual(result["kmeans_f1"], 0.0)
         self.assertLessEqual(result["kmeans_f1"], 1.0)
 
+    def test_point_removal(self):
+        ord_one = "ascending"
+        result = point_removal(
+            self.data_evaluator,
+            self.loader,
+            order=ord_one,
+            percentile=0.05,
+            plot=None,
+            metric_name="accuracy",
+            train_kwargs=self.train_kwargs,
+        )
+
+        self.assertIn("axis", result)
+        self.assertIn(f"{ord_one}_remove_accuracy", result)
+        self.assertEqual(len(result["axis"]), len(result[f"{ord_one}_remove_accuracy"]))
+
+        ord_two = "descending"
+        result = point_removal(
+            self.data_evaluator,
+            self.loader,
+            order=ord_two,
+            percentile=0.05,
+            plot=self.plot,
+            metric_name="accuracy",
+            train_kwargs=self.train_kwargs,
+        )
+        self.assertIn("axis", result)
+        self.assertIn(f"{ord_two}_remove_accuracy", result)
+        self.assertEqual(len(result["axis"]), len(result[f"{ord_two}_remove_accuracy"]))
+
     def test_increasing_bin_removal(self):
-        metric_name = Metrics.ACCURACY
+        metric_name = "accuracy"
         result = increasing_bin_removal(
             self.data_evaluator,
-            self.fetcher,
+            self.loader,
             bin_size=1,
-            metric=metric_name,
+            metric_name=metric_name,
             plot=self.plot,
             train_kwargs=self.train_kwargs,
         )
         self.assertIn("axis", result)
         self.assertIn("frac_datapoints_explored", result)
-        self.assertIn(f"{get_name(metric_name)}_at_datavalues", result)
+        self.assertIn(f"{metric_name}_at_datavalues", result)
 
     def test_save_dataval(self):
         data_values = self.data_evaluator.evaluate_data_values()
-        result = save_dataval(self.data_evaluator, self.fetcher)
+        result = save_dataval(self.data_evaluator, self.loader)
         self.assertListEqual(list(range(20)), result["indices"].tolist())
         self.assertListEqual(data_values.tolist(), result["data_values"].tolist())
 
     def test_discover_corrupted_sample(self):
         result = discover_corrupted_sample(
             self.data_evaluator,
-            self.fetcher,
+            self.loader,
             percentile=0.5,
             plot=self.plot,
         )
@@ -111,19 +150,16 @@ class TestExperiment(unittest.TestCase):
             self.assertEqual(axis_len, len(result[key]), msg=f"len(axis) != len({key})")
 
     def test_remove_high_low(self):
-        metric = Metrics.ACCURACY
+        metric = "accuracy"
         result = remove_high_low(
             self.data_evaluator,
-            self.fetcher,
-            metric=metric,
+            self.loader,
+            metric_name=metric,
             percentile=0.05,
             plot=self.plot,
             train_kwargs=self.train_kwargs,
         )
-        keys = [
-            f"remove_least_influential_first_{get_name(metric)}",
-            f"remove_most_influential_first_{get_name(metric)}",
-        ]
+        keys = [f"remove_mostval_{metric}", f"remove_leastval_{metric}"]
         self.assertIn("axis", result)
         axis_len = len(result["axis"])
 

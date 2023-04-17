@@ -94,3 +94,7 @@ known-third-party = [
     "transformers",
     "torchvision"
 ]
+
+[tool.coverage.run]
+source = ['dataoob']
+omit = ["dataoob/model/*", "dataoob/dataloader/datasets/*"]

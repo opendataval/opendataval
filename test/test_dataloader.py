@@ -5,7 +5,7 @@ import torch
 from numpy.random import RandomState
 from sklearn.datasets import make_classification
 
-from dataoob.dataloader import DataLoader, Register, mix_labels
+from dataoob.dataloader import DataLoader, Register, add_gauss_noise, mix_labels
 
 Data = make_classification(
     n_samples=100,
@@ -86,6 +86,15 @@ class TestDataLoader(unittest.TestCase):
         self.loader.noisify(mix_labels, noise_rate=0.5)
         self.assertTrue(np.array_equal(self.loader.x_train, x_train))
         self.assertFalse(np.array_equal(self.loader.y_train, y_train))
+        self.assertTrue(self.loader.noisy_indices.any())
+
+        # Test with gauss noise
+        self.loader.split_dataset(train_count=80, valid_count=20)
+        x_train = self.loader.x_train.copy()
+        y_train = self.loader.y_train.copy()
+        self.loader.noisify(add_gauss_noise, mu=10, sigma=10, noise_rate=0.5)
+        self.assertFalse(np.array_equal(self.loader.x_train, x_train))
+        self.assertTrue(np.array_equal(self.loader.y_train, y_train))
         self.assertTrue(self.loader.noisy_indices.any())
 
     def test_invalid_dataset(self):

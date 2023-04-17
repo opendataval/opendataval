@@ -2,7 +2,7 @@
 
 Experiments to pass into :py:meth:`~dataoob.evaluator.api.ExperimentMediator.evaluate`
 and :py:meth:`~dataoob.evaluator.api.ExperimentMediator.plot` evaluate performance of
-one :py:class:`~dataoob.dataval.api.DataEvaluator` at a a time.
+one :py:class:`~dataoob.dataval.api.DataEvaluator` at a time.
 """
 from typing import Any, Literal
 
@@ -76,9 +76,9 @@ def point_removal(
     loader : DataLoader
         DataLoader containing training and valid data points
     order : Literal["random", "ascending";, "descending";], optional
-        Order which data points will be added, by default "random"
+        Order which data points will be removed, by default "random"
     percentile : float, optional
-        Percentile of data points to add each iteration, by default 0.05
+        Percentile of data points to remove per iteration, by default 0.05
     plot : Axes, optional
         Matplotlib Axes to plot data output, by default None
     metric_name : str, optional
@@ -89,7 +89,7 @@ def point_removal(
     Returns
     -------
     dict[str, list[float]]
-        dict containing performance list after adding ``(i * percentile)`` data
+        dict containing performance list after removing ``(i * percentile)`` data
 
         - **"axis"** -- Proportion of data values removed currently
         - **f"{order}_add_{metric_name}"** -- Performance of model after removing
@@ -129,10 +129,10 @@ def point_removal(
 
         metric_list.append(model_score)
 
-    x_axis = [i * (1.0 / num_bins) for i in range(num_bins)]
-    eval_results = {f"{order}_add_{metric_name}": metric_list, "axis": x_axis}
+    x_axis = [i / num_bins for i in range(num_bins)]
+    eval_results = {f"{order}_remove_{metric_name}": metric_list, "axis": x_axis}
 
-    if plot:
+    if plot is not None:
         plot.plot(x_axis, metric_list[:num_bins], "o-")
 
         plot.set_xlabel("Fraction Removed")
@@ -162,7 +162,7 @@ def remove_high_low(
     loader : DataLoader
         DataLoader containing training and valid data points
     percentile : float, optional
-        Percentile of data points to add remove iteration, by default 0.05
+        Percentile of data points to remove per iteration, by default 0.05
     plot : Axes, optional
         Matplotlib Axes to plot data output, by default None
     metric_name : str, optional
@@ -224,7 +224,7 @@ def remove_high_low(
         unvaluable_score = evaluator.evaluate(y_test, iy_hat_valid)
         unvaluable_list.append(unvaluable_score)
 
-    x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
+    x_axis = [i / num_bins for i in range(num_bins)]
 
     eval_results = {
         f"remove_mostval_{metric_name}": valuable_list,
@@ -233,7 +233,7 @@ def remove_high_low(
     }
 
     # Plot graphs
-    if plot:
+    if plot is not None:
         # Prediction performances after removing high or low values
         plot.plot(x_axis, valuable_list[:num_bins], "o-")
         plot.plot(x_axis, unvaluable_list[:num_bins], "x-")
@@ -307,14 +307,14 @@ def discover_corrupted_sample(
             / len(noisy_indices)
         )
 
-    x_axis = [a * (1.0 / num_bins) for a in range(num_bins)]
+    x_axis = [i / num_bins for i in range(num_bins)]
     eval_results = {"corrupt_found": found_rates, "axis": x_axis}
 
     # Plot corrupted label discovery graphs
     if plot is not None:
         # Corrupted label discovery results (dvrl, optimal, random)
         y_dv = found_rates[:num_bins]
-        y_opt = [min((a * (1.0 / num_bins / noise_rate), 1.0)) for a in range(num_bins)]
+        y_opt = [min((i / num_bins / noise_rate, 1.0)) for i in range(num_bins)]
         y_random = x_axis
 
         eval_results["optimal"] = y_opt

@@ -1,0 +1,52 @@
+name: Update Coverage on Readme
+on:
+  pull_request:
+jobs:
+  update-coverage-on-readme:
+    name: Update Code Coverage on ReadMe
+    runs-on: ubuntu-latest
+    permissions:
+        checks: read
+        actions: write
+        contents: write
+        issues: write
+        pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Wait for tests to succeed
+        uses: lewagon/wait-on-check-action@master
+        with:
+          ref: ${{ github.head_ref }}
+          check-name: 'Runs Tests (ubuntu-latest, 3.11)'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          allowed-conclusions: success
+
+      - name: Download Code Coverage
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: test.yml
+          name: code-coverage-report
+          workflow_conclusion: success
+          pr: ${{github.event.pull_request.number}}
+      - name: Pytest coverage comment
+        id: commentCoverage
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          badge-title: dataoob Coverage Badge
+          title: dataoob Coverage Report
+          hide-comment: true
+      - name: Update Readme with Coverage Html
+        run: |
+          echo ${{ steps.commentCoverage.outputs.coverageHtml }}
+          sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n![Coverage](https://img.shields.io/badge/Coverage-${{steps.commentCoverage.outputs.coverage}}25-${{steps.commentCoverage.outputs.color}}.svg?style=for-the-badge)\n<!-- Pytest Coverage Comment:End -->' ./README.md
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Update coverage badge on Readme
+          add_options: '-u'
+          commit_options: '--no-verify'

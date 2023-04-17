@@ -8,6 +8,7 @@ from dataoob.dataloader import DataLoader, Register, mix_labels
 from dataoob.evaluator import ExperimentMediator, discover_corrupted_sample
 from dataoob.evaluator.presets import dummy_evaluators
 from dataoob.model import Model
+from dataoob.util import set_random_state
 
 
 class DummyModel(Model):
@@ -27,8 +28,9 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
     def test_dry_run(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")  # temporarily ignores warnings
+            random_state = set_random_state(10)
             loader = (
-                DataLoader("iris")
+                DataLoader("iris", random_state=random_state)
                 .split_dataset(5, 2, 2)
                 .noisify(mix_labels, noise_rate=0.2)
             )

@@ -13,7 +13,7 @@ from dataoob.dataval.dvrl.dvrl import DVRL
 from dataoob.dataval.influence.influence import InfluenceFunctionEval
 from dataoob.dataval.knnshap.knnshap import KNNShapley
 from dataoob.dataval.oob.oob import DataOob
-from dataoob.dataval.shap.banzhaf import DataBanzhaf
+from dataoob.dataval.shap.banzhaf import DataBanzhaf, DataBanzhafMargContrib
 from dataoob.dataval.shap.betashap import BetaShapley
 from dataoob.dataval.shap.datashap import DataShapley
 from dataoob.dataval.shap.loo import LeaveOneOut
@@ -111,6 +111,7 @@ dummy_evaluators = [  # Used for quick testing and run throughs
     InfluenceFunctionEval(1, random_state=RANDOM_STATE),
     LeaveOneOut(random_state=RANDOM_STATE),
     DataBanzhaf(samples=1, random_state=RANDOM_STATE),
+    DataBanzhafMargContrib(99, max_iterations=2, samples_per_iteration=1, cache_name="t", random_state=RANDOM_STATE),
     BetaShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="t", random_state=RANDOM_STATE),
     DataShapley(cache_name="t", random_state=RANDOM_STATE),
     DataShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="r", random_state=RANDOM_STATE),
