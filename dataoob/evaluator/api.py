@@ -120,8 +120,9 @@ class ExperimentMediator:
 
         self.num_data_eval = len(self.data_evaluators)
 
-    @staticmethod
+    @classmethod
     def setup(
+        cls,
         dataset_name: str,
         force_download: bool = False,
         train_count: int | float = 0,
@@ -152,7 +153,7 @@ class ExperimentMediator:
             noise_kwargs=noise_kwargs,
         )
 
-        return ExperimentMediator(
+        return cls(
             loader=loader,
             data_evaluators=data_evaluators,
             pred_model=pred_model,
@@ -160,20 +161,22 @@ class ExperimentMediator:
             metric_name=metric_name,
         )
 
-    @staticmethod
+    @classmethod
     def from_dataclasses(
+        cls,
         loader_args: DataLoaderArgs,
         data_evaluator_args: DataEvaluatorArgs,
         data_evaluators: list[DataEvaluator] = None,
     ):
         """Create ExperimentMediator from dataclass arg wrappers."""
-        return ExperimentMediator.create_dataloader(
+        return cls.create_dataloader(
             data_evaluators=data_evaluators,
             **(asdict(loader_args) | asdict(data_evaluator_args)),
         )
 
-    @staticmethod
+    @classmethod
     def preset_setup(
+        cls,
         loader_args: DataLoaderArgs,
         de_factory_args: DataEvaluatorFactoryArgs,
         data_evaluators: list[DataEvaluator] = None,
@@ -199,7 +202,7 @@ class ExperimentMediator:
         label_dim = (1,) if loader.y_train.ndim == 1 else loader.y_train[0].shape
         pred_model = de_factory_args.pred_model_factory(*covar_dim, *label_dim, device)
 
-        return ExperimentMediator(
+        return cls(
             loader=loader,
             data_evaluators=data_evaluators,
             pred_model=pred_model,

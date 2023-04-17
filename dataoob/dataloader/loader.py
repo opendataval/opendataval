@@ -86,8 +86,9 @@ class DataLoader:
         """Get list of available data set names."""
         return list(Register.Datasets.keys())
 
-    @staticmethod
+    @classmethod
     def setup(
+        cls,
         dataset_name: str,
         force_download: bool = False,
         device: torch.device = torch.device("cpu"),
@@ -104,23 +105,60 @@ class DataLoader:
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
         return (
-            DataLoader(dataset_name, force_download, device, random_state)
+            cls(dataset_name, force_download, device, random_state)
             .split_dataset(train_count, valid_count, test_count)
             .noisify(add_noise_func, **noise_kwargs)
         )
 
-    @staticmethod
+    @classmethod
     def from_data(
+        cls,
         covar: Dataset | np.ndarray,
         labels: np.ndarray,
         device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
     ):
-        """Returns DataLoader from input Covariates and Labels."""
-        loader = DataLoader.__new__(DataLoader)
+        """Return DataLoader from input Covariates and Labels."""
+        loader = cls.__new__(cls)
         loader.covar, loader.labels = covar, labels
         if not len(loader.covar) == len(loader.labels):
             raise ValueError("Covariates and Labels must be of same length.")
+
+        loader.device = device
+        loader.random_state = check_random_state(random_state)
+
+        return loader
+
+    @classmethod
+    def from_data_splits(
+        cls,
+        x_train: Dataset | np.ndarray,
+        y_train: np.ndarray,
+        x_valid: Dataset | np.ndarray,
+        y_valid: np.ndarray,
+        x_test: Dataset | np.ndarray,
+        y_test: np.ndarray,
+        device: torch.device = torch.device("cpu"),
+        random_state: RandomState = None,
+    ):
+        """Return DataLoader from already split data."""
+        if not (
+            len(x_train) == len(y_train)
+            and len(x_valid) == len(y_valid)
+            and len(x_test) == len(y_test)
+        ):
+            raise Exception
+
+        if not (
+            x_train[0].shape == x_valid[0].shape == x_test[0].shape
+            and y_train[0].shape == y_valid[0].shape == y_test[0].shape
+        ):
+            raise Exception
+
+        loader = cls.__new__(cls)
+        loader.x_train, loader.y_train = x_train, y_train
+        loader.x_valid, loader.y_valid = x_valid, y_valid
+        loader.x_test, loader.y_test = x_test, y_test
 
         loader.device = device
         loader.random_state = check_random_state(random_state)
@@ -140,7 +178,7 @@ class DataLoader:
         (torch.Tensor | Dataset, torch.Tensor)
             Test Covariates, Test Labels
         """
-        if isinstance(self.covar, Dataset):
+        if isinstance(self.x_train, Dataset):
             x_train, x_valid, x_test = self.x_train, self.x_valid, self.x_test
         else:
             x_train = self._tensorify(self.x_train)

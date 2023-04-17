@@ -51,10 +51,14 @@ class TestDataEvaluator(unittest.TestCase):
 
         self.model = DummyModel(input_dim=10, output_dim=1)
         self.metric = MagicMock(return_value=1.0)
-        self.loader = DataLoader.from_data(
-            torch.cat((self.x_train, self.x_valid, self.x_test)),
-            torch.cat((self.y_train, self.y_valid, self.y_test)),
-        ).split_dataset_by_indices(range(100), range(100, 120), range(120, 140))
+        self.loader = DataLoader.from_data_splits(
+            self.x_train,
+            self.y_train,
+            self.x_valid,
+            self.y_valid,
+            self.x_test,
+            self.y_test,
+        )
 
     def test_init_(self):
         evaluator = DummyDataEvaluator(random_state=self.random_state)

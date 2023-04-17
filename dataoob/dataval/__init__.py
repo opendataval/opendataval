@@ -20,6 +20,7 @@ Catalog
     DataEvaluator
     AME
     DVRL
+    InfluenceFunctionEval
     KNNShapley
     DataOob
     DataBanzhaf
@@ -31,6 +32,7 @@ Catalog
 from dataoob.dataval.ame import AME
 from dataoob.dataval.api import DataEvaluator
 from dataoob.dataval.dvrl import DVRL
+from dataoob.dataval.influence import InfluenceFunctionEval
 from dataoob.dataval.knnshap import KNNShapley
 from dataoob.dataval.oob import DataOob
 from dataoob.dataval.shap import (
