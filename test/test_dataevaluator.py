@@ -6,6 +6,7 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
+from dataoob.dataloader import DataLoader
 from dataoob.dataval import DataEvaluator
 from dataoob.model import Model
 
@@ -38,11 +39,6 @@ class DummyDataEvaluator(DataEvaluator):
         return np.array([1.0] * self.x_train.shape[0])
 
 
-class DummyDataLoader:
-    def __init__(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
-        self.datapoints = x_train, y_train, x_valid, y_valid, x_test, y_test
-
-
 class TestDataEvaluator(unittest.TestCase):
     def setUp(self):
         self.random_state = np.random.RandomState(seed=0)
@@ -55,14 +51,10 @@ class TestDataEvaluator(unittest.TestCase):
 
         self.model = DummyModel(input_dim=10, output_dim=1)
         self.metric = MagicMock(return_value=1.0)
-        self.loader = DummyDataLoader(
-            self.x_train,
-            self.y_train,
-            self.x_valid,
-            self.y_valid,
-            self.x_test,
-            self.y_test,
-        )
+        self.loader = DataLoader.from_data(
+            torch.cat((self.x_train, self.x_valid, self.x_test)),
+            torch.cat((self.y_train, self.y_valid, self.y_test)),
+        ).split_dataset_by_indices(range(100), range(100, 120), range(120, 140))
 
     def test_init_(self):
         evaluator = DummyDataEvaluator(random_state=self.random_state)

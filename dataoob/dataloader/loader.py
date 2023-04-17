@@ -109,6 +109,24 @@ class DataLoader:
             .noisify(add_noise_func, **noise_kwargs)
         )
 
+    @staticmethod
+    def from_data(
+        covar: Dataset | np.ndarray,
+        labels: np.ndarray,
+        device: torch.device = torch.device("cpu"),
+        random_state: RandomState = None,
+    ):
+        """Returns DataLoader from input Covariates and Labels."""
+        loader = DataLoader.__new__(DataLoader)
+        loader.covar, loader.labels = covar, labels
+        if not len(loader.covar) == len(loader.labels):
+            raise ValueError("Covariates and Labels must be of same length.")
+
+        loader.device = device
+        loader.random_state = check_random_state(random_state)
+
+        return loader
+
     @property
     def datapoints(self):
         """Return split data points to be input into a DataEvaluator as tensors.

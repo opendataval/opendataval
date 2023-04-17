@@ -46,13 +46,6 @@ class DummyEvaluator(DataEvaluator):
         return self.data_values
 
 
-class DummyLoader(DataLoader):
-    def __init__(self, covar, labels, random_state: RandomState):
-        self.covar, self.labels = covar, labels
-        self.random_state = check_random_state(random_state)
-        self.device = torch.device("cpu")
-
-
 class TestExperiment(unittest.TestCase):
     def setUp(self):
         random_state = set_random_state(10)
@@ -65,7 +58,7 @@ class TestExperiment(unittest.TestCase):
         )
 
         self.loader = (
-            DummyLoader(covar, labels, random_state)
+            DataLoader.from_data(covar, labels, random_state=random_state)
             .split_dataset_by_indices(range(20), range(20, 40), range(40, 60))
             .noisify(mix_labels, noise_rate=0.25)
         )
