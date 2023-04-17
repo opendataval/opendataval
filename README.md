@@ -51,6 +51,7 @@
 [![Build][test-shield]][test-url]
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)
 <!-- Pytest Coverage Comment:Begin -->
+![Coverage](https://img.shields.io/badge/Coverage-87%25-green.svg?style=for-the-badge)
 <!-- Pytest Coverage Comment:End -->
 
 
