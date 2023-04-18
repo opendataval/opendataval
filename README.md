@@ -169,12 +169,12 @@ from dataoob.eval_method import discover_corrupted_sample, noisy
 
 eval_med = preset.from_presets('iris_low_noise_ann', 'experiment')  # Allocate 20+ min
 
-# Runs a discover the noisy data experiment for each DataLoader
+# Runs a discover the noisy data experiment for each DataFetcher
 # Plots the results in figure (if has plot arg), and returns the results as a DataFrame
 data, fig = eval_med.plot(discover_corrupted_sample)
 
 # If not plot: Axes argument, we can still evaluate the function with the following
-# Any function with arguments (DataEvaluator, DataLoader, ...) -> dict is valid.
+# Any function with arguments (DataEvaluator, DataFetcher, ...) -> dict is valid.
 data = eval_method.evaluate(noisy_detection)
 ```
 
@@ -183,21 +183,21 @@ data = eval_method.evaluate(noisy_detection)
 ### Overview
 Here are the 4 interacting parts of opendataval
 1. `DataEvaluator`, Measures the data values of input data point for a specified model.
-2. `DataLoader`, Loads data and holds meta data regarding splits
+2. `DataFetcher`, Loads data and holds meta data regarding splits
 3. `Model`, trainable prediction model.
 4. `ExperimentMediator`, facilitates experiments regarding data values across several `DataEvaluator`s
 ```python
-loader = (
-    DataLoader(dataset_name='name')
+fetcher = (
+    DataFetcher(dataset_name='name')
     .split_dataset(train_count=.7, valid_count=.2, test_count=.1)
-    .noisify(noise_func)  # (DataLoader, ...) -> dict
+    .noisify(noise_func)  # (DataFetcher, ...) -> dict
 )
 
 evaluator = ChildEvaluator()  # DataEvaluator is abstract
 model = ChildModel()  # Model is abstract
 
 expermed = ExperimentMediator(
-    loader=loader,
+    fetcher=fetcher,
     data_evaluators=[evaluator],
     pred_model=model,
     metric_name='accuracy'
@@ -242,28 +242,28 @@ dataval = (
 data_values = dataval.evaluate_data_values()
 ```
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
-### `DataLoader`
-The DataLoader accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
+### `DataFetcher`
+The DataFetcher accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
 ```python
-DataLoader.datasets_available()  # ['name1', 'name2']
+DataFetcher.datasets_available()  # ['name1', 'name2']
 ```
 
-A dataloader first takes a data set name to be loaded.
+A fetcher first takes a data set name to be fetched.
 ```python
-from dataoob.dataloader import DataLoader
+from dataoob.dataloader import DataFetcher
 
-loader = DataLoader(dataset_name='name1', device=torch.device('...'))
+fetcher = DataFetcher(dataset_name='name1')
 ```
 
 From there we must define how we will split the data set into train/valid/test splits
 ```python
-loader = loader.split_dataset(70, 20, 10)  # Data set counts
-loader = loader.split_dataset(.7, .2, .1)  # Replits on proportions
+fetcher = fetcher.split_dataset(70, 20, 10)  # Data set counts
+fetcher = fetcher.split_dataset(.7, .2, .1)  # Replits on proportions
 ```
 
 To get data points
 ```python
-x_train, y_train, x_valid, y_valid, x_test, y_test = loader.datapoints
+x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 ```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
@@ -276,7 +276,7 @@ expermed = ExperimentrMediator(
 )
 ```
 
-From here we can run experiments by passing in an experiment function `(DataEvaluator, DataLoader) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable. All returns include a pandas `DataFrame`.
+From here we can run experiments by passing in an experiment function `(DataEvaluator, DataFetcher) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable. All returns include a pandas `DataFrame`.
 ```python
 df = expermed.evaluate(noisy_detection)
 df, figure = expermed.plot(discover_corrupted_sample)

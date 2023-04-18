@@ -12,7 +12,7 @@ from dataoob.dataloader.register import Register
 Self = TypeVar("Self")
 
 
-class DataLoader:
+class DataFetcher:
     """Load data for an experiment from an input data set name.
 
     Facade for Register object, prepares the data and provides an API for subsequent
@@ -94,7 +94,7 @@ class DataLoader:
         add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
         noise_kwargs: dict[str, Any] = None,
     ):
-        """Create, split, and add noise to DataLoader from input arguments."""
+        """Create, split, and add noise to DataFetcher from input arguments."""
         # If noisy func is not defined, turns returns noise_kwargs as update value dict
         add_noise_func = dict if add_noise_func is None else add_noise_func
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
@@ -112,15 +112,15 @@ class DataLoader:
         labels: np.ndarray,
         random_state: RandomState = None,
     ):
-        """Return DataLoader from input Covariates and Labels."""
-        loader = cls.__new__(cls)
-        loader.covar, loader.labels = covar, labels
-        if not len(loader.covar) == len(loader.labels):
+        """Return DataFetcher from input Covariates and Labels."""
+        fetcher = cls.__new__(cls)
+        fetcher.covar, fetcher.labels = covar, labels
+        if not len(fetcher.covar) == len(fetcher.labels):
             raise ValueError("Covariates and Labels must be of same length.")
 
-        loader.random_state = check_random_state(random_state)
+        fetcher.random_state = check_random_state(random_state)
 
-        return loader
+        return fetcher
 
     @classmethod
     def from_data_splits(
@@ -133,28 +133,28 @@ class DataLoader:
         y_test: np.ndarray,
         random_state: RandomState = None,
     ):
-        """Return DataLoader from already split data."""
+        """Return DataFetcher from already split data."""
         if not (
             len(x_train) == len(y_train)
             and len(x_valid) == len(y_valid)
             and len(x_test) == len(y_test)
         ):
-            raise Exception
+            raise ValueError("Covariates and Labels must be of same length.")
 
         if not (
             x_train[0].shape == x_valid[0].shape == x_test[0].shape
             and y_train[0].shape == y_valid[0].shape == y_test[0].shape
         ):
-            raise Exception
+            raise ValueError("Covariates and Labels inputs must be of same shape.")
 
-        loader = cls.__new__(cls)
-        loader.x_train, loader.y_train = x_train, y_train
-        loader.x_valid, loader.y_valid = x_valid, y_valid
-        loader.x_test, loader.y_test = x_test, y_test
+        fetcher = cls.__new__(cls)
+        fetcher.x_train, fetcher.y_train = x_train, y_train
+        fetcher.x_valid, fetcher.y_valid = x_valid, y_valid
+        fetcher.x_test, fetcher.y_test = x_test, y_test
 
-        loader.random_state = check_random_state(random_state)
+        fetcher.random_state = check_random_state(random_state)
 
-        return loader
+        return fetcher
 
     @property
     def datapoints(self):
@@ -207,13 +207,13 @@ class DataLoader:
         Returns
         -------
         self : object
-            Returns a DataLoader with covariates, labels split into train/valid/test.
+            Returns a DataFetcher with covariates, labels split into train/valid/test.
 
         Raises
         ------
         AttributeError
             No specified Covariates or labels. Ensure that the Register object
-            has loaded your data set correctly
+            has been fetched and your data set correctly
         ValueError
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
@@ -271,7 +271,7 @@ class DataLoader:
         Returns
         -------
         self : object
-            Returns a DataLoader with covariates, labels split into train/valid/test.
+            Returns a DataFetcher with covariates, labels split into train/valid/test.
 
         Raises
         ------
@@ -348,10 +348,10 @@ class DataLoader:
         Returns
         -------
         self : object
-            Returns a DataLoader with noise added to the data set.
+            Returns a DataFetcher with noise added to the data set.
         """
-        # Passes the DataLoader to the noise_func, has access to all instance variables
-        noisy_datapoints = add_noise_func(loader=self, *noise_args, **noise_kwargs)
+        # Passes the DataFetcher to the noise_func, has access to all instance variables
+        noisy_datapoints = add_noise_func(fetcher=self, *noise_args, **noise_kwargs)
 
         self.x_train = noisy_datapoints.get("x_train", self.x_train)
         self.y_train = noisy_datapoints.get("y_train", self.y_train)

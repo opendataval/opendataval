@@ -6,12 +6,12 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataLoader, Register, mix_labels
+from dataoob.dataloader import DataFetcher, Register, mix_labels
 from dataoob.dataval import DataEvaluator
 from dataoob.evaluator import (
     DataEvaluatorArgs,
     DataEvaluatorFactoryArgs,
-    DataLoaderArgs,
+    DataFetcherArgs,
     ExperimentMediator,
 )
 from dataoob.model import Model
@@ -66,9 +66,9 @@ class BrokenEvaluator(DataEvaluator):
 Register("test_dataset").from_numpy(np.array([[1, 2], [3, 4], [5, 6]]), 1)
 
 
-class TestDataLoaderArgs(unittest.TestCase):
+class TestDataFetcherArgs(unittest.TestCase):
     def test_data_loader_args(self):
-        args = DataLoaderArgs(
+        args = DataFetcherArgs(
             dataset_name="test_dataset",
             force_download=False,
         )
@@ -76,7 +76,7 @@ class TestDataLoaderArgs(unittest.TestCase):
         self.assertEqual(args.force_download, False)
 
     def test_data_loader_args_default(self):
-        args = DataLoaderArgs(dataset_name="test_dataset")
+        args = DataFetcherArgs(dataset_name="test_dataset")
         self.assertEqual(args.train_count, 0.7)
         self.assertEqual(args.valid_count, 0.2)
         self.assertEqual(args.test_count, 0.1)
@@ -112,18 +112,18 @@ class TestDataEvaluatorFactoryArgs(unittest.TestCase):
 
 class TestExperimentMediator(unittest.TestCase):
     def setUp(self):
-        self.dataloader = DataLoader.setup("test_dataset", False, 10, 0.7, 0.2, 0.1)
+        self.fetcher = DataFetcher.setup("test_dataset", False, 10, 0.7, 0.2, 0.1)
         self.dataevaluator = DummyEvaluator()
 
     def test_experiment_mediator(self):
         experimentmediator = ExperimentMediator(
-            self.dataloader,
+            self.fetcher,
             [self.dataevaluator],
             DummyModel(),
             train_kwargs={"epochs": 10},
             metric_name="accuracy",
         )
-        self.assertIsInstance(experimentmediator.loader, DataLoader)
+        self.assertIsInstance(experimentmediator.fetcher, DataFetcher)
         self.assertIsInstance(experimentmediator.data_evaluators[0], DataEvaluator)
         self.assertIsInstance(experimentmediator.train_kwargs, dict)
         self.assertEqual(experimentmediator.metric_name, "accuracy")
@@ -131,12 +131,12 @@ class TestExperimentMediator(unittest.TestCase):
 
     def test_experiment_mediator_default(self):
         experimentmediator = ExperimentMediator(
-            self.dataloader, [self.dataevaluator], DummyModel()
+            self.fetcher, [self.dataevaluator], DummyModel()
         )
         self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
-    def test_experminet_mediator_create_dataloader(self):
+    def test_experiment_mediator_create_fetcher(self):
         experimentmediator = ExperimentMediator.setup(
             dataset_name="test_dataset",
             force_download=False,
@@ -172,7 +172,7 @@ class TestExperimentMediator(unittest.TestCase):
         self.assertWarns(
             Warning,
             ExperimentMediator.preset_setup,
-            DataLoaderArgs(
+            DataFetcherArgs(
                 dataset_name="test_dataset",
                 force_download=False,
                 noise_kwargs={"noise_rate": 0.2},
@@ -188,12 +188,12 @@ class TestExperimentMediator(unittest.TestCase):
         mock_func = Mock(side_effect=[{"a": [1, 2], "b": [3]}, {"a": [4, 5], "b": [6]}])
         kwargs = {"c": 1, "d": "2"}
         dummies = [DummyEvaluator(1), DummyEvaluator(2)]
-        experimentmediator = ExperimentMediator(self.dataloader, dummies, DummyModel())
+        experimentmediator = ExperimentMediator(self.fetcher, dummies, DummyModel())
         res = experimentmediator.evaluate(exper_func=mock_func, **kwargs)
         mock_func.assert_has_calls(
             [
-                call(dummies[0], self.dataloader, **kwargs),
-                call(dummies[1], self.dataloader, **kwargs),
+                call(dummies[0], self.fetcher, **kwargs),
+                call(dummies[1], self.fetcher, **kwargs),
             ]
         )
 

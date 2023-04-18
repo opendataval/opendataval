@@ -7,7 +7,7 @@ dataoob
 
 :py:mod:`dataoob` provides a framework to evaluate the worth of data. The framework is
 easily extendable via adding/registering new datasets via
-:py:class:`~dataoob.dataloader.DataLoader` and :py:class:`~dataoob.dataloader.Register`.
+:py:class:`~dataoob.dataloader.DataFetcher` + :py:class:`~dataoob.dataloader.Register`,
 creating your own :py:class:`~dataoob.dataval.DataEvaluator` via inheritance, or
 creating new experiments to be run by :py:class:`~dataoob.evaluator.ExperimentMediator`.
 The framework provides a robust and replicable way of loading data, selecting a model,

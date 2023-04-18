@@ -6,7 +6,7 @@ Data Evaluator
 .. currentmodule:: dataoob.dataval
 
 Provides an ABC for DataEvaluator to inherit from. The work flow is as follows:
-(:py:class:`~dataoob.dataloader.DataLoader`, :py:class:`~dataoob.dataloader.DataLoader`)
+:py:class:`~dataoob.dataloader.Register`, :py:class:`~dataoob.dataloader.DataFetcher`
 -> :py:class:`~dataoob.dataval.DataEvaluator`
 -> :py:mod:`~dataoob.evaluator.exper_methods`
 

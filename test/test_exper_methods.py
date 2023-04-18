@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from sklearn.datasets import make_classification
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataLoader
+from dataoob.dataloader import DataFetcher
 from dataoob.dataloader.noisify import mix_labels
 from dataoob.dataval import DataEvaluator
 from dataoob.evaluator.exper_methods import (
@@ -57,22 +57,20 @@ class TestExperiment(unittest.TestCase):
             random_state=random_state,
         )
 
-        self.loader = (
-            DataLoader.from_data(covar, labels, random_state=random_state)
+        self.fetcher = (
+            DataFetcher.from_data(covar, labels, random_state=random_state)
             .split_dataset_by_indices(range(20), range(20, 40), range(40, 60))
             .noisify(mix_labels, noise_rate=0.25)
         )
         self.data_evaluator = (
-            DummyEvaluator(random_state)
-            .input_dataloader(self.loader)
-            .train_data_values()
+            DummyEvaluator(random_state).input_fetcher(self.fetcher).train_data_values()
         )
         self.num_points = 20
         self.train_kwargs = {}
         self.plot = plt.subplot(1, 1, 1)
 
     def test_noisy_detection(self):
-        result = noisy_detection(self.data_evaluator, self.loader)
+        result = noisy_detection(self.data_evaluator, self.fetcher)
         self.assertIn("kmeans_f1", result)
         self.assertIsInstance(result["kmeans_f1"], float)
         self.assertGreaterEqual(result["kmeans_f1"], 0.0)
@@ -82,7 +80,7 @@ class TestExperiment(unittest.TestCase):
         ord_one = "ascending"
         result = point_removal(
             self.data_evaluator,
-            self.loader,
+            self.fetcher,
             order=ord_one,
             percentile=0.05,
             plot=None,
@@ -97,7 +95,7 @@ class TestExperiment(unittest.TestCase):
         ord_two = "descending"
         result = point_removal(
             self.data_evaluator,
-            self.loader,
+            self.fetcher,
             order=ord_two,
             percentile=0.05,
             plot=self.plot,
@@ -112,7 +110,7 @@ class TestExperiment(unittest.TestCase):
         metric_name = "accuracy"
         result = increasing_bin_removal(
             self.data_evaluator,
-            self.loader,
+            self.fetcher,
             bin_size=1,
             metric_name=metric_name,
             plot=self.plot,
@@ -124,14 +122,14 @@ class TestExperiment(unittest.TestCase):
 
     def test_save_dataval(self):
         data_values = self.data_evaluator.evaluate_data_values()
-        result = save_dataval(self.data_evaluator, self.loader)
+        result = save_dataval(self.data_evaluator, self.fetcher)
         self.assertListEqual(list(range(20)), result["indices"].tolist())
         self.assertListEqual(data_values.tolist(), result["data_values"].tolist())
 
     def test_discover_corrupted_sample(self):
         result = discover_corrupted_sample(
             self.data_evaluator,
-            self.loader,
+            self.fetcher,
             percentile=0.5,
             plot=self.plot,
         )
@@ -146,7 +144,7 @@ class TestExperiment(unittest.TestCase):
         metric = "accuracy"
         result = remove_high_low(
             self.data_evaluator,
-            self.loader,
+            self.fetcher,
             metric_name=metric,
             percentile=0.05,
             plot=self.plot,

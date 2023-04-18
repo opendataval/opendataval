@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataLoader, mix_labels
+from dataoob.dataloader import DataFetcher, mix_labels
 from dataoob.dataval import DataEvaluator
 from dataoob.model import Model
 
@@ -29,8 +29,8 @@ metrics_dict = {  # TODO add metrics and change this implementation
 
 
 @dataclass
-class DataLoaderArgs:
-    """DataLoaderArgs dataclass for easier creation of ExperimentMediator."""
+class DataFetcherArgs:
+    """DataFetcherArgs dataclass for easier creation of ExperimentMediator."""
 
     dataset_name: str
     force_download: bool = False
@@ -41,12 +41,12 @@ class DataLoaderArgs:
     test_count: int | float = 0.1
 
     noise_kwargs: dict[str, Any] = field(default_factory=dict)
-    add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels
+    add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels
 
 
 @dataclass
 class DataEvaluatorArgs:
-    """DataLoaderArgs dataclass for easier creation of ExperimentMediator."""
+    """DataFetcherArgs dataclass for easier creation of ExperimentMediator."""
 
     pred_model: Model
     train_kwargs: dict[str, Any] = field(default_factory=dict)
@@ -68,9 +68,9 @@ class ExperimentMediator:
 
     Parameters
     ----------
-    loader : DataLoader
-        DataLoader for the data set used for the experiment. All `exper_func` take a
-        DataLoader as an argument to have access to all data points and noisy indices.
+    fetcher : DataFetcher
+        DataFetcher for the data set used for the experiment. All `exper_func` take a
+        DataFetcher as an argument to have access to all data points and noisy indices.
     data_evaluators : list[DataEvaluator]
         List of DataEvaluators to be tested by `exper_func`
     pred_model : Model
@@ -84,22 +84,23 @@ class ExperimentMediator:
 
     def __init__(
         self,
-        loader: DataLoader,
+        fetcher: DataFetcher,
         data_evaluators: list[DataEvaluator],
         pred_model: Model,
         train_kwargs: dict[str, Any] = None,
         metric_name: str = "accuracy",
     ):
-        self.loader = loader
+        self.fetcher = fetcher
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
         self.metric_name = metric_name
         self.data_evaluators = []
 
         for data_val in data_evaluators:
             try:
+
                 self.data_evaluators.append(
                     data_val.input_model_metric(pred_model, metrics_dict[metric_name])
-                    .input_dataloader(loader)
+                    .input_fetcher(fetcher)
                     .train_data_values(**self.train_kwargs)
                 )
 
@@ -127,7 +128,7 @@ class ExperimentMediator:
         train_count: int | float = 0,
         valid_count: int | float = 0,
         test_count: int | float = 0,
-        add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels,
+        add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels,
         noise_kwargs: dict[str, Any] = None,
         random_state: RandomState = None,
         pred_model: Model = None,
@@ -135,11 +136,11 @@ class ExperimentMediator:
         metric_name: str = "accuracy",
         data_evaluators: list[DataEvaluator] = None,
     ):
-        """Create a DataLoader from args and passes it into the init."""
+        """Create a DataFetcher from args and passes it into the init."""
         random_state = check_random_state(random_state)
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
-        loader = DataLoader.setup(
+        fetcher = DataFetcher.setup(
             dataset_name=dataset_name,
             force_download=force_download,
             random_state=random_state,
@@ -151,7 +152,7 @@ class ExperimentMediator:
         )
 
         return cls(
-            loader=loader,
+            fetcher=fetcher,
             data_evaluators=data_evaluators,
             pred_model=pred_model,
             train_kwargs=train_kwargs,
@@ -161,42 +162,42 @@ class ExperimentMediator:
     @classmethod
     def from_dataclasses(
         cls,
-        loader_args: DataLoaderArgs,
+        fetcher_args: DataFetcherArgs,
         data_evaluator_args: DataEvaluatorArgs,
         data_evaluators: list[DataEvaluator] = None,
     ):
         """Create ExperimentMediator from dataclass arg wrappers."""
-        return cls.create_dataloader(
+        return cls.create_fetcher(
             data_evaluators=data_evaluators,
-            **(asdict(loader_args) | asdict(data_evaluator_args)),
+            **(asdict(fetcher_args) | asdict(data_evaluator_args)),
         )
 
     @classmethod
     def preset_setup(
         cls,
-        loader_args: DataLoaderArgs,
+        fetcher_args: DataFetcherArgs,
         de_factory_args: DataEvaluatorFactoryArgs,
         data_evaluators: list[DataEvaluator] = None,
     ):
         """Create ExperimentMediator from presets, infers input/output dimensions."""
-        rs = check_random_state(loader_args.random_state)
-        train_count = loader_args.train_count
-        valid_count = loader_args.valid_count
-        test_count = loader_args.test_count
+        rs = check_random_state(fetcher_args.random_state)
+        train_count = fetcher_args.train_count
+        valid_count = fetcher_args.valid_count
+        test_count = fetcher_args.test_count
 
-        loader = (
-            DataLoader(loader_args.dataset_name, loader_args.force_download, rs)
+        fetcher = (
+            DataFetcher(fetcher_args.dataset_name, fetcher_args.force_download, rs)
             .split_dataset(train_count, valid_count, test_count)
-            .noisify(loader_args.add_noise_func, **loader_args.noise_kwargs)
+            .noisify(fetcher_args.add_noise_func, **fetcher_args.noise_kwargs)
         )
 
         device = de_factory_args.device
-        covar_dim = (1,) if loader.x_train.ndim == 1 else loader.x_train[0].shape
-        label_dim = (1,) if loader.y_train.ndim == 1 else loader.y_train[0].shape
+        covar_dim = (1,) if fetcher.x_train.ndim == 1 else fetcher.x_train[0].shape
+        label_dim = (1,) if fetcher.y_train.ndim == 1 else fetcher.y_train[0].shape
         pred_model = de_factory_args.pred_model_factory(*covar_dim, *label_dim, device)
 
         return cls(
-            loader=loader,
+            fetcher=fetcher,
             data_evaluators=data_evaluators,
             pred_model=pred_model,
             train_kwargs=de_factory_args.train_kwargs,
@@ -205,7 +206,7 @@ class ExperimentMediator:
 
     def evaluate(
         self,
-        exper_func: Callable[[DataEvaluator, DataLoader, ...], dict[str, Any]],
+        exper_func: Callable[[DataEvaluator, DataFetcher, ...], dict[str, Any]],
         include_train: bool = False,
         **exper_kwargs,
     ) -> pd.DataFrame:
@@ -216,9 +217,9 @@ class ExperimentMediator:
 
         Parameters
         ----------
-        exper_func : Callable[[DataEvaluator, DataLoader, ...], dict[str, Any]]
+        exper_func : Callable[[DataEvaluator, DataFetcher, ...], dict[str, Any]]
             Experiment function, runs an experiment on a DataEvaluator and the data of
-            the DataLoader associated. Output must be a dict with results of the
+            the DataFetcher associated. Output must be a dict with results of the
             experiment. NOTE, the results must all be <= 1 dimensional but does not
             need to be the same length.
         include_train : bool, optional
@@ -245,7 +246,7 @@ class ExperimentMediator:
             exper_kwargs["metric_name"] = self.metric_name
 
         for data_val in self.data_evaluators:
-            eval_resp = exper_func(data_val, self.loader, **exper_kwargs)
+            eval_resp = exper_func(data_val, self.fetcher, **exper_kwargs)
             data_eval_perf[str(data_val)] = eval_resp
 
         # index=[result_title, DataEvaluator] columns=[range(len(axis))]
@@ -253,7 +254,7 @@ class ExperimentMediator:
 
     def plot(
         self,
-        exper_func: Callable[[DataEvaluator, DataLoader, Axes, ...], dict[str, Any]],
+        exper_func: Callable[[DataEvaluator, DataFetcher, Axes, ...], dict[str, Any]],
         figure: Figure = None,
         row: int = None,
         col: int = 2,
@@ -267,9 +268,9 @@ class ExperimentMediator:
 
         Parameters
         ----------
-        exper_func : Callable[[DataEvaluator, DataLoader, Axes, ...], dict[str, Any]]
+        exper_func : Callable[[DataEvaluator, DataFetcher, Axes, ...], dict[str, Any]]
             Experiment function, runs an experiment on a DataEvaluator and the data of
-            the DataLoader associated. Output must be a dict with results of the
+            the DataFetcher associated. Output must be a dict with results of the
             experiment. NOTE, the results must all be <= 1 dimensional but does not
             need to be the same length.
         fig : Figure, optional
@@ -310,7 +311,7 @@ class ExperimentMediator:
 
         for i, data_val in enumerate(self.data_evaluators, start=1):
             plot = figure.add_subplot(row, col, i)
-            eval_resp = exper_func(data_val, self.loader, plot=plot, **exper_kwargs)
+            eval_resp = exper_func(data_val, self.fetcher, plot=plot, **exper_kwargs)
 
             data_eval_perf[str(data_val)] = eval_resp
 

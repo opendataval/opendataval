@@ -13,11 +13,11 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import f1_score
 from torch.utils.data import Subset
 
-from dataoob.dataloader import DataLoader
+from dataoob.dataloader import DataFetcher
 from dataoob.dataval import DataEvaluator
 
 
-def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, float]:
+def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str, float]:
     """Evaluate ability to identify noisy indices.
 
     Compute recall and F1 score (of 2NN classifier) of the data evaluator
@@ -27,8 +27,8 @@ def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, f
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataLoader
-        DataLoader containing noisy indices
+    loader : DataFetcher
+        DataFetcher containing noisy indices
 
     Returns
     -------
@@ -38,7 +38,7 @@ def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, f
             corrupted, and the higher value data points as correct.
     """
     data_values = evaluator.evaluate_data_values()
-    noisy_indices = loader.noisy_indices
+    noisy_indices = fetcher.noisy_indices
 
     num_points = len(data_values)
     sorted_indices = np.argsort(data_values)
@@ -58,7 +58,7 @@ def noisy_detection(evaluator: DataEvaluator, loader: DataLoader) -> dict[str, f
 
 def point_removal(
     evaluator: DataEvaluator,
-    loader: DataLoader,
+    fetcher: DataFetcher,
     order: Literal["random", "ascending", "descending"] = "random",
     percentile: float = 0.05,
     plot: Axes = None,
@@ -73,8 +73,8 @@ def point_removal(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataLoader
-        DataLoader containing training and valid data points
+    loader : DataFetcher
+        DataFetcher containing training and valid data points
     order : Literal["random", "ascending";, "descending";], optional
         Order which data points will be removed, by default "random"
     percentile : float, optional
@@ -95,7 +95,7 @@ def point_removal(
         - **f"{order}_add_{metric_name}"** -- Performance of model after removing
             a proportion of the data points with the highest/lowest/random data values
     """
-    x_train, y_train, x_valid, y_valid, *_ = loader.datapoints
+    x_train, y_train, x_valid, y_valid, *_ = fetcher.datapoints
     data_values = evaluator.evaluate_data_values()
     curr_model = evaluator.pred_model.clone()
 
@@ -144,7 +144,7 @@ def point_removal(
 
 def remove_high_low(
     evaluator: DataEvaluator,
-    loader: DataLoader,
+    fetcher: DataFetcher,
     percentile: float = 0.05,
     plot: Axes = None,
     metric_name: str = "accuracy",
@@ -159,8 +159,8 @@ def remove_high_low(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataLoader
-        DataLoader containing training and valid data points
+    loader : DataFetcher
+        DataFetcher containing training and valid data points
     percentile : float, optional
         Percentile of data points to remove per iteration, by default 0.05
     plot : Axes, optional
@@ -182,7 +182,7 @@ def remove_high_low(
         - **"f"remove_leastval_{metric_name}""** -- Performance of model after removing
             a proportion of the data points with the lowest data values
     """
-    x_train, y_train, *_, x_test, y_test = loader.datapoints
+    x_train, y_train, *_, x_test, y_test = fetcher.datapoints
     data_values = evaluator.evaluate_data_values()
     curr_model = evaluator.pred_model.clone()
 
@@ -249,7 +249,7 @@ def remove_high_low(
 
 def discover_corrupted_sample(
     evaluator: DataEvaluator,
-    loader: DataLoader,
+    fetcher: DataFetcher,
     percentile: float = 0.05,
     plot: Axes = None,
 ) -> dict[str, list[float]]:
@@ -262,8 +262,8 @@ def discover_corrupted_sample(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataLoader
-        DataLoader containing noisy indices
+    loader : DataFetcher
+        DataFetcher containing noisy indices
     percentile : float, optional
         Percentile of data points to additionally search per iteration, by default .05
     plot : Axes, optional
@@ -285,8 +285,8 @@ def discover_corrupted_sample(
             if the data points were explored randomly, we'd expect to find
             corrupted_samples in proportion to the number of corruption in the data set.
     """
-    x_train, *_ = loader.datapoints
-    noisy_indices = loader.noisy_indices
+    x_train, *_ = fetcher.datapoints
+    noisy_indices = fetcher.noisy_indices
     data_values = evaluator.evaluate_data_values()
 
     num_points = len(x_train)
@@ -333,9 +333,9 @@ def discover_corrupted_sample(
     return eval_results
 
 
-def save_dataval(evaluator: DataEvaluator, loader: DataLoader):
+def save_dataval(evaluator: DataEvaluator, fetcher: DataFetcher):
     """Save the indices and the respective data values of the DataEvaluator."""
-    train_indices = loader.train_indices
+    train_indices = fetcher.train_indices
     data_values = evaluator.evaluate_data_values()
 
     return {"indices": train_indices, "data_values": data_values}
@@ -343,7 +343,7 @@ def save_dataval(evaluator: DataEvaluator, loader: DataLoader):
 
 def increasing_bin_removal(
     evaluator: DataEvaluator,
-    loader: DataLoader,
+    fetcher: DataFetcher,
     bin_size: int = 1,
     plot: Axes = None,
     metric_name: str = "accuracy",
@@ -368,8 +368,8 @@ def increasing_bin_removal(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataLoader
-        DataLoader containing training and valid data points
+    loader : DataFetcher
+        DataFetcher containing training and valid data points
     bin_size : float, optional
         We look at bins of equal size and find the data values cutoffs for the x-axis,
         by default 1
@@ -395,7 +395,7 @@ def increasing_bin_removal(
     """
     data_values = evaluator.evaluate_data_values()
     curr_model = evaluator.pred_model
-    x_train, y_train, *_, x_test, y_test = loader.datapoints
+    x_train, y_train, *_, x_test, y_test = fetcher.datapoints
 
     num_points = len(data_values)
 

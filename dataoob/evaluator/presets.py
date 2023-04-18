@@ -20,7 +20,7 @@ from dataoob.dataval.shap.loo import LeaveOneOut
 
 # Data classes for wrapping EvaluatorMediator Args
 from dataoob.evaluator import DataEvaluatorFactoryArgs as DEFA
-from dataoob.evaluator import DataLoaderArgs as DLA
+from dataoob.evaluator import DataFetcherArgs as DLA
 from dataoob.evaluator import ExperimentMediator
 from dataoob.model.ann import BinaryANN, ClassifierANN
 

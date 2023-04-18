@@ -29,7 +29,7 @@ Utils
 .. autosummary::
     :toctree: generated/
 
-    DataLoaderArgs
+    DataFetcherArgs
     DataEvaluatorArgs
     DataEvaluatorFactoryArgs
 
@@ -46,7 +46,7 @@ Presets
 from dataoob.evaluator.api import (
     DataEvaluatorArgs,
     DataEvaluatorFactoryArgs,
-    DataLoaderArgs,
+    DataFetcherArgs,
     ExperimentMediator,
 )
 from dataoob.evaluator.exper_methods import *

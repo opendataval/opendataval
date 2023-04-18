@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import torch
 
-from dataoob.dataloader import DataLoader, Register, mix_labels
+from dataoob.dataloader import DataFetcher, Register, mix_labels
 from dataoob.evaluator import ExperimentMediator, discover_corrupted_sample
 from dataoob.evaluator.presets import dummy_evaluators
 from dataoob.model import Model
@@ -29,8 +29,8 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")  # temporarily ignores warnings
             random_state = set_random_state(10)
-            loader = (
-                DataLoader("iris", random_state=random_state)
+            fetcher = (
+                DataFetcher("iris", random_state=random_state)
                 .split_dataset(5, 2, 2)
                 .noisify(mix_labels, noise_rate=0.2)
             )
@@ -38,7 +38,7 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
             # Checks that all evaluators in `dummy_evaluators` can have at least
             # a dry run with low data. Basically a sanity check.
             exper_med = ExperimentMediator(
-                loader=loader,
+                fetcher=fetcher,
                 data_evaluators=dummy_evaluators,
                 pred_model=DummyModel(),
                 metric_name="accuracy",

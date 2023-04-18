@@ -1,25 +1,25 @@
-## `DataLoader`
-The DataLoader is a class that will load exactly one data set per instance. It accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
+## `DataFetcher`
+The DataFetcher is a class that will load exactly one data set per instance. It accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
 ```python
-DataLoader.datasets_available()  # ['name1', 'name2']
+DataFetcher.datasets_available()  # ['name1', 'name2']
 ```
 
-A dataloader first takes a data set name to be loaded.
+A fetcher first takes a data set name to be loaded.
 ```python
-from dataoob.dataloader import DataLoader
+from dataoob.dataloader import DataFetcher
 
-loader = DataLoader(dataset_name='dataset', device=torch.device('...'))
+fetcher = DataFetcher(dataset_name='dataset')
 ```
 
 From there we must define how we will split the data set into train/valid/test splits
 ```python
-loader = loader.split_dataset(70, 20, 10)  # Data set counts
-loader = loader.split_dataset(.7, .2, .1)  # Splits on proportions
+fetcher = fetcher.split_dataset(70, 20, 10)  # Data set counts
+fetcher = fetcher.split_dataset(.7, .2, .1)  # Splits on proportions
 ```
 
-Finally we can specify a function on how to add noise to the data points. The function should be allowed to access every instance variable of a dataloader.
+Finally we can specify a function on how to add noise to the data points. The function should be allowed to access every instance variable of a data fetcher.
 ```
-loader = loader.noisify(noise_func, **noise_kwargs)  # noise_func: (DataLoader, ...) -> dict[str, np.ndarray]
+fetcher = fetcher.noisify(noise_func, **noise_kwargs)  # noise_func: (DataFetcher, ...) -> dict[str, np.ndarray]
 ```
 
 The return type of this function is a dict with the following strings and the updated `np.ndarray`. If the key is present, we will update the value of `self.[key]` with the value in the dictionary.
@@ -29,16 +29,15 @@ The return type of this function is a dict with the following strings and the up
 
 To get data points
 ```python
-x_train, y_train, x_valid, y_valid, x_test, y_test = loader.datapoints
+x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 ```
 
 Alternatively, if you're unhappy with the above implementation, we present
-another way of constructing the DataLoader by passing all arguments in at once:
+another way of constructing the DataFetcher by passing all arguments in at once:
 ```python
-loader = DataLoader.setup(
+fetcher = DataFetcher.setup(
     dataset_name=dataset_name,
     force_download=force_download,
-    device=device,
     random_state=random_state,
     train_count=train_count,
     valid_count=valid_count,
@@ -46,11 +45,11 @@ loader = DataLoader.setup(
     add_noise_func=add_noise_func,
     noise_kwargs=noise_kwargs
 )
-x_train, y_train, x_valid, y_valid, x_test, y_test = loader.datapoints
+x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 ```
 
 ## `Register` datasets
-Data sets are tricky topic, as sometimes we'd want to load the covariates and labels seperately. If you're not contributing, please ignore this as this is all facaded away by DataLoader.
+Data sets are tricky topic, as sometimes we'd want to load the covariates and labels seperately. If you're not contributing, please ignore this as this is all facaded away by DataFetcher.
 
 Take for example this use case, we want to have the covariates loaded dynamically (like a PyTorch `Dataset`) because of the memory usage, but we need the labels all loaded in memory (for certain evaluators).
 
@@ -64,7 +63,7 @@ def image_labels() -> np.ndarray:
     ...
 ```
 
-To ensure that these two separate functions are loaded together, we define a `Register` object to link these two.
+To ensure that these two separate functions are fetched together, we define a `Register` object to link these two.
 
 ```python
 image_dataset = Register('image', categorical=True, cacheable=True)
@@ -107,5 +106,5 @@ covar, labels = pd_dataset.load_data()
 
 To wrap back around, this is the api to get the data from any of the Registered data sets.
 ```python
-datapoints = DataLoader("pd").split_dataset(.7, .2, .1).datapoints
+datapoints = DataFetcher("pd").split_dataset(.7, .2, .1).datapoints
 ```

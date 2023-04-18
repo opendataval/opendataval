@@ -1,4 +1,4 @@
-"""Create data sets and loads with :py:class:`~dataoob.dataloader.DataLoader`.
+"""Create data sets and loads with :py:class:`~dataoob.dataloader.DataFetcher`.
 
 Data Loader
 ===========
@@ -7,7 +7,7 @@ Data Loader
 
 Provides an API to add new data sets and load them with the data loader.
 To create a new data set, create a :py:class:`Register` object to register the data set
-with a name. Then load the data set with :py:class:`DataLoader`. This allows us the
+with a name. Then load the data set with :py:class:`DataFetcher`. This allows us the
 flexibility to call the dataset later and to define separate functions/classes
 for the covariates and labels of a data set
 
@@ -17,7 +17,7 @@ Creating/Loading data sets
     :toctree: generated/
 
     Register
-    DataLoader
+    DataFetcher
     datasets
 
 Utils
@@ -31,7 +31,7 @@ Utils
     CatDataset
 """
 from dataoob.dataloader import datasets
-from dataoob.dataloader.loader import DataLoader
+from dataoob.dataloader.fetcher import DataFetcher
 from dataoob.dataloader.noisify import add_gauss_noise, mix_labels
 from dataoob.dataloader.register import Register, cache, one_hot_encode
 from dataoob.dataloader.util import CatDataset

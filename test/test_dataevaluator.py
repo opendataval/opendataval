@@ -6,7 +6,7 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataLoader
+from dataoob.dataloader import DataFetcher
 from dataoob.dataval import DataEvaluator
 from dataoob.model import Model
 
@@ -51,7 +51,7 @@ class TestDataEvaluator(unittest.TestCase):
 
         self.model = DummyModel(input_dim=10, output_dim=1)
         self.metric = MagicMock(return_value=1.0)
-        self.loader = DataLoader.from_data_splits(
+        self.fetcher = DataFetcher.from_data_splits(
             self.x_train,
             self.y_train,
             self.x_valid,
@@ -109,9 +109,9 @@ class TestDataEvaluator(unittest.TestCase):
         self.assertTrue((evaluator.y_valid == self.y_valid).all().item())
         self.assertTrue(evaluator.trained)
 
-    def test_input_dataloader(self):
+    def test_input_fetcher(self):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
-        evaluator = evaluator.input_dataloader(self.loader)
+        evaluator = evaluator.input_fetcher(self.fetcher)
 
         self.assertTrue((evaluator.x_train == self.x_train).all().item())
         self.assertTrue((evaluator.y_train == self.y_train).all().item())

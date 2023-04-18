@@ -3,17 +3,17 @@ import torch
 from sklearn.utils import check_random_state
 from torch.utils.data import Dataset
 
-from dataoob.dataloader.loader import DataLoader
+from dataoob.dataloader.fetcher import DataFetcher
 from dataoob.dataloader.util import IndexTransformDataset
 
 
-def mix_labels(loader: DataLoader, noise_rate: float = 0.2) -> dict[str, np.ndarray]:
-    """Mixes y_train labels of a DataLoader, adding noise to data.
+def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.ndarray]:
+    """Mixes y_train labels of a DataFetcher, adding noise to data.
 
     Parameters
     ----------
-    loader : DataLoader
-        DataLoader object housing the data to have noise added to
+    fetcher : DataFetcher
+        DataFetcher object housing the data to have noise added to
     noise_rate : float
         Proportion of labels to add noise to
 
@@ -24,9 +24,9 @@ def mix_labels(loader: DataLoader, noise_rate: float = 0.2) -> dict[str, np.ndar
         - **"y_train"** -- Updated training labels mixed
         - **"noisy_indices"** -- Indices of training data set with mixed labels
     """
-    rs = check_random_state(loader.random_state)
+    rs = check_random_state(fetcher.random_state)
 
-    y_train = loader.y_train
+    y_train = fetcher.y_train
     num_points = len(y_train)
 
     replace = rs.choice(num_points, round(num_points * noise_rate), replace=False)
@@ -37,14 +37,14 @@ def mix_labels(loader: DataLoader, noise_rate: float = 0.2) -> dict[str, np.ndar
 
 
 def add_gauss_noise(
-    loader: DataLoader, noise_rate: float = 0.2, mu: float = 0.0, sigma: float = 1.0
+    fetcher: DataFetcher, noise_rate: float = 0.2, mu: float = 0.0, sigma: float = 1.0
 ) -> dict[str, Dataset | np.ndarray]:
     """Add gaussian noise to covariates.
 
     Parameters
     ----------
-    loader : DataLoader
-        DataLoader object housing the data to have noise added to
+    fetcher : DataFetcher
+        DataFetcher object housing the data to have noise added to
     noise_rate : float
         Proportion of labels to add noise to
     mu : float, optional
@@ -59,9 +59,9 @@ def add_gauss_noise(
         - **"x_train"** -- Updated training covariates with added gaussian noise
         - **"noisy_indices"** -- Indices of training data set with mixed labels
     """
-    rs = check_random_state(loader.random_state)
+    rs = check_random_state(fetcher.random_state)
 
-    x_train = loader.x_train
+    x_train = fetcher.x_train
     num_points = len(x_train)
     [*feature_dim] = x_train[0].shape  # Unpacks dims of tensors and numpy array
 

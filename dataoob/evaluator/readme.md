@@ -9,7 +9,7 @@ expermed = ExperimentrMediator(
 Metric name is one of predefined metrics in `evaluator`. # TODO
 
 
-From here we can run experiments by passing in an experiment function `(DataEvaluator, DataLoader) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable. All returns include a pandas `DataFrame`.
+From here we can run experiments by passing in an experiment function `(DataEvaluator, DataFetcher) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable. All returns include a pandas `DataFrame`.
 ```python
 df = expermed.evaluate(noisy_detection)
 df, figure = expermed.plot(discover_corrupted_sample)
@@ -26,9 +26,9 @@ We have two dataclasses that wrap the arguments so we can define exactly what we
 
 For example:
 ```python
-from dataoob.evaluator import DataEvaluatorArgs, DataLoaderArgs, ExperimentMediator
+from dataoob.evaluator import DataEvaluatorArgs, DataFetcherArgs, ExperimentMediator
 
-loader_args = DataLoaderArgs(
+loader_args = DataFetcherArgs(
     dataset="dataset_name",
     force_download=True,
     device=torch.device("cuda"),
@@ -36,7 +36,7 @@ loader_args = DataLoaderArgs(
     valid_count=0.2,
     test_count=0.1,
     noise_kwargs={'noise_rate': .2}
-    add_noise_func=mix_labels  # (DataLoader, ...) -> dict[str, np.ndarray]
+    add_noise_func=mix_labels  # (DataFetcher, ...) -> dict[str, np.ndarray]
 )
 
 dataval_args = DataEvaluatorArgs(
@@ -49,7 +49,7 @@ exper_med = ExperimentMediator.from_dataclasses(loader_args, dataval_args)
 ```
 
 ## `presets.py`
-We define many presets to quickly get an `ExperimentMediator` and test `exper_methods.py`. To use call one of the following functions: `new_evaluator` if we're testing a new `DataEvaluator` with `DataLoader` `Model` presets or `from_presets` if you want to just specify strings to get the `DataEvaluator` as well.
+We define many presets to quickly get an `ExperimentMediator` and test `exper_methods.py`. To use call one of the following functions: `new_evaluator` if we're testing a new `DataEvaluator` with `DataFetcher` `Model` presets or `from_presets` if you want to just specify strings to get the `DataEvaluator` as well.
 ```python
 from dataoob.evaluator import from_presets, new_evaluator
 exper_med = from_presets('iris_ann_low_noise', 'dummy')

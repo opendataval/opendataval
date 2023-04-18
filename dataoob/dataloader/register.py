@@ -75,7 +75,7 @@ def _from_numpy(array, label_columns: int | list[int]) -> DatasetCallable:
 class Register:
     """Register a data set by defining its name and adding functions to retrieve data.
 
-    Registers data sets to be loaded by the DataLoader. Also allows specific
+    Registers data sets to be fetched by the DataFetcher. Also allows specific
     transformations to be applied on a data set. This gives the benefit of creating
     :py:class:`Register` objects to distinguish separate data sets
 
@@ -163,12 +163,12 @@ class Register:
         return func
 
     def add_covar_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
-        """Add covariate transform after data is loaded."""
+        """Add covariate transform after data is fetched."""
         self.covar_transform = transform
         return self
 
     def add_label_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
-        """Add label transform after data is loaded."""
+        """Add label transform after data is fetched."""
         self.label_transform = transform
         return self
 

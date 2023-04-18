@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Dataset
 
-from dataoob.dataloader import DataLoader
+from dataoob.dataloader import DataFetcher
 from dataoob.model import Model
 
 
@@ -162,9 +162,9 @@ class DataEvaluator(ABC):
             Predicted data values/selection for training input data point
         """
 
-    def input_dataloader(self, loader: DataLoader):
-        """Input data from a DataLoader object. Alternative way of adding data."""
-        x_train, y_train, x_valid, y_valid, *_ = loader.datapoints
+    def input_fetcher(self, fetcher: DataFetcher):
+        """Input data from a DataFetcher object. Alternative way of adding data."""
+        x_train, y_train, x_valid, y_valid, *_ = fetcher.datapoints
         return self.input_data(x_train, y_train, x_valid, y_valid)
 
     def train(

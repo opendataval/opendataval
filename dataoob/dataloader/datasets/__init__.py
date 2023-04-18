@@ -10,8 +10,8 @@ Data sets
     nlpsets
 
 Catalog of registered data sets that can be used with
-:py:class:`~dataoob.dataloader.loader.DataLoader`. Pass in the ``str`` name registering
-the data set to load the data set as needed.
+:py:class:`~dataoob.dataloader.fetcher.DataFetcher`. Pass in the ``str`` name
+registering the data set to load the data set as needed.
 
 NOTE :py:mod:`~dataoob.dataloader.datasets.imagesets` and
 :py:class:`~dataoob.dataloader.datasets.nlpsets` have external dependencies,
