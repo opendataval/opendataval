@@ -83,6 +83,10 @@ class Model(ABC):
 class TorchBinClassMixin(Model, nn.Module):
     """Binary Classifier Mixin for Torch Neural Networks."""
 
+    @property
+    def device(self):
+        return next(self.parameters()).device
+
     def fit(
         self,
         x_train: torch.Tensor | Dataset,
@@ -116,12 +120,15 @@ class TorchBinClassMixin(Model, nn.Module):
         self.train()
         for _ in range(int(epochs)):
             # *weights helps check if we passed weights into the Dataloader
-            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
+            for x_batch, y_batch, *weights in DataLoader(
+                dataset, batch_size, shuffle=True, pin_memory=True
+            ):
                 optimizer.zero_grad()
                 outputs = self.__call__(x_batch)
 
                 if sample_weight is not None:
-                    loss = criterion(outputs, y_batch, weight=weights[0])
+                    weight = weights[0].to(self.device)
+                    loss = criterion(outputs, y_batch, weight=weight)
                 else:
                     loss = criterion(outputs, y_batch)
 
@@ -133,6 +140,10 @@ class TorchBinClassMixin(Model, nn.Module):
 
 class TorchClassMixin(Model, nn.Module):
     """Classifier Mixin for Torch Neural Networks."""
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def fit(
         self,
@@ -168,14 +179,20 @@ class TorchClassMixin(Model, nn.Module):
         self.train()
         for _ in range(int(epochs)):
             # *weights helps check if we passed weights into the Dataloader
-            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
+            for x_batch, y_batch, *weights in DataLoader(
+                dataset, batch_size, shuffle=True, pin_memory=True
+            ):
+                # Moves data to correct device
+                x_batch = x_batch.to(device=self.device)
+                y_batch = y_batch.to(device=self.device)
+
                 optimizer.zero_grad()
                 outputs = self.__call__(x_batch)
 
                 if sample_weight is not None:
                     # F.cross_entropy doesn't support sample_weights
                     loss = criterion(outputs, y_batch, reduction="none")
-                    loss = (loss * weights[0]).mean()
+                    loss = (loss * weights[0].to(device=self.device)).mean()
                 else:
                     loss = criterion(outputs, y_batch, reduction="mean")
 
@@ -187,6 +204,10 @@ class TorchClassMixin(Model, nn.Module):
 
 class TorchRegressMixin(Model, nn.Module):
     """Regressor Mixin for Torch Neural Networks."""
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def fit(
         self,
@@ -221,14 +242,24 @@ class TorchRegressMixin(Model, nn.Module):
         self.train()
         for _ in range(int(epochs)):
             # *weights helps check if we passed weights into the Dataloader
-            for x_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
+            for x_batch, y_batch, *weights in DataLoader(
+                dataset,
+                batch_size,
+                shuffle=True,
+                pin_memory=True,
+                num_workers=4,
+            ):
+                # Moves data to correct device
+                x_batch = x_batch.to(device=self.device)
+                y_batch = y_batch.to(device=self.device)
+
                 optimizer.zero_grad()
                 y_hat = self.__call__(x_batch)
 
                 if sample_weight is not None:
                     # F.cross_entropy doesn't support sample_weight
                     loss = criterion(y_hat, y_batch, reduction="none")
-                    loss = (loss * weights[0]).mean()
+                    loss = (loss * weights[0].to(device=self.device)).mean()
                 else:
                     loss = criterion(y_hat, y_batch, reduction="mean")
 
@@ -240,6 +271,10 @@ class TorchRegressMixin(Model, nn.Module):
 
 class TorchPredictMixin(Model, nn.Module):
     """Torch ``.predict()`` method mixin for Torch Neural Networks."""
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
         """Predicts output from input tensor/data set.
@@ -255,15 +290,17 @@ class TorchPredictMixin(Model, nn.Module):
             Predicted tensor output
         """
         if isinstance(x, Dataset):
-            x = next(iter(DataLoader(x, batch_size=len(x))))
+            x = next(iter(DataLoader(x, batch_size=len(x), pin_memory=True)))
+        x = x.to(device=self.device)
 
         self.eval()
         with torch.no_grad():
             y_hat = self.forward(x)
+
         return y_hat
 
 
-def to_cpu(tensors: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+def to_numpy(tensors: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
     """Mini function to move tensor to CPU for sk-learn."""
     return tuple(t.numpy(force=True) for t in default_collate(tensors))
 
@@ -327,7 +364,7 @@ class ClassifierSkLearnWrapper(Model):
         if num_samples == 0:
             self.model = DummyClassifier(strategy="constant", constant=0).fit([0], [0])
             return self
-        dataloader = DataLoader(dataset, batch_size=num_samples, collate_fn=to_cpu)
+        dataloader = DataLoader(dataset, batch_size=num_samples, collate_fn=to_numpy)
 
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train, *weights = next(iter(dataloader))
@@ -363,7 +400,7 @@ class ClassifierSkLearnWrapper(Model):
         """
         # Extracts the input into a cpu tensor
         if isinstance(x, Dataset):
-            x = next(iter(DataLoader(x, len(x), collate_fn=to_cpu)))[0]
+            x = next(iter(DataLoader(x, len(x), collate_fn=to_numpy)))[0]
         else:
             x = x.numpy(force=True)
         output = self.model.predict_proba(x)
@@ -430,7 +467,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         if sample_weight is not None:
             ws = WeightedRandomSampler(sample_weight, num_samples, replacement=True)
 
-        dataloader = DataLoader(dataset, num_samples, sampler=ws, collate_fn=to_cpu)
+        dataloader = DataLoader(dataset, num_samples, sampler=ws, collate_fn=to_numpy)
 
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train = next(iter(dataloader))

@@ -71,11 +71,9 @@ class TestDataLoaderArgs(unittest.TestCase):
         args = DataLoaderArgs(
             dataset_name="test_dataset",
             force_download=False,
-            device=torch.device("cpu"),
         )
         self.assertEqual(args.dataset_name, "test_dataset")
         self.assertEqual(args.force_download, False)
-        self.assertEqual(args.device.type, "cpu")
 
     def test_data_loader_args_default(self):
         args = DataLoaderArgs(dataset_name="test_dataset")
@@ -114,9 +112,7 @@ class TestDataEvaluatorFactoryArgs(unittest.TestCase):
 
 class TestExperimentMediator(unittest.TestCase):
     def setUp(self):
-        self.dataloader = DataLoader(
-            "test_dataset", False, torch.device("cpu")
-        ).split_dataset(0.7, 0.2, 0.1)
+        self.dataloader = DataLoader.setup("test_dataset", False, 10, 0.7, 0.2, 0.1)
         self.dataevaluator = DummyEvaluator()
 
     def test_experiment_mediator(self):
@@ -149,7 +145,6 @@ class TestExperimentMediator(unittest.TestCase):
             test_count=0.1,
             add_noise_func=mix_labels,
             noise_kwargs={"noise_rate": 0.2},
-            device=torch.device("cpu"),
             pred_model=DummyModel(),
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
@@ -167,7 +162,6 @@ class TestExperimentMediator(unittest.TestCase):
                 valid_count=1.1,
                 add_noise_func=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
-                device=torch.device("cpu"),
                 pred_model=DummyModel(),
                 train_kwargs={"epochs": 5},
                 metric_name="accuracy",
@@ -181,7 +175,6 @@ class TestExperimentMediator(unittest.TestCase):
             DataLoaderArgs(
                 dataset_name="test_dataset",
                 force_download=False,
-                device=torch.device("cpu"),
                 noise_kwargs={"noise_rate": 0.2},
             ),
             DataEvaluatorFactoryArgs(

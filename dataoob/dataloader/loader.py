@@ -26,13 +26,11 @@ class DataLoader:
         Forces download from source URL, by default False
     noise_rate : float, optional
         Ratio of data to add noise to, by default 0.0
-    device : int, optional
-        Tensor device for acceleration, by default torch.device("cpu")
 
     Attributes
     ----------
     datapoints : tuple[torch.Tensor, ...]
-        Train+Valid+Test covariates and labels as Tensors loaded on input device
+        Train+Valid+Test covariates and labels
     train_indices : np.ndarray[int]
         The indices of the original data set used to make the training data set.
     valid_indices : np.ndarray[[int]
@@ -64,7 +62,6 @@ class DataLoader:
         self,
         dataset_name: str,
         force_download: bool = False,
-        device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
     ):
         if dataset_name not in Register.Datasets:
@@ -78,7 +75,6 @@ class DataLoader:
         if not len(self.covar) == len(self.labels):
             raise ValueError("Covariates and Labels must be of same length.")
 
-        self.device = device
         self.random_state = check_random_state(random_state)
 
     @staticmethod
@@ -91,7 +87,6 @@ class DataLoader:
         cls,
         dataset_name: str,
         force_download: bool = False,
-        device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
         train_count: int | float = 0,
         valid_count: int | float = 0,
@@ -105,7 +100,7 @@ class DataLoader:
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
         return (
-            cls(dataset_name, force_download, device, random_state)
+            cls(dataset_name, force_download, random_state)
             .split_dataset(train_count, valid_count, test_count)
             .noisify(add_noise_func, **noise_kwargs)
         )
@@ -115,7 +110,6 @@ class DataLoader:
         cls,
         covar: Dataset | np.ndarray,
         labels: np.ndarray,
-        device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
     ):
         """Return DataLoader from input Covariates and Labels."""
@@ -124,7 +118,6 @@ class DataLoader:
         if not len(loader.covar) == len(loader.labels):
             raise ValueError("Covariates and Labels must be of same length.")
 
-        loader.device = device
         loader.random_state = check_random_state(random_state)
 
         return loader
@@ -138,7 +131,6 @@ class DataLoader:
         y_valid: np.ndarray,
         x_test: Dataset | np.ndarray,
         y_test: np.ndarray,
-        device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
     ):
         """Return DataLoader from already split data."""
@@ -160,7 +152,6 @@ class DataLoader:
         loader.x_valid, loader.y_valid = x_valid, y_valid
         loader.x_test, loader.y_test = x_test, y_test
 
-        loader.device = device
         loader.random_state = check_random_state(random_state)
 
         return loader
@@ -194,7 +185,7 @@ class DataLoader:
     def _tensorify(self, data: np.ndarray) -> torch.Tensor:
         """Convert array to tensor with helper method."""
         dim = (1,) if data.ndim == 1 else data.shape[1:]
-        return torch.tensor(data, dtype=torch.float, device=self.device).view(-1, *dim)
+        return torch.tensor(data, dtype=torch.float).view(-1, *dim)
 
     def split_dataset(
         self,

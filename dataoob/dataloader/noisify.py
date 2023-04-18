@@ -80,7 +80,7 @@ def add_gauss_noise(
         remap[noisy_indices] = range(1, len(noisy_indices) + 1)
 
         x_train = IndexTransformDataset(
-            x_train, lambda data, ind: (data + noise_add[remap[ind]]).to(loader.device)
+            x_train, lambda data, ind: (data + noise_add[remap[ind]])
         )
     else:
         x_train[noisy_indices] = x_train[noisy_indices] + noise

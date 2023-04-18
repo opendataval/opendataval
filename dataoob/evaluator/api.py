@@ -34,7 +34,6 @@ class DataLoaderArgs:
 
     dataset_name: str
     force_download: bool = False
-    device: torch.device = torch.device("cpu")
     random_state: RandomState = None
 
     train_count: int | float = 0.7  # 70-20-10 split is relatively standard
@@ -130,7 +129,6 @@ class ExperimentMediator:
         test_count: int | float = 0,
         add_noise_func: Callable[[DataLoader, Any, ...], dict[str, Any]] = mix_labels,
         noise_kwargs: dict[str, Any] = None,
-        device: torch.device = torch.device("cpu"),
         random_state: RandomState = None,
         pred_model: Model = None,
         train_kwargs: dict[str, Any] = None,
@@ -144,7 +142,6 @@ class ExperimentMediator:
         loader = DataLoader.setup(
             dataset_name=dataset_name,
             force_download=force_download,
-            device=device,
             random_state=random_state,
             train_count=train_count,
             valid_count=valid_count,
@@ -183,21 +180,17 @@ class ExperimentMediator:
     ):
         """Create ExperimentMediator from presets, infers input/output dimensions."""
         rs = check_random_state(loader_args.random_state)
-
-        if loader_args.device != de_factory_args.device:
-            raise Exception("All tensors must be on same device")
-        device = loader_args.device
-
         train_count = loader_args.train_count
         valid_count = loader_args.valid_count
         test_count = loader_args.test_count
 
         loader = (
-            DataLoader(loader_args.dataset_name, loader_args.force_download, device, rs)
+            DataLoader(loader_args.dataset_name, loader_args.force_download, rs)
             .split_dataset(train_count, valid_count, test_count)
             .noisify(loader_args.add_noise_func, **loader_args.noise_kwargs)
         )
 
+        device = de_factory_args.device
         covar_dim = (1,) if loader.x_train.ndim == 1 else loader.x_train[0].shape
         label_dim = (1,) if loader.y_train.ndim == 1 else loader.y_train[0].shape
         pred_model = de_factory_args.pred_model_factory(*covar_dim, *label_dim, device)

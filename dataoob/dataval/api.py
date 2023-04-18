@@ -71,6 +71,9 @@ class DataEvaluator(ABC):
             If metric is not specified either by the ``self.input_model_metric()`` or
             as an argument
         """
+        if y.device != y_hat.device:
+            y = y.to(y_hat.device)
+
         if metric is None and hasattr(self, "metric"):
             return self.metric(y, y_hat)
         elif callable(metric):

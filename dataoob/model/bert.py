@@ -57,7 +57,7 @@ class BertClassifier(Model, nn.Module):
         self.bert = DistilBertModel.from_pretrained(pretrained_model_name)
 
         self.num_classes = num_classes
-        self.max_token_length = 50  # TODO
+        self.max_length = 50  # TODO
         hidden_dim = self.bert.config.hidden_size
 
         # Classifier layer as specified by the HuggingFace BERT Classifiers
@@ -145,12 +145,9 @@ class BertClassifier(Model, nn.Module):
             padding=True,
             truncation=True,
             return_tensors="pt",
-        ).to(self.dummy_param.device)
-
-        return TensorDataset(
-            batch_encoding.input_ids,
-            batch_encoding.attention_mask,
         )
+
+        return TensorDataset(batch_encoding.input_ids, batch_encoding.attention_mask)
 
     def fit(
         self,
@@ -199,14 +196,19 @@ class BertClassifier(Model, nn.Module):
 
         self.train()
         for _ in tqdm.tqdm(range(int(epochs))):
-            for input_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
+            for input_batch, y_batch, *weights in DataLoader(
+                dataset, batch_size, shuffle=True, pin_memory=True
+            ):
+                input_batch = [t.to(self.bert.device) for t in input_batch]
+                y_batch = y_batch.to(self.bert.device)
+
                 optimizer.zero_grad()
                 y_hat = self.__call__(*input_batch)
 
                 if sample_weight is not None:
                     # F.cross_entropy doesn't support sample_weight
                     loss = criterion(y_hat, y_batch, reduction="none")
-                    loss = (loss * weights[0]).mean()
+                    loss = (loss * weights[0].to(self.bert.device)).mean()
                 else:
                     loss = criterion(y_hat, y_batch, reduction="mean")
 

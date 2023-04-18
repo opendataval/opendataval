@@ -141,7 +141,7 @@ class DVRL(DataEvaluator):
         self.valid_perf = self.evaluate(self.y_valid, y_valid_hat)
 
         # Compute diff
-        y_pred = self.val_model.predict(self.x_train)
+        y_pred = self.val_model.predict(self.x_train).to(device=torch.device("cpu"))
 
         self.y_pred_diff = torch.abs(self.y_train - y_pred)
 
@@ -165,14 +165,26 @@ class DVRL(DataEvaluator):
         optimizer = torch.optim.Adam(self.value_estimator.parameters(), lr=self.lr)
         criterion = DveLoss(threshold=self.threshold)
 
-        data = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
         gen = torch.Generator(self.device).manual_seed(self.random_state.tomaxint())
-        # No idea why the DataLoader Generator has to be on the cpu, likely a bug
         cpu_gen = torch.Generator("cpu").manual_seed(self.random_state.tomaxint())
+
+        data = CatDataset(self.x_train, self.y_train, self.y_pred_diff)
         rs = RandomSampler(data, True, self.rl_epochs * batch_size, generator=cpu_gen)
-        for x_batch, y_batch, y_hat_batch in tqdm.tqdm(
-            DataLoader(data, sampler=rs, batch_size=batch_size, generator=cpu_gen)
-        ):
+        dataloader = DataLoader(
+            data,
+            batch_size,
+            sampler=rs,
+            generator=cpu_gen,
+            pin_memory=True,
+            num_workers=4,
+        )
+
+        for x_batch, y_batch, y_hat_batch in tqdm.tqdm(dataloader):
+            # Moves tensors to actual device
+            x_batch = x_batch.to(device=self.device)
+            y_batch = y_batch.to(device=self.device)
+            y_hat_batch = y_hat_batch.to(device=self.device)
+
             optimizer.zero_grad()
 
             # Generates selection probability
