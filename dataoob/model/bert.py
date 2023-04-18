@@ -37,7 +37,7 @@ class BertClassifier(Model, nn.Module):
         Huggingface model directory containing the pretrained model for BERT
         by default "distilbert-base-uncased" [2]
     num_classes : int, optional
-        Number of classes of the labels, by default 2
+        Number of prediction classes, by default 2
     dropout_rate : float, optional
         Dropout rate for the embeddings of bert, helps in fine tuning, by default 0.2
     num_train_layers : int, optional
@@ -53,10 +53,11 @@ class BertClassifier(Model, nn.Module):
     ):
         super().__init__()
 
-        self.tokenizer = BertTokenizerWrapper(pretrained_model_name)
+        self.tokenizer = DistilBertTokenizerFast.from_pretrained(pretrained_model_name)
         self.bert = DistilBertModel.from_pretrained(pretrained_model_name)
 
         self.num_classes = num_classes
+        self.max_token_length = 50  # TODO
         hidden_dim = self.bert.config.hidden_size
 
         # Classifier layer as specified by the HuggingFace BERT Classifiers
@@ -69,8 +70,6 @@ class BertClassifier(Model, nn.Module):
         self.classifier = nn.Sequential(classifier_dict)
 
         # Freezing the embeddings and initial layers
-        self.tokenizer.require_grad = False
-
         for param in self.bert.embeddings.parameters():
             param.requires_grad = False
 
@@ -104,6 +103,54 @@ class BertClassifier(Model, nn.Module):
         y_hat = self.classifier(pooled_output)
 
         return y_hat
+
+    def tokenize(self, sentences: Sequence[str | list[str]]) -> TensorDataset:
+        """Convert sequence of sentences or tokens into DistilBERT inputs.
+
+        Given a sequence of sentences or tokens, computes the ``input_ids``,
+        and ``attention_masks`` and loads them on their respective
+        tensor device. Any changes made to the tokenizer should be reflected here
+        and the `.forward()` method.
+
+        Parameters
+        ----------
+        sentences : Sequence[str | list[str]]
+            Sequence of sentences or tokens to be transformed into inputs for BERT.
+
+        Returns
+        -------
+        TensorDataset
+            2 tensors representing ``input_ids`` and ``attention_masks``.
+            For more in-depth on what each these represent:
+
+            - **input_ids** -- List of token ids to be fed to a model.
+                [Input IDs?](https://huggingface.co/transformers/glossary#input-ids)
+
+            - **attention_mask** -- List of indices specifying which tokens should
+                be attended to by the model (when `return_attention_mask=True` or if
+                *"attention_mask"* is in `self.model_input_names`).
+                [Mask?](https://huggingface.co/transformers/glossary#attention-mask)
+
+            If using a non-DistilBert tokenizer, see the below. The token type ids
+            aren't needed for DistilBert models.
+            - **token_type_ids** -- List of token type ids to be fed to a model
+                (when `return_token_type_ids=True` or if *"token_type_ids"* is in
+                `self.model_input_names`).
+                [Type IDs?](https://huggingface.co/transformers/glossary#token-type-ids)
+        """
+        sentences = [sent for sent in sentences]  # Input must be list
+        batch_encoding = self.tokenizer.__call__(
+            sentences,
+            max_length=self.max_length,
+            padding=True,
+            truncation=True,
+            return_tensors="pt",
+        ).to(self.dummy_param.device)
+
+        return TensorDataset(
+            batch_encoding.input_ids,
+            batch_encoding.attention_mask,
+        )
 
     def fit(
         self,
@@ -140,7 +187,7 @@ class BertClassifier(Model, nn.Module):
         if len(x_train) == 0:
             return self
 
-        bert_inputs = self.tokenizer(x_train)
+        bert_inputs = self.tokenize(x_train)
         dataset = CatDataset(bert_inputs, y_train, sample_weight)
 
         # Optimizer and scheduler specified for BERT per Huggingface
@@ -152,9 +199,9 @@ class BertClassifier(Model, nn.Module):
 
         self.train()
         for _ in tqdm.tqdm(range(int(epochs))):
-            for bert_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
+            for input_batch, y_batch, *weights in DataLoader(dataset, batch_size, True):
                 optimizer.zero_grad()
-                y_hat = self.__call__(*bert_batch)
+                y_hat = self.__call__(*input_batch)
 
                 if sample_weight is not None:
                     # F.cross_entropy doesn't support sample_weight
@@ -187,74 +234,8 @@ class BertClassifier(Model, nn.Module):
 
         self.eval()
         # Return type of tokenizer is a data set so we are cheating here.
-        bert_inputs = self.tokenizer(x)
+        bert_inputs = self.tokenize(x)
         bert_batch = bert_inputs.tensors
 
         y_hat = self.__call__(*bert_batch)
         return y_hat
-
-
-class BertTokenizerWrapper(nn.Module):
-    """Wrapper for ``DistilBertTokenizerFast``. Changes API slightly based on inputs.
-
-    Parameters
-    ----------
-    pretrained_model_name : str
-        Huggingface model directory containing the pretrained model tokenizer for BERT
-    max_length : int, optional
-        Max length of a tokenizer, by default 50 for performance.
-    """
-
-    def __init__(self, pretrained_model_name: str, max_length: int = 100):
-        super().__init__()
-        self.tokenizer = DistilBertTokenizerFast.from_pretrained(pretrained_model_name)
-        self.max_length = max_length
-        # Dummy param helps track the right device
-        self.dummy_param = nn.Parameter(torch.empty(0), requires_grad=False)
-
-    def forward(self, sentences: Sequence[str | list[str]]) -> TensorDataset:
-        """Convert sequence of sentences or tokens into BERT inputs.
-
-        Given a sequence of sentences or tokens, computes the ``input_ids``,
-        ``token_type_ids``, and ``attention_masks`` and loads them on their respective
-        tensor device.
-
-        Parameters
-        ----------
-        sentences : Sequence[str | list[str]]
-            Sequence of sentences or tokens to be transformed into inputs for BERT.
-
-        Returns
-        -------
-        TensorDataset
-            2 tensors representing ``input_ids`` and ``attention_masks``.
-            For more in-depth on what each these represent:
-
-            - **input_ids** -- List of token ids to be fed to a model.
-                [Input IDs?](https://huggingface.co/transformers/glossary#input-ids)
-
-            - **attention_mask** -- List of indices specifying which tokens should
-                be attended to by the model (when `return_attention_mask=True` or if
-                *"attention_mask"* is in `self.model_input_names`).
-                [Mask?](https://huggingface.co/transformers/glossary#attention-mask)
-
-            If using a non-DistilBert tokenizier, see the below. The token type ids
-            aren't needed for DistilBert models.
-            - **token_type_ids** -- List of token type ids to be fed to a model
-                (when `return_token_type_ids=True` or if *"token_type_ids"* is in
-                `self.model_input_names`).
-                [Type IDs?](https://huggingface.co/transformers/glossary#token-type-ids)
-        """
-        sentences = [sent for sent in sentences]  # Input must be list
-        batch_encoding = self.tokenizer.__call__(
-            sentences,
-            max_length=self.max_length,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        ).to(self.dummy_param.device)
-
-        return TensorDataset(
-            batch_encoding.input_ids,
-            batch_encoding.attention_mask,
-        )

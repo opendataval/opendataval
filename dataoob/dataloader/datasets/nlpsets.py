@@ -12,6 +12,9 @@ import torch
 from dataoob.dataloader.register import Register, cache
 from dataoob.dataloader.util import ListDataset
 
+MAX_DATASET_SIZE = 1000
+"""Data Valuation algorithms can take a long time for large data sets, thus cap size."""
+
 
 def bert_embeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
     """Convert text data into pooled embeddings with DistilBERT model.
@@ -32,23 +35,25 @@ def bert_embeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]])
         arXiv.org, 2019. Available: https://arxiv.org/abs/1910.01108.
     """
 
-    def wrapper(cache_dir: str, force_download: bool) -> tuple[np.ndarray, np.ndarray]:
-        from transformers import BertModel, BertTokenizerFast
+    def wrapper(
+        cache_dir: str, force_download: bool, **kwargs
+    ) -> tuple[np.ndarray, np.ndarray]:
+        from transformers import DistilBertModel, DistilBertTokenizerFast
 
-        BERT_PRETRAINED_NAME = "prajjwal1/bert-tiny"
+        BERT_PRETRAINED_NAME = "distilbert-base-uncased"  # TODO update this
 
-        tokenizer = BertTokenizerFast(BERT_PRETRAINED_NAME)
-        bert_model = BertModel.from_pretrained(BERT_PRETRAINED_NAME)
+        tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_PRETRAINED_NAME)
+        bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME)
 
-        dataset, labels = func(cache_dir, force_download)
-        entries = [entry for entry in dataset]
+        dataset, labels = func(cache_dir, force_download, **kwargs)
+        entries = [entry for entry in dataset[:MAX_DATASET_SIZE]]
         res = tokenizer.__call__(
-            entries, max_length=100, padding=True, truncation=True, return_tensors="pt"
+            entries, max_length=250, padding=True, truncation=True, return_tensors="pt"
         )
 
         with torch.no_grad():
             pooled_embeddings = bert_model(res.input_ids, res.attention_mask)[0][:, 0]
-        return pooled_embeddings.numpy(force=True), labels
+        return pooled_embeddings.numpy(force=True), np.array(labels)
 
     return wrapper
 
