@@ -20,7 +20,7 @@ jobs:
         uses: lewagon/wait-on-check-action@master
         with:
           ref: ${{ github.head_ref }}
-          check-name: 'Runs Tests (ubuntu-latest, 3.11)'
+          running-workflow-name: 'Update Code Coverage on ReadMe'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
           allowed-conclusions: success

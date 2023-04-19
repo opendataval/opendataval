@@ -24,7 +24,7 @@ fetcher = fetcher.noisify(noise_func, **noise_kwargs)  # noise_func: (DataFetche
 
 The return type of this function is a dict with the following strings and the updated `np.ndarray`. If the key is present, we will update the value of `self.[key]` with the value in the dictionary.
 ```python
-{'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_indices'}
+{'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_train_indices'}
 ```
 
 To get data points

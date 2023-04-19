@@ -77,7 +77,7 @@ class TestDataFetcher(unittest.TestCase):
         self.fetcher.noisify(mix_labels, noise_rate=0.0)
         self.assertTrue(np.array_equal(self.fetcher.x_train, x_train))
         self.assertTrue(np.array_equal(self.fetcher.y_train, y_train))
-        self.assertTrue(not self.fetcher.noisy_indices.any())
+        self.assertTrue(not self.fetcher.noisy_train_indices.any())
 
         # Test with noise
         self.fetcher.split_dataset(train_count=80, valid_count=20)
@@ -86,7 +86,7 @@ class TestDataFetcher(unittest.TestCase):
         self.fetcher.noisify(mix_labels, noise_rate=0.5)
         self.assertTrue(np.array_equal(self.fetcher.x_train, x_train))
         self.assertFalse(np.array_equal(self.fetcher.y_train, y_train))
-        self.assertTrue(self.fetcher.noisy_indices.any())
+        self.assertTrue(self.fetcher.noisy_train_indices.any())
 
         # Test with gauss noise
         self.fetcher.split_dataset(train_count=80, valid_count=20)
@@ -95,7 +95,7 @@ class TestDataFetcher(unittest.TestCase):
         self.fetcher.noisify(add_gauss_noise, mu=10, sigma=10, noise_rate=0.5)
         self.assertFalse(np.array_equal(self.fetcher.x_train, x_train))
         self.assertTrue(np.array_equal(self.fetcher.y_train, y_train))
-        self.assertTrue(self.fetcher.noisy_indices.any())
+        self.assertTrue(self.fetcher.noisy_train_indices.any())
 
     def test_invalid_dataset(self):
         self.assertRaises(KeyError, DataFetcher, dataset_name="nonexistent")

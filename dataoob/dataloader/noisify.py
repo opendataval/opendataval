@@ -22,18 +22,27 @@ def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.nd
     dict[str, np.ndarray]
         dictionary of updated data points
         - **"y_train"** -- Updated training labels mixed
-        - **"noisy_indices"** -- Indices of training data set with mixed labels
+        - **"y_valid"** -- Updated validation labels mixed
+        - **"noisy_train_indices"** -- Indices of training data set with mixed labels
     """
     rs = check_random_state(fetcher.random_state)
 
-    y_train = fetcher.y_train
-    num_points = len(y_train)
+    y_train, y_valid = fetcher.y_train, fetcher.y_valid
+    num_train, num_valid = len(y_train), len(y_valid)
 
-    replace = rs.choice(num_points, round(num_points * noise_rate), replace=False)
-    target = rs.choice(num_points, round(num_points * noise_rate), replace=False)
-    y_train[replace] = y_train[target]
+    replace_train = rs.choice(num_train, round(num_train * noise_rate), replace=False)
+    target_train = rs.choice(num_train, round(num_train * noise_rate), replace=False)
+    replace_valid = rs.choice(num_valid, round(num_valid * noise_rate), replace=False)
+    target_valid = rs.choice(num_valid, round(num_valid * noise_rate), replace=False)
 
-    return {"y_train": y_train, "noisy_indices": replace}
+    y_train[replace_train] = y_train[target_train]
+    y_valid[replace_valid] = y_valid[target_valid]
+
+    return {
+        "y_train": y_train,
+        "y_valid": y_valid,
+        "noisy_train_indices": replace_train,
+    }
 
 
 def add_gauss_noise(
@@ -57,32 +66,46 @@ def add_gauss_noise(
     dict[str, np.ndarray]
         dictionary of updated data points
         - **"x_train"** -- Updated training covariates with added gaussian noise
-        - **"noisy_indices"** -- Indices of training data set with mixed labels
+        - **"noisy_train_indices"** -- Indices of training data set with mixed labels
     """
     rs = check_random_state(fetcher.random_state)
 
-    x_train = fetcher.x_train
-    num_points = len(x_train)
+    x_train, x_valid = fetcher.x_train, fetcher.x_valid
+    num_train, num_valid = len(x_train), len(x_valid)
     [*feature_dim] = x_train[0].shape  # Unpacks dims of tensors and numpy array
 
-    noisy_indices = rs.choice(num_points, round(num_points * noise_rate), replace=False)
-    noise = rs.normal(mu, sigma, size=(len(noisy_indices), *feature_dim))
+    noisy_train_idx = rs.choice(num_train, round(num_train * noise_rate), replace=False)
+    noisy_valid_idx = rs.choice(num_valid, round(num_valid * noise_rate), replace=False)
+    noise_train = rs.normal(mu, sigma, size=(len(noisy_train_idx), *feature_dim))
+    noise_valid = rs.normal(mu, sigma, size=(len(noisy_valid_idx), *feature_dim))
 
     if isinstance(x_train, Dataset):
         # We add a zero tensor at the top because noise only some indices have noise
         # added. For those that do not, they have the zero tensor added -> no change
-        padded_noise = np.vstack([np.zeros(shape=(1, *feature_dim)), noise])
-        noise_add = torch.tensor(padded_noise, dtype=torch.float)
+        padded_noise_train = np.vstack([np.zeros(shape=(1, *feature_dim)), noise_train])
+        padded_noise_valid = np.vstack([np.zeros(shape=(1, *feature_dim)), noise_valid])
+        noise_add_train = torch.tensor(padded_noise_train, dtype=torch.float)
+        noise_add_valid = torch.tensor(padded_noise_valid, dtype=torch.float)
 
         # A remapping to noisy index, in noise array, offset by 1 for non-noisy data
         # as the 0th index is the zero tensor from above
-        remap = np.zeros((num_points,), dtype=int)
-        remap[noisy_indices] = range(1, len(noisy_indices) + 1)
+        remap_train = np.zeros((num_train,), dtype=int)
+        remap_valid = np.zeros((num_valid,), dtype=int)
+        remap_train[noisy_train_idx] = range(1, len(noisy_train_idx) + 1)
+        remap_valid[noisy_valid_idx] = range(1, len(noisy_valid_idx) + 1)
 
         x_train = IndexTransformDataset(
-            x_train, lambda data, ind: (data + noise_add[remap[ind]])
+            x_train, lambda data, ind: (data + noise_add_train[remap_train[ind]])
+        )
+        x_valid = IndexTransformDataset(
+            x_valid, lambda data, ind: (data + noise_add_valid[remap_valid[ind]])
         )
     else:
-        x_train[noisy_indices] = x_train[noisy_indices] + noise
+        x_train[noisy_train_idx] = x_train[noisy_train_idx] + noise_train
+        x_valid[noisy_valid_idx] = x_valid[noisy_valid_idx] + noise_valid
 
-    return {"x_train": x_train, "noisy_indices": noisy_indices}
+    return {
+        "x_train": x_train,
+        "x_valid": x_valid,
+        "noisy_train_indices": noisy_train_idx,
+    }

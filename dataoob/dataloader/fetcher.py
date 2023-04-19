@@ -37,7 +37,7 @@ class DataFetcher:
         The indices of the original data set used to make the validation data set.
     test_indices : np.ndarray[[int]
         The indices of the original data set used to make the test data set.
-    noisy_indices : np.ndarray[[int]
+    noisy_train_indices : np.ndarray[[int]
         The indices of training data points with noise added to them.
     [x/y]_[train/valid/test] : np.ndarray
         Access to the raw split of the [covariate/label] [train/valid/test] data set
@@ -323,7 +323,7 @@ class DataFetcher:
         Adds noise to the data set and saves the indices of the noisy data.
         Return object of `add_noise_func` is a dict with keys to signify how the
         data are updated:
-        {'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_indices'}
+        {'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_train_indices'}
 
         Parameters
         ----------
@@ -338,7 +338,7 @@ class DataFetcher:
             - **"y_valid"** -- Updated validation labels with noise, optional
             - **"x_test"** -- Updated testing covariates with noise, optional
             - **"y_test"** -- Updated testing labels with noise, optional
-            - **"noisy_indices"** -- Indices of data set with noise,
+            - **"noisy_train_indices"** -- Indices of data set with noise,
                 typically the training data set has noise added
         args : tuple[Any]
             Additional positional arguments passed to ``add_noise_func``
@@ -351,14 +351,14 @@ class DataFetcher:
             Returns a DataFetcher with noise added to the data set.
         """
         # Passes the DataFetcher to the noise_func, has access to all instance variables
-        noisy_datapoints = add_noise_func(fetcher=self, *noise_args, **noise_kwargs)
+        noisy_data = add_noise_func(fetcher=self, *noise_args, **noise_kwargs)
 
-        self.x_train = noisy_datapoints.get("x_train", self.x_train)
-        self.y_train = noisy_datapoints.get("y_train", self.y_train)
-        self.x_valid = noisy_datapoints.get("x_valid", self.x_valid)
-        self.y_valid = noisy_datapoints.get("y_valid", self.y_valid)
-        self.x_test = noisy_datapoints.get("x_test", self.x_test)
-        self.y_test = noisy_datapoints.get("y_test", self.y_test)
-        self.noisy_indices = noisy_datapoints.get("noisy_indices", np.array([]))
+        self.x_train = noisy_data.get("x_train", self.x_train)
+        self.y_train = noisy_data.get("y_train", self.y_train)
+        self.x_valid = noisy_data.get("x_valid", self.x_valid)
+        self.y_valid = noisy_data.get("y_valid", self.y_valid)
+        self.x_test = noisy_data.get("x_test", self.x_test)
+        self.y_test = noisy_data.get("y_test", self.y_test)
+        self.noisy_train_indices = noisy_data.get("noisy_train_indices", np.array([]))
 
         return self

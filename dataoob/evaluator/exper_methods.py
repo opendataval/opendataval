@@ -42,7 +42,7 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
             corrupted, and the higher value data points as correct.
     """
     data_values = evaluator.evaluate_data_values()
-    noisy_indices = fetcher.noisy_indices
+    noisy_train_indices = fetcher.noisy_train_indices
 
     num_points = len(data_values)
     sorted_indices = np.argsort(data_values)
@@ -52,12 +52,13 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
 
     # Because of the convexity of KMeans classification, the least valuable data point
     # will always belong to one cluster, while the most valuable will belong to another.
-    validation = np.zeros(shape=(num_points,))
-    validation[noisy_indices] = 1
-
     labels = (  # If the least valuable group isn't labeled as 1, flips the labels
         kmeans.labels_ if kmeans.labels_[sorted_indices[0]] == 1 else 1 - kmeans.labels_
     )
+
+    # Noisy group is what we're trying to detect, which is why it's set to the positives
+    validation = np.zeros(shape=(num_points,))
+    validation[noisy_train_indices] = 1
 
     f1_kmeans_label = f1_score(labels, validation)
 
@@ -208,7 +209,7 @@ def discover_corrupted_sample(
             corrupted_samples in proportion to the number of corruption in the data set.
     """
     x_train, *_ = fetcher.datapoints
-    noisy_indices = fetcher.noisy_indices
+    noisy_train_indices = fetcher.noisy_train_indices
     data_values = evaluator.evaluate_data_values()
 
     num_points = len(x_train)
@@ -216,7 +217,7 @@ def discover_corrupted_sample(
     num_bins = int(num_points // num_period) + 1
 
     sorted_value_list = np.argsort(data_values, kind="stable")  # Order descending
-    noise_rate = len(noisy_indices) / len(data_values)
+    noise_rate = len(noisy_train_indices) / len(data_values)
 
     # Output initialization
     found_rates = []
@@ -225,8 +226,8 @@ def discover_corrupted_sample(
     for bin_index in range(0, num_points + num_period, num_period):
         # from low to high data values
         found_rates.append(
-            len(np.intersect1d(sorted_value_list[:bin_index], noisy_indices))
-            / len(noisy_indices)
+            len(np.intersect1d(sorted_value_list[:bin_index], noisy_train_indices))
+            / len(noisy_train_indices)
         )
 
     x_axis = [i / num_bins for i in range(num_bins)]
