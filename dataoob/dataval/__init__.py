@@ -34,11 +34,11 @@ from dataoob.dataval.api import DataEvaluator
 from dataoob.dataval.dvrl import DVRL
 from dataoob.dataval.influence import InfluenceFunctionEval
 from dataoob.dataval.knnshap import KNNShapley
-from dataoob.dataval.oob import DataOob
-from dataoob.dataval.shap import (
+from dataoob.dataval.margcontrib import (
     BetaShapley,
     DataBanzhaf,
     DataShapley,
     LeaveOneOut,
     ShapEvaluator,
 )
+from dataoob.dataval.oob import DataOob

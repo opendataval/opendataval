@@ -12,11 +12,11 @@ from dataoob.dataval.ame.ame import AME
 from dataoob.dataval.dvrl.dvrl import DVRL
 from dataoob.dataval.influence.influence import InfluenceFunctionEval
 from dataoob.dataval.knnshap.knnshap import KNNShapley
+from dataoob.dataval.margcontrib.banzhaf import DataBanzhaf, DataBanzhafMargContrib
+from dataoob.dataval.margcontrib.betashap import BetaShapley
+from dataoob.dataval.margcontrib.datashap import DataShapley
+from dataoob.dataval.margcontrib.loo import LeaveOneOut
 from dataoob.dataval.oob.oob import DataOob
-from dataoob.dataval.shap.banzhaf import DataBanzhaf, DataBanzhafMargContrib
-from dataoob.dataval.shap.betashap import BetaShapley
-from dataoob.dataval.shap.datashap import DataShapley
-from dataoob.dataval.shap.loo import LeaveOneOut
 
 # Data classes for wrapping EvaluatorMediator Args
 from dataoob.evaluator import DataEvaluatorFactoryArgs as DEFA

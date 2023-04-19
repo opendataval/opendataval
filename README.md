@@ -300,8 +300,7 @@ Submitting a new `DataEvaluator` and a list of `presets` and `experiments` to te
 will be trained and tested several times. We will always use the same seeds, with one
 seed used public: `42`.
 
-Submitting a new `Register` data set is very helpful as that will increases the number
-of different presets.
+Submitting a new `Register` data set is very helpful as that will increases the number of different presets.
 
 Submitting a new `exper_func` increases the number of metrics for evaluation.
 

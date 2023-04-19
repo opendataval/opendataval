@@ -8,7 +8,7 @@ from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
 from dataoob.dataval.api import DataEvaluator
-from dataoob.dataval.shap.shap import ShapEvaluator
+from dataoob.dataval.margcontrib.shap import ShapEvaluator
 
 
 class DataBanzhaf(DataEvaluator):
