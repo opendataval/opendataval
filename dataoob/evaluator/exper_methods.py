@@ -4,7 +4,7 @@ Experiments to pass into :py:meth:`~dataoob.evaluator.api.ExperimentMediator.eva
 and :py:meth:`~dataoob.evaluator.api.ExperimentMediator.plot` evaluate performance of
 one :py:class:`~dataoob.dataval.api.DataEvaluator` at a time.
 """
-from typing import Any, Literal
+from typing import Any
 
 import numpy as np
 from matplotlib.axes import Axes
@@ -62,92 +62,6 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
     f1_kmeans_label = f1_score(labels, validation)
 
     return {"kmeans_f1": f1_kmeans_label}
-
-
-def point_removal(
-    evaluator: DataEvaluator,
-    fetcher: DataFetcher,
-    order: Literal["random", "ascending", "descending"] = "random",
-    percentile: float = 0.05,
-    plot: Axes = None,
-    metric_name: str = "accuracy",
-    train_kwargs: dict[str, Any] = None,
-) -> dict[str, list[float]]:
-    """Evaluate performance after removing points according to `order`.
-
-    Repeatedly removes `percentile` of data points and trains/evaluates performance.
-
-    Parameters
-    ----------
-    evaluator : DataEvaluator
-        DataEvaluator to be tested
-    loader : DataFetcher
-        DataFetcher containing training and valid data points
-    order : Literal["random", "ascending";, "descending";], optional
-        Order which data points will be removed, by default "random"
-    percentile : float, optional
-        Percentile of data points to remove per iteration, by default 0.05
-    plot : Axes, optional
-        Matplotlib Axes to plot data output, by default None
-    metric_name : str, optional
-        Name of DataEvaluator defined performance metric, by default assumed "accuracy"
-    train_kwargs : dict[str, Any], optional
-        Training key word arguments for training the pred_model, by default None
-
-    Returns
-    -------
-    dict[str, list[float]]
-        dict containing performance list after removing ``(i * percentile)`` data
-
-        - **"axis"** -- Proportion of data values removed currently
-        - **f"{order}_add_{metric_name}"** -- Performance of model after removing
-            a proportion of the data points with the highest/lowest/random data values
-    """
-    x_train, y_train, x_valid, y_valid, *_ = fetcher.datapoints
-    data_values = evaluator.evaluate_data_values()
-    curr_model = evaluator.pred_model.clone()
-
-    num_points = len(data_values)
-    num_period = max(round(num_points * percentile), 5)  # Add at least 5 per bin
-    num_bins = int(num_points // num_period)
-
-    match order:
-        case "ascending":
-            sorted_value_list = np.argsort(data_values)
-        case "descending":
-            sorted_value_list = np.argsort(-data_values)
-        case "random":
-            sorted_value_list = np.random.permutation(num_points)
-
-    metric_list = []
-    train_kwargs = train_kwargs if train_kwargs is not None else {}
-
-    for bin_index in range(0, num_points, num_period):
-
-        sorted_value_coalition = sorted_value_list[bin_index:]
-
-        new_model = curr_model.clone()
-        new_model.fit(
-            Subset(x_train, sorted_value_coalition),
-            Subset(y_train, sorted_value_coalition),
-            **train_kwargs,
-        )
-        y_hat_valid = new_model.predict(x_valid)
-        model_score = evaluator.evaluate(y_valid, y_hat_valid)
-
-        metric_list.append(model_score)
-
-    x_axis = [i / num_bins for i in range(num_bins)]
-    eval_results = {f"{order}_remove_{metric_name}": metric_list, "axis": x_axis}
-
-    if plot is not None:
-        plot.plot(x_axis, metric_list[:num_bins], "o-")
-
-        plot.set_xlabel("Fraction Removed")
-        plot.set_ylabel(metric_name)
-        plot.set_title(str(evaluator))
-
-    return eval_results
 
 
 def remove_high_low(

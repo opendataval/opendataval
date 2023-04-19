@@ -14,7 +14,6 @@ from dataoob.evaluator.exper_methods import (
     discover_corrupted_sample,
     increasing_bin_removal,
     noisy_detection,
-    point_removal,
     remove_high_low,
     save_dataval,
 )
@@ -75,36 +74,6 @@ class TestExperiment(unittest.TestCase):
         self.assertIsInstance(result["kmeans_f1"], float)
         self.assertGreaterEqual(result["kmeans_f1"], 0.0)
         self.assertLessEqual(result["kmeans_f1"], 1.0)
-
-    def test_point_removal(self):
-        ord_one = "ascending"
-        result = point_removal(
-            self.data_evaluator,
-            self.fetcher,
-            order=ord_one,
-            percentile=0.05,
-            plot=None,
-            metric_name="accuracy",
-            train_kwargs=self.train_kwargs,
-        )
-
-        self.assertIn("axis", result)
-        self.assertIn(f"{ord_one}_remove_accuracy", result)
-        self.assertEqual(len(result["axis"]), len(result[f"{ord_one}_remove_accuracy"]))
-
-        ord_two = "descending"
-        result = point_removal(
-            self.data_evaluator,
-            self.fetcher,
-            order=ord_two,
-            percentile=0.05,
-            plot=self.plot,
-            metric_name="accuracy",
-            train_kwargs=self.train_kwargs,
-        )
-        self.assertIn("axis", result)
-        self.assertIn(f"{ord_two}_remove_accuracy", result)
-        self.assertEqual(len(result["axis"]), len(result[f"{ord_two}_remove_accuracy"]))
 
     def test_increasing_bin_removal(self):
         metric_name = "accuracy"
