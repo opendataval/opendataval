@@ -6,7 +6,15 @@ from dataoob.model.api import TorchBinClassMixin, TorchClassMixin, TorchPredictM
 
 
 class LogisticRegression(TorchClassMixin, TorchPredictMixin):
-    """Initialize LogisticRegression."""
+    """Initialize LogisticRegression
+
+    Parameters
+    ----------
+    input_dim : int
+        Size of the input dimension of the LogisticRegression
+    num_classes : int
+        Size of the output dimension of the LR, outputs selection probabilities
+    """
 
     def __init__(self, input_dim: int, num_classes: int):
         super().__init__()

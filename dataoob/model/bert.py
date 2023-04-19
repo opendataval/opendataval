@@ -78,7 +78,7 @@ class BertClassifier(Model, nn.Module):
                 param.requires_grad = False
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None):
-        """Compute label for the inputs from DistilBERT tokenizer output.
+        """Forward pass through DistilBert with inputs from DistilBERT tokenizer output.
 
         NOTE this is only applicable for a DistilBERT model that doesn't require
         ``token_type_ids``.

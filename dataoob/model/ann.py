@@ -13,7 +13,21 @@ from dataoob.model.api import (
 
 
 class ClassifierANN(TorchClassMixin, TorchPredictMixin):
-    """Initializes the Artificial Neural Network."""
+    """Initializes the Artificial Neural Network Classifier.
+
+    Parameters
+    ----------
+    input_dim : int
+        Size of the input dimension of the ANN
+    num_classes : int
+        Size of the output dimension of the ANN, outputs selection probabilities
+    layers : int, optional
+        Number of layers for the ANN, by default 5
+    hidden_dim : int, optional
+        Hidden dimension for the ANN, by default 25
+    act_fn : Callable, optional
+        Activation function for ANN, if none, set to nn.ReLU, by default None
+    """
 
     def __init__(
         self,
@@ -74,7 +88,21 @@ class BinaryANN(TorchBinClassMixin, ClassifierANN):
 
 
 class RegressionANN(TorchRegressMixin, TorchPredictMixin):
-    """Initializes RegressionANN."""
+    """Initializes the Artificial Neural Network Regression.
+
+    Parameters
+    ----------
+    input_dim : int
+        Size of the input dimension of the ANN
+    num_classes : int
+        Size of the output dimension of the ANN, >1 means multi dimension output
+    layers : int, optional
+        Number of layers for the ANN, by default 5
+    hidden_dim : int, optional
+        Hidden dimension for the ANN, by default 25
+    act_fn : Callable, optional
+        Activation function for ANN, if none, set to nn.ReLU, by default None
+    """
 
     def __init__(
         self,
