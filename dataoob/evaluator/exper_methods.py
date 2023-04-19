@@ -21,13 +21,11 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
     """Evaluate ability to identify noisy indices.
 
     Compute recall and F1 score (of 2NN classifier) of the data evaluator
-    on the noisy indices. Because of the convexity of K-means classification, the
-    most valuable data point will belong to one group and the least valuable to another.
-    While the labels (0,1) won't be consistent, we know that the most valuable data
-    point and the most valuable group are labeled differently from the least valuable
-    data point and group. Thus, we set the noisy indices as the same label as the
-    least valuable data point (which is the less valuable group) for F1 score
-    calculation.
+    on the noisy indices. Noisy indices will be labeled 1 for the positives,
+    while non-Noisy are labeled zero. KMeans labels are random, but because
+    of the convexity the highest data point and lowest data point have different
+    labels and belong to the most valuable/least valuable group. Thus, the least
+    valuable group will be set to 1 and most valuable to zero for the F1 score.
 
     Parameters
     ----------
@@ -54,10 +52,14 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
 
     # Because of the convexity of KMeans classification, the least valuable data point
     # will always belong to one cluster, while the most valuable will belong to another.
-    validation = np.full((num_points,), kmeans.labels_[sorted_indices[-1]])
-    validation[noisy_indices] = kmeans.labels_[sorted_indices[0]]
+    validation = np.zeros(shape=(num_points,))
+    validation[noisy_indices] = 1
 
-    f1_kmeans_label = f1_score(kmeans.labels_, validation)
+    labels = (  # If the least valuable group isn't labeled as 1, flips the labels
+        kmeans.labels_ if kmeans.labels_[sorted_indices[0]] == 1 else 1 - kmeans.labels_
+    )
+
+    f1_kmeans_label = f1_score(labels, validation)
 
     return {"kmeans_f1": f1_kmeans_label}
 

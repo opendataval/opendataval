@@ -237,7 +237,7 @@ class BertClassifier(Model, nn.Module):
         self.eval()
         # Return type of tokenizer is a data set so we are cheating here.
         bert_inputs = self.tokenize(x)
-        bert_batch = bert_inputs.tensors
+        bert_batch = [t.to(device=self.bert.device) for t in bert_inputs.tensors]
 
         y_hat = self.__call__(*bert_batch)
         return y_hat
