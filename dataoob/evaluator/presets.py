@@ -22,12 +22,12 @@ from dataoob.dataval.shap.loo import LeaveOneOut
 from dataoob.evaluator import DataEvaluatorFactoryArgs as DEFA
 from dataoob.evaluator import DataFetcherArgs as DLA
 from dataoob.evaluator import ExperimentMediator
-from dataoob.model.ann import BinaryANN, ClassifierANN
 
 # Models
 from dataoob.model.api import Model
 from dataoob.model.logistic_regression import BinaryLogisticRegression as BLR
 from dataoob.model.logistic_regression import LogisticRegression as LR
+from dataoob.model.mlp import BinaryMLP, ClassifierMLP
 
 RANDOM_STATE = 10  # NOTE this random state should be changed, for now it's a constant
 
@@ -88,9 +88,9 @@ def from_presets(preset_name: str, evaluators_name: str) -> ExperimentMediator:
 # ruff: noqa: E501 D103
 def ann_class_fac(covar_dim: int, label_dim: int, device: torch.Tensor) -> Model:
     if label_dim == 2:
-        return BinaryANN(covar_dim).to(device)
+        return BinaryMLP(covar_dim).to(device)
     else:
-        return ClassifierANN(covar_dim, label_dim).to(device)
+        return ClassifierMLP(covar_dim, label_dim).to(device)
 
 def lr_class_fac(covar_dim: int, label_dim: int, device: torch.Tensor) -> LR:
     if label_dim == 2:

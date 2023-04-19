@@ -40,7 +40,7 @@ loader_args = DataFetcherArgs(
 )
 
 dataval_args = DataEvaluatorArgs(
-    pred_mode=ANN(4, 3),
+    pred_mode=ClassifierMLP(4, 3),
     train_kwargs={'epochs': 32, 'batch_size': 20},
     metric_name='accuracy'
 )

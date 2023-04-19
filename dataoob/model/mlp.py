@@ -12,21 +12,21 @@ from dataoob.model.api import (
 )
 
 
-class ClassifierANN(TorchClassMixin, TorchPredictMixin):
-    """Initializes the Artificial Neural Network Classifier.
+class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
+    """Initializes the Multilayer Perceptron  Classifier.
 
     Parameters
     ----------
     input_dim : int
-        Size of the input dimension of the ANN
+        Size of the input dimension of the MLP
     num_classes : int
-        Size of the output dimension of the ANN, outputs selection probabilities
+        Size of the output dimension of the MLP, outputs selection probabilities
     layers : int, optional
-        Number of layers for the ANN, by default 5
+        Number of layers for the MLP, by default 5
     hidden_dim : int, optional
-        Hidden dimension for the ANN, by default 25
+        Hidden dimension for the MLP, by default 25
     act_fn : Callable, optional
-        Activation function for ANN, if none, set to nn.ReLU, by default None
+        Activation function for MLP, if none, set to nn.ReLU, by default None
     """
 
     def __init__(
@@ -58,7 +58,7 @@ class ClassifierANN(TorchClassMixin, TorchPredictMixin):
         self.mlp = nn.Sequential(mlp_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass of Artificial Neural Network.
+        """Forward pass of MLP Neural Network.
 
         Parameters
         ----------
@@ -68,14 +68,14 @@ class ClassifierANN(TorchClassMixin, TorchPredictMixin):
         Returns
         -------
         torch.Tensor
-            Output Tensor of ANN
+            Output Tensor of MLP
         """
         x = self.mlp(x)
         return x
 
 
-class BinaryANN(TorchBinClassMixin, ClassifierANN):
-    """Initializes the BinaryANN. TorchBinClassMixin defines `.fit()`."""
+class BinaryMLP(TorchBinClassMixin, ClassifierMLP):
+    """Initializes the BinaryMLP. TorchBinClassMixin defines `.fit()`."""
 
     def __init__(
         self,
@@ -87,21 +87,21 @@ class BinaryANN(TorchBinClassMixin, ClassifierANN):
         super().__init__(input_dim, 2, layers, hidden_dim, act_fn)
 
 
-class RegressionANN(TorchRegressMixin, TorchPredictMixin):
-    """Initializes the Artificial Neural Network Regression.
+class RegressionMLP(TorchRegressMixin, TorchPredictMixin):
+    """Initializes the Multilayer Perceptron Regression.
 
     Parameters
     ----------
     input_dim : int
-        Size of the input dimension of the ANN
+        Size of the input dimension of the MLP
     num_classes : int
-        Size of the output dimension of the ANN, >1 means multi dimension output
+        Size of the output dimension of the MLP, >1 means multi dimension output
     layers : int, optional
-        Number of layers for the ANN, by default 5
+        Number of layers for the MLP, by default 5
     hidden_dim : int, optional
-        Hidden dimension for the ANN, by default 25
+        Hidden dimension for the MLP, by default 25
     act_fn : Callable, optional
-        Activation function for ANN, if none, set to nn.ReLU, by default None
+        Activation function for MLP, if none, set to nn.ReLU, by default None
     """
 
     def __init__(
@@ -130,7 +130,7 @@ class RegressionANN(TorchRegressMixin, TorchPredictMixin):
         self.mlp = nn.Sequential(mlp_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass of Artificial Neural Network.
+        """Forward pass of Multilayer Perceptron.
 
         Parameters
         ----------
@@ -140,7 +140,7 @@ class RegressionANN(TorchRegressMixin, TorchPredictMixin):
         Returns
         -------
         torch.Tensor
-            Output Tensor of ANN
+            Output Tensor of MLP
         """
         x = self.mlp(x)
         return x
