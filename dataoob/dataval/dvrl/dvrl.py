@@ -18,7 +18,7 @@ class DVRL(DataEvaluator):
 
     References
     ----------
-    .. [1] J. Yoon, Arik, Sercan O, and T. Pfister,
+    .. [1] J. Yoon, S. Arik, and T. Pfister,
         Data Valuation using Reinforcement Learning,
         arXiv.org, 2019. Available: https://arxiv.org/abs/1909.11671.
 
@@ -181,14 +181,14 @@ class DVRL(DataEvaluator):
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(dataloader):
             # Moves tensors to actual device
-            x_batch = x_batch.to(device=self.device)
-            y_batch = y_batch.to(device=self.device)
-            y_hat_batch = y_hat_batch.to(device=self.device)
+            x_batch_ve = x_batch.to(device=self.device)
+            y_batch_ve = y_batch.to(device=self.device)
+            y_hat_batch_ve = y_hat_batch.to(device=self.device)
 
             optimizer.zero_grad()
 
             # Generates selection probability
-            pred_dataval = self.value_estimator(x_batch, y_batch, y_hat_batch)
+            pred_dataval = self.value_estimator(x_batch_ve, y_batch_ve, y_hat_batch_ve)
 
             # Samples the selection probability
             select_prob = torch.bernoulli(pred_dataval, generator=gen)
@@ -261,7 +261,7 @@ class DataValueEstimatorRL(nn.Module):
 
     References
     ----------
-    .. [1] J. Yoon, Arik, Sercan O, and T. Pfister,
+    .. [1] J. Yoon, Sercan O, and T. Pfister,
         Data Valuation using Reinforcement Learning,
         arXiv.org, 2019. Available: https://arxiv.org/abs/1909.11671.
 
