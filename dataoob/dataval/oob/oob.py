@@ -107,8 +107,8 @@ class DataOob(DataEvaluator):
                 **kwargs
             )
 
-            y_hat = curr_model.predict(Subset(self.x_train, indices=out_bag)).cpu()
-            self.oob_pred = torch.cat((self.oob_pred, y_hat), dim=0)
+            y_hat = curr_model.predict(Subset(self.x_train, indices=out_bag))
+            self.oob_pred = torch.cat((self.oob_pred, y_hat.detach().cpu()), dim=0)
             self.oob_indices.add_indices(out_bag)
 
         return self
