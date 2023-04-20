@@ -23,8 +23,9 @@ def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
 
 metrics_dict = {  # TODO add metrics and change this implementation
     "accuracy": accuracy_metric,
-    "l2": lambda a, b: torch.square(a - b).sum().sqrt().item(),
-    "mse": lambda a, b: F.mse_loss(a, b).item(),
+    # Metrics should be the higher the better
+    "l2": lambda a, b: -torch.square(a - b).sum().sqrt().item(),
+    "mse": lambda a, b: -F.mse_loss(a, b).item(),
 }
 
 

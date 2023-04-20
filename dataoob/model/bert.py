@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset
 from transformers import (
     DistilBertModel,
     DistilBertTokenizerFast,
-    get_linear_schedule_with_warmup,
 )
 
 from dataoob.dataloader import CatDataset
@@ -189,8 +188,8 @@ class BertClassifier(Model, nn.Module):
 
         # Optimizer and scheduler specified for BERT per Huggingface
         optimizer = torch.optim.AdamW(self.parameters(), lr=0.001, eps=1e-8)
-        scheduler = get_linear_schedule_with_warmup(
-            optimizer, num_warmup_steps=0, num_training_steps=len(dataset) * epochs
+        scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer, start_factor=1, end_factor=0.1, total_iters=epochs * len(dataset)
         )
         criterion = F.cross_entropy
 

@@ -141,7 +141,7 @@ class DVRL(DataEvaluator):
         self.valid_perf = self.evaluate(self.y_valid, y_valid_hat)
 
         # Compute diff
-        y_pred = self.val_model.predict(self.x_train).to(device=torch.device("cpu"))
+        y_pred = self.val_model.predict(self.x_train).cpu()
 
         self.y_pred_diff = torch.abs(self.y_train - y_pred)
 
@@ -177,6 +177,7 @@ class DVRL(DataEvaluator):
             generator=cpu_gen,
             pin_memory=True,
             num_workers=4,
+            persistent_workers=True,
         )
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(dataloader):
@@ -199,7 +200,11 @@ class DVRL(DataEvaluator):
             # Prediction and training
             new_model = self.pred_model.clone()
             new_model.fit(
-                x_batch, y_batch, *args, sample_weight=select_prob.detach(), **kwargs
+                x_batch,
+                y_batch,
+                *args,
+                sample_weight=select_prob.detach().cpu(),  # Expects cpu tensors
+                **kwargs,
             )
 
             # Reward computation
@@ -213,11 +218,25 @@ class DVRL(DataEvaluator):
             loss.backward(retain_graph=True)
             optimizer.step()
 
-        # Trains final model
-        final_prob = self.value_estimator(self.x_train, self.y_train, self.y_pred_diff)
-        final_prob = final_prob.detach()
+        weights = torch.zeros(0, 1, device=self.device)
+        for x_batch, y_batch, y_hat_batch in DataLoader(
+            data, batch_size=self.rl_batch_size, shuffle=False
+        ):
+            # Moves tensors to actual device
+            x_batch = x_batch.to(device=self.device)
+            y_batch = y_batch.to(device=self.device)
+            y_hat_batch = y_hat_batch.to(device=self.device)
+
+            data_values = self.value_estimator(x_batch, y_batch, y_hat_batch)
+            weights = torch.cat([weights, data_values])
+
+        self.final_model = self.pred_model.clone()
         self.final_model.fit(
-            self.x_train, self.y_train, *args, sample_weight=final_prob, **kwargs
+            self.x_train,
+            self.y_train,
+            *args,
+            sample_weight=weights.detach().cpu(),  # Expects cpu tensors
+            **kwargs,
         )
 
         return self
@@ -232,14 +251,26 @@ class DVRL(DataEvaluator):
         np.ndarray
             Predicted data values/selection for training input data point
         """
-        y_valid_pred = self.final_model.predict(self.x_train)
+        y_valid_pred = self.final_model.predict(self.x_train).cpu()
         y_hat = torch.abs(self.y_train - y_valid_pred)
+        response = torch.zeros(0, 1, device=self.device)
 
         # Estimates data value
         with torch.no_grad():  # No dropout layers so no need to set to eval
-            final_data_value = self.value_estimator(self.x_train, self.y_train, y_hat)
 
-        return torch.squeeze(final_data_value).numpy(force=True)
+            data = CatDataset(self.x_train, self.y_train, y_hat)
+            for x_batch, y_batch, y_hat_batch in DataLoader(
+                data, batch_size=self.rl_batch_size, shuffle=False
+            ):
+                # Moves tensors to actual device
+                x_batch = x_batch.to(device=self.device)
+                y_batch = y_batch.to(device=self.device)
+                y_hat_batch = y_hat_batch.to(device=self.device)
+
+                data_values = self.value_estimator(x_batch, y_batch, y_hat_batch)
+                response = torch.cat([response, data_values])
+
+        return response.squeeze().numpy(force=True)
 
 
 class DataValueEstimatorRL(nn.Module):

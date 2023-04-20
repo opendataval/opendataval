@@ -247,7 +247,6 @@ class TorchRegressMixin(Model, nn.Module):
                 batch_size,
                 shuffle=True,
                 pin_memory=True,
-                num_workers=4,
             ):
                 # Moves data to correct device
                 x_batch = x_batch.to(device=self.device)
