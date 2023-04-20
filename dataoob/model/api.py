@@ -123,6 +123,10 @@ class TorchBinClassMixin(Model, nn.Module):
             for x_batch, y_batch, *weights in DataLoader(
                 dataset, batch_size, shuffle=True, pin_memory=True
             ):
+                # Moves data to correct device
+                x_batch = x_batch.to(device=self.device)
+                y_batch = y_batch.to(device=self.device)
+
                 optimizer.zero_grad()
                 outputs = self.__call__(x_batch)
 

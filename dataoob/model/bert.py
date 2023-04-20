@@ -4,7 +4,6 @@ from typing import Sequence
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import tqdm
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 from transformers import (
     DistilBertModel,
@@ -194,7 +193,7 @@ class BertClassifier(Model, nn.Module):
         criterion = F.cross_entropy
 
         self.train()
-        for _ in tqdm.tqdm(range(int(epochs))):
+        for _ in range(int(epochs)):
             for input_batch, y_batch, *weights in DataLoader(
                 dataset, batch_size, shuffle=True, pin_memory=True
             ):
