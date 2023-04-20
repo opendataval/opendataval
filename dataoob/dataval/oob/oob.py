@@ -127,7 +127,7 @@ class DataOob(DataEvaluator):
 
         for i, indices in self.oob_indices.items():
             # Expands the label to the desired size, squeezes for regression
-            oob_labels = self.y_train[i].expand((len(indices), -1)).squeeze(dim=1)
+            oob_labels = self.y_train[i].expand((len(indices), *self.label_dim))
             self.data_values[i] = self.evaluate(oob_labels, self.oob_pred[indices])
 
         return self.data_values
