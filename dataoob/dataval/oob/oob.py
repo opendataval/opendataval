@@ -70,11 +70,8 @@ class DataOob(DataEvaluator):
         self.num_points = len(x_train)
         [*self.label_dim] = (1,) if self.y_train.ndim == 1 else self.y_train[0].shape
         self.max_samples = round(self.proportion * self.num_points)
-        self.device = y_train.device
 
-        self.oob_pred = torch.zeros(
-            (0, *self.label_dim), requires_grad=False, device=self.device
-        )
+        self.oob_pred = torch.zeros((0, *self.label_dim), requires_grad=False)
         self.oob_indices = GroupingIndex()
         return self
 
@@ -110,7 +107,7 @@ class DataOob(DataEvaluator):
                 **kwargs
             )
 
-            y_hat = curr_model.predict(Subset(self.x_train, indices=out_bag))
+            y_hat = curr_model.predict(Subset(self.x_train, indices=out_bag)).cpu()
             self.oob_pred = torch.cat((self.oob_pred, y_hat), dim=0)
             self.oob_indices.add_indices(out_bag)
 

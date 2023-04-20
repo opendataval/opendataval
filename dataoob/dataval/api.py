@@ -72,7 +72,7 @@ class DataEvaluator(ABC):
             as an argument
         """
         if y.device != y_hat.device:
-            y = y.to(y_hat.device)
+            y = y.to(device=y_hat.device)
 
         if metric is None and hasattr(self, "metric"):
             return self.metric(y, y_hat)
