@@ -80,68 +80,6 @@ class Model(ABC):
         return copy.deepcopy(self)
 
 
-class TorchBinClassMixin(Model, nn.Module):
-    """Binary Classifier Mixin for Torch Neural Networks."""
-
-    @property
-    def device(self):
-        return next(self.parameters()).device
-
-    def fit(
-        self,
-        x_train: torch.Tensor | Dataset,
-        y_train: torch.Tensor,
-        sample_weight: torch.Tensor = None,
-        batch_size: int = 32,
-        epochs: int = 1,
-    ):
-        """Fits the model on the training data.
-
-        Fits a torch classifier Model object using ADAM optimizer and BCELoss.
-
-        Parameters
-        ----------
-        x_train : torch.Tensor
-            Data covariates
-        y_train : torch.Tensor
-            Data labels
-        batch_size : int, optional
-            Training batch size, by default 32
-        epochs : int, optional
-            Number of training epochs, by default 1
-        sample_weights : torch.Tensor, optional
-            Weights associated with each data point, by default None
-        """
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
-
-        criterion = F.binary_cross_entropy
-        dataset = CatDataset(x_train, y_train, sample_weight)
-
-        self.train()
-        for _ in range(int(epochs)):
-            # *weights helps check if we passed weights into the Dataloader
-            for x_batch, y_batch, *weights in DataLoader(
-                dataset, batch_size, shuffle=True, pin_memory=True
-            ):
-                # Moves data to correct device
-                x_batch = x_batch.to(device=self.device)
-                y_batch = y_batch.to(device=self.device)
-
-                optimizer.zero_grad()
-                outputs = self.__call__(x_batch)
-
-                if sample_weight is not None:
-                    weight = weights[0].to(self.device)
-                    loss = criterion(outputs, y_batch, weight=weight)
-                else:
-                    loss = criterion(outputs, y_batch)
-
-                loss.backward()  # Compute gradient
-                optimizer.step()  # Updates weights
-
-        return self
-
-
 class TorchClassMixin(Model, nn.Module):
     """Classifier Mixin for Torch Neural Networks."""
 
@@ -177,7 +115,7 @@ class TorchClassMixin(Model, nn.Module):
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
-        criterion = F.cross_entropy
+        criterion = F.binary_cross_entropy if self.num_classes == 2 else F.cross_entropy
         dataset = CatDataset(x_train, y_train, sample_weight)
 
         self.train()
@@ -325,12 +263,9 @@ class ClassifierSkLearnWrapper(Model):
         Device output tensor is moved to, by default torch.device("cpu")
     """
 
-    def __init__(
-        self, base_model, num_classes: int, device: torch.device = torch.device("cpu")
-    ):
+    def __init__(self, base_model, num_classes: int):
         self.model = base_model
         self.num_classes = num_classes
-        self.device = device
 
     def fit(
         self,
@@ -408,7 +343,7 @@ class ClassifierSkLearnWrapper(Model):
             x = x.numpy(force=True)
         output = self.model.predict_proba(x)
 
-        return torch.from_numpy(output).to(device=self.device, dtype=torch.float)
+        return torch.from_numpy(output).to(dtype=torch.float)
 
 
 class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):

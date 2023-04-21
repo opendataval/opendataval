@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dataoob.model.api import TorchBinClassMixin, TorchClassMixin, TorchPredictMixin
+from dataoob.model.api import TorchClassMixin, TorchPredictMixin
 
 
 class LogisticRegression(TorchClassMixin, TorchPredictMixin):
@@ -21,35 +21,6 @@ class LogisticRegression(TorchClassMixin, TorchPredictMixin):
 
         self.input_dim = input_dim
         self.num_of_classes = num_classes
-
-        self.linear = nn.Linear(self.input_dim, self.num_of_classes)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass of Logistic Regression.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor
-
-        Returns
-        -------
-        torch.Tensor
-            Output Tensor of logistic regression
-        """
-        x = self.linear(x)
-        x = F.sigmoid(x)
-        return x
-
-
-class BinaryLogisticRegression(TorchBinClassMixin, TorchPredictMixin):
-    """Initialize BinaryLogisticRegression."""
-
-    def __init__(self, input_dim: int):
-        super().__init__()
-
-        self.input_dim = input_dim
-        self.num_of_classes = 2
 
         self.linear = nn.Linear(self.input_dim, self.num_of_classes)
 

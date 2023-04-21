@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 
 from dataoob.model.api import (
-    TorchBinClassMixin,
     TorchClassMixin,
     TorchPredictMixin,
     TorchRegressMixin,
@@ -40,6 +39,7 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
         super().__init__()
 
         act_fn = nn.ReLU() if act_fn is None else act_fn
+        self.num_classes = num_classes
 
         mlp_layers = OrderedDict()
 
@@ -51,53 +51,6 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
             mlp_layers[f"{i+1}_acti"] = act_fn
 
         mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, num_classes)
-        mlp_layers[f"{i+1}_out_acti"] = act_fn
-
-        mlp_layers["output"] = nn.Softmax(-1)
-
-        self.mlp = nn.Sequential(mlp_layers)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass of MLP Neural Network.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor
-
-        Returns
-        -------
-        torch.Tensor
-            Output Tensor of MLP
-        """
-        x = self.mlp(x)
-        return x
-
-
-class BinaryMLP(TorchBinClassMixin, TorchPredictMixin):
-    """Initializes the BinaryMLP."""
-
-    def __init__(
-        self,
-        input_dim: int,
-        layers: int = 5,
-        hidden_dim: int = 25,
-        act_fn: Callable = None,
-    ):
-        super().__init__()
-
-        act_fn = nn.ReLU() if act_fn is None else act_fn
-
-        mlp_layers = OrderedDict()
-
-        mlp_layers["input"] = nn.Linear(input_dim, hidden_dim)
-        mlp_layers["input_acti"] = act_fn
-
-        for i in range(int(layers - 2)):
-            mlp_layers[f"{i+1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
-            mlp_layers[f"{i+1}_acti"] = act_fn
-
-        mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, 2)
         mlp_layers[f"{i+1}_out_acti"] = act_fn
 
         mlp_layers["output"] = nn.Softmax(-1)
