@@ -20,7 +20,7 @@ run `make install-extra`.
 from dataoob.dataloader.datasets import datasets
 
 try:
-    from dataoob.dataloader.datasets import imagesets, nlpsets
+    from dataoob.dataloader.datasets import nlpsets
 except ImportError as e:
     print(
         f"Failed to import nlpsets or imagesets, likely optional dependency not found."

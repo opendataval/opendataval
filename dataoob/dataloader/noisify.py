@@ -21,6 +21,7 @@ def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.nd
     -------
     dict[str, np.ndarray]
         dictionary of updated data points
+
         - **"y_train"** -- Updated training labels mixed
         - **"y_valid"** -- Updated validation labels mixed
         - **"noisy_train_indices"** -- Indices of training data set with mixed labels

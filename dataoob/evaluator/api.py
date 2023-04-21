@@ -1,5 +1,5 @@
 import math
-from dataclasses import asdict, dataclass, field
+from functools import partial
 from typing import Any, Callable
 
 import pandas as pd
@@ -13,7 +13,12 @@ from sklearn.utils import check_random_state
 
 from dataoob.dataloader import DataFetcher, mix_labels
 from dataoob.dataval import DataEvaluator
-from dataoob.model import Model
+from dataoob.model.api import Model
+from dataoob.model.bert import BertClassifier
+
+# Models
+from dataoob.model.logistic_regression import LogisticRegression
+from dataoob.model.mlp import ClassifierMLP, RegressionMLP
 
 
 def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
@@ -29,39 +34,23 @@ metrics_dict = {  # TODO add metrics and change this implementation
 }
 
 
-@dataclass
-class DataFetcherArgs:
-    """DataFetcherArgs dataclass for easier creation of ExperimentMediator."""
-
-    dataset_name: str
-    force_download: bool = False
-    random_state: RandomState = None
-
-    train_count: int | float = 0.7  # 70-20-10 split is relatively standard
-    valid_count: int | float = 0.2
-    test_count: int | float = 0.1
-
-    noise_kwargs: dict[str, Any] = field(default_factory=dict)
-    add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels
-
-
-@dataclass
-class DataEvaluatorArgs:
-    """DataFetcherArgs dataclass for easier creation of ExperimentMediator."""
-
-    pred_model: Model
-    train_kwargs: dict[str, Any] = field(default_factory=dict)
-    metric_name: str = "accuracy"
-
-
-@dataclass
-class DataEvaluatorFactoryArgs:
-    """DataEvaluatorArgs dataclass for ExperimentMediator if input/output dim known."""
-
-    pred_model_factory: Callable[[int, int, torch.device], Model]
-    train_kwargs: dict[str, Any] = field(default_factory=dict)
-    metric_name: str = "accuracy"
-    device: torch.device = torch.device("cpu")
+def model_factory(
+    model_name: str,
+    covar_dim: tuple[int, ...],
+    label_dim: tuple[int, ...],
+    device: torch.device = torch.device("cpu"),
+):
+    match model_name:
+        case "logreg":
+            return LogisticRegression(*covar_dim, *label_dim).to(device=device)
+        case "mlpclass":
+            return ClassifierMLP(*covar_dim, *label_dim).to(device=device)
+        case "mlpregress":
+            return RegressionMLP(*covar_dim, *label_dim).to(device=device)
+        case "bert":
+            return BertClassifier(num_classes=label_dim[0]).to(device=device)
+        case _:
+            raise ValueError(f"{model_name} is not a valid predefined model")
 
 
 class ExperimentMediator:
@@ -161,48 +150,106 @@ class ExperimentMediator:
         )
 
     @classmethod
-    def from_dataclasses(
+    def placeholder(
         cls,
-        fetcher_args: DataFetcherArgs,
-        data_evaluator_args: DataEvaluatorArgs,
-        data_evaluators: list[DataEvaluator] = None,
-    ):
-        """Create ExperimentMediator from dataclass arg wrappers."""
-        return cls.create_fetcher(
-            data_evaluators=data_evaluators,
-            **(asdict(fetcher_args) | asdict(data_evaluator_args)),
+        dataset_name: str,
+        force_download: bool = False,
+        train_count: int | float = 0,
+        valid_count: int | float = 0,
+        test_count: int | float = 0,
+        add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels,
+        noise_kwargs: dict[str, Any] = None,
+        random_state: RandomState = None,
+        model_name: "str" = None,
+        device: torch.device = torch.device("cpu"),
+        train_kwargs: dict[str, Any] = None,
+        metric_name: str = "accuracy",
+    ) -> partial:
+        """Set up ExperimentMediator without inputting the DataEvaluators
+
+        Return a partial[ExperimentMediator] initialized with the
+
+        Parameters
+        ----------
+        dataset_name : str
+            Name of the data set, must be registered with
+            :py:class:`~dataoob.dataloader.Register`
+        force_download : bool, optional
+            Forces download from source URL, by default False
+        train_count : int | float
+            Number/proportion training points
+        valid_count : int | float
+            Number/proportion validation points
+        test_count : int | float
+            Number/proportion test points
+        add_noise_func : Callable
+            If None, no changes are made. Takes as argument required arguments
+            DataFetcher and adds noise to those the data points of DataFetcher as
+            needed. Returns dict[str, np.ndarray] that has the updated np.ndarray in a
+            dict to update the data loader with the following keys:
+
+            - **"x_train"** -- Updated training covariates with noise, optional
+            - **"y_train"** -- Updated training labels with noise, optional
+            - **"x_valid"** -- Updated validation covariates with noise, optional
+            - **"y_valid"** -- Updated validation labels with noise, optional
+            - **"x_test"** -- Updated testing covariates with noise, optional
+            - **"y_test"** -- Updated testing labels with noise, optional
+            - **"noisy_train_indices"** -- Indices of training data set with noise
+        noise_kwargs : dict[str, Any], optional
+            Key word arguments passed to ``add_noise_func``, by default None
+        random_state : RandomState, optional
+            Random initial state, by default None
+        model_name : str, optional
+            Name of the preset model, check :py:func:`model_factory` for preset models,
+            by default None
+        device : torch.device, optional
+            Tensor device for acceleration, by default torch.device("cpu")
+        metric_name : str, optional
+            Name of the performance metric used to evaluate the performance of the
+            prediction model, must be string for better labeling, by default "accuracy"
+        train_kwargs : dict[str, Any], optional
+            Training key word arguments for the prediction model, by default None
+
+        Returns
+        -------
+        partial[ExperimentMediator]
+            Partially initialized ExperimentMediator. When called, pass in the
+            list[:py:class:`~dataoob.dataval.DataEvaluator`] to run the experiment.
+        """
+        noise_kwargs = {} if noise_kwargs is None else noise_kwargs
+
+        fetcher = DataFetcher.setup(
+            dataset_name=dataset_name,
+            force_download=force_download,
+            random_state=random_state,
+            train_count=train_count,
+            valid_count=valid_count,
+            test_count=test_count,
+            add_noise_func=add_noise_func,
+            noise_kwargs=noise_kwargs,
         )
 
-    @classmethod
-    def preset_setup(
-        cls,
-        fetcher_args: DataFetcherArgs,
-        de_factory_args: DataEvaluatorFactoryArgs,
-        data_evaluators: list[DataEvaluator] = None,
-    ):
-        """Create ExperimentMediator from presets, infers input/output dimensions."""
-        rs = check_random_state(fetcher_args.random_state)
-        train_count = fetcher_args.train_count
-        valid_count = fetcher_args.valid_count
-        test_count = fetcher_args.test_count
-
-        fetcher = (
-            DataFetcher(fetcher_args.dataset_name, fetcher_args.force_download, rs)
-            .split_dataset(train_count, valid_count, test_count)
-            .noisify(fetcher_args.add_noise_func, **fetcher_args.noise_kwargs)
+        pred_model = model_factory(
+            model_name=model_name,
+            covar_dim=fetcher.covar_dim,
+            label_dim=fetcher.label_dim,
+            device=device,
         )
 
-        device = de_factory_args.device
-        covar_dim = (1,) if fetcher.x_train.ndim == 1 else fetcher.x_train[0].shape
-        label_dim = (1,) if fetcher.y_train.ndim == 1 else fetcher.y_train[0].shape
-        pred_model = de_factory_args.pred_model_factory(*covar_dim, *label_dim, device)
+        # Prints base line performance
+        model = pred_model.clone()
+        x_train, y_train, *_, x_test, y_test = fetcher.datapoints
 
-        return cls(
+        model.fit(x_train, y_train, **train_kwargs)
+        perf = metrics_dict[metric_name](y_test, model.predict(x_test).cpu())
+        print(f"Base line model {metric_name}: {perf}")
+
+        return partial(
+            cls,
             fetcher=fetcher,
-            data_evaluators=data_evaluators,
             pred_model=pred_model,
-            train_kwargs=de_factory_args.train_kwargs,
-            metric_name=de_factory_args.metric_name,
+            train_kwargs=train_kwargs,
+            metric_name=metric_name,
         )
 
     def evaluate(

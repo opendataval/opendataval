@@ -15,17 +15,17 @@ Self = TypeVar("Self")
 class DataFetcher:
     """Load data for an experiment from an input data set name.
 
-    Facade for Register object, prepares the data and provides an API for subsequent
-    splitting, adding noise, and transforming into a tensor.
+    Facade for :py:class:`Register` object, prepares the data and provides an API for
+    subsequent splitting, adding noise, and transforming into a tensor.
 
     Parameters
     ----------
     dataset_name : str
-        Name of the data set, can be registered in `datasets.py`
+        Name of the data set, must be registered with :py:class:`Register`
     force_download : bool, optional
         Forces download from source URL, by default False
-    noise_rate : float, optional
-        Ratio of data to add noise to, by default 0.0
+     random_state : RandomState, optional
+        Random initial state, by default None
 
     Attributes
     ----------
@@ -101,8 +101,6 @@ class DataFetcher:
         noise_kwargs: dict[str, Any] = None,
     ):
         """Create, split, and add noise to DataFetcher from input arguments."""
-        # If noisy func is not defined, turns returns noise_kwargs as update value dict
-        add_noise_func = dict if add_noise_func is None else add_noise_func
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
         return (
@@ -236,22 +234,20 @@ class DataFetcher:
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
         """
-        num_points = len(self.covar)
-
         match (train_count, valid_count, test_count):
-            case int(tr), int(val), int(tes) if sum((tr, val, tes)) <= num_points:
+            case int(tr), int(val), int(tes) if sum((tr, val, tes)) <= self.num_points:
                 sp = list(accumulate((tr, val, tes)))
             case float(tr), float(val), float(tes) if sum((tr, val, tes)) <= 1.0:
-                splits = (round(num_points * prob) for prob in (tr, val, tes))
+                splits = (round(self.num_points * prob) for prob in (tr, val, tes))
                 sp = list(accumulate(splits))
             case _:
                 raise ValueError(
-                    f"Splits must be < {num_points=} and of the same type: "
+                    f"Splits must be < {self.num_points=} and of the same type: "
                     f"{type(train_count)=}|{type(valid_count)=}|{type(test_count)=}."
                 )
 
         # Extra underscore to unpack any remainders
-        idx = self.random_state.permutation(num_points)
+        idx = self.random_state.permutation(self.num_points)
         self.train_indices, self.valid_indices, self.test_indices, _ = np.split(idx, sp)
 
         if isinstance(self.covar, Dataset):
@@ -297,7 +293,6 @@ class DataFetcher:
             Invalid input for indices of the train, valid, or split data set, leak
             of at least 1 data point in the indices.
         """
-        num_points = len(self.covar)
         train_indices = [] if train_indices is None else train_indices
         valid_indices = [] if valid_indices is None else valid_indices
         test_indices = [] if test_indices is None else test_indices
@@ -307,7 +302,7 @@ class DataFetcher:
         for index in idx:
             if not (0 <= index < len(self.covar)) or index in seen:
                 raise ValueError(
-                    f"{index=} is repeated or is out of range for {num_points=}"
+                    f"{index=} is repeated or is out of range for {self.num_points=}"
                 )
             seen.add(index)
 
@@ -332,7 +327,7 @@ class DataFetcher:
 
     def noisify(
         self,
-        add_noise_func: Callable[[Self, Any, ...], dict[str, np.ndarray | Dataset]],
+        add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
         *noise_args,
         **noise_kwargs,
     ):
@@ -346,18 +341,18 @@ class DataFetcher:
         Parameters
         ----------
         add_noise_func : Callable
-            Takes as argument required arguments x_train, y_train, x_valid, y_valid
-            and adds noise to those data points as needed. Returns dict[str, np.ndarray]
-            that has the updated np.ndarray in a dict to update the data loader with the
-            following keys:
+            If None, no changes are made. Takes as argument required arguments
+            DataFetcher and adds noise to those the data points of DataFetcher as
+            needed. Returns dict[str, np.ndarray] that has the updated np.ndarray in a
+            dict to update the data loader with the following keys:
+
             - **"x_train"** -- Updated training covariates with noise, optional
             - **"y_train"** -- Updated training labels with noise, optional
             - **"x_valid"** -- Updated validation covariates with noise, optional
             - **"y_valid"** -- Updated validation labels with noise, optional
             - **"x_test"** -- Updated testing covariates with noise, optional
             - **"y_test"** -- Updated testing labels with noise, optional
-            - **"noisy_train_indices"** -- Indices of data set with noise,
-                typically the training data set has noise added
+            - **"noisy_train_indices"** -- Indices of training data set with noise.
         args : tuple[Any]
             Additional positional arguments passed to ``add_noise_func``
         kwargs: dict[str, Any]
@@ -368,6 +363,9 @@ class DataFetcher:
         self : object
             Returns a DataFetcher with noise added to the data set.
         """
+        if add_noise_func is None:
+            return self
+
         # Passes the DataFetcher to the noise_func, has access to all instance variables
         noisy_data = add_noise_func(fetcher=self, *noise_args, **noise_kwargs)
 

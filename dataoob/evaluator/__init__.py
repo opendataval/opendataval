@@ -23,14 +23,6 @@ Experiments
     :toctree: generated/
 
     exper_methods
-
-Utils
------
-.. autosummary::
-    :toctree: generated/
-
-    DataEvaluatorArgs
-    DataEvaluatorFactoryArgs
 """
 
 from dataoob.evaluator.api import ExperimentMediator

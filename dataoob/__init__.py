@@ -23,5 +23,13 @@ Modules
     dataval
     model
     evaluator
+
+Utils
+-----
+.. autosummary::
+    :toctree: generated/
+
+    ~dataoob.util.set_random_state
+    ~dataoob.util.load_mediator_output
 """
 __version__ = "0.0.1"

@@ -37,6 +37,7 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
     Returns
     -------
     dict[str, float]
+
         - **"kmeans_f1"** -- F1 score performance of a 1D KNN binary classifier
             of the data points. Classifies the lower data value data points as
             corrupted, and the higher value data points as correct.
