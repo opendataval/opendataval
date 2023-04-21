@@ -72,7 +72,7 @@ def add_gauss_noise(
 
     x_train, x_valid = fetcher.x_train, fetcher.x_valid
     num_train, num_valid = len(x_train), len(x_valid)
-    [*feature_dim] = x_train[0].shape  # Unpacks dims of tensors and numpy array
+    feature_dim = fetcher.covar_dim
 
     noisy_train_idx = rs.choice(num_train, round(num_train * noise_rate), replace=False)
     noisy_valid_idx = rs.choice(num_valid, round(num_valid * noise_rate), replace=False)

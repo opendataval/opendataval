@@ -8,12 +8,7 @@ from sklearn.utils import check_random_state
 
 from dataoob.dataloader import DataFetcher, Register, mix_labels
 from dataoob.dataval import DataEvaluator
-from dataoob.evaluator import (
-    DataEvaluatorArgs,
-    DataEvaluatorFactoryArgs,
-    DataFetcherArgs,
-    ExperimentMediator,
-)
+from dataoob.evaluator import ExperimentMediator
 from dataoob.model import Model
 
 
@@ -64,50 +59,6 @@ class BrokenEvaluator(DataEvaluator):
 
 
 Register("test_dataset").from_numpy(np.array([[1, 2], [3, 4], [5, 6]]), 1)
-
-
-class TestDataFetcherArgs(unittest.TestCase):
-    def test_data_loader_args(self):
-        args = DataFetcherArgs(
-            dataset_name="test_dataset",
-            force_download=False,
-        )
-        self.assertEqual(args.dataset_name, "test_dataset")
-        self.assertEqual(args.force_download, False)
-
-    def test_data_loader_args_default(self):
-        args = DataFetcherArgs(dataset_name="test_dataset")
-        self.assertEqual(args.train_count, 0.7)
-        self.assertEqual(args.valid_count, 0.2)
-        self.assertEqual(args.test_count, 0.1)
-
-
-class TestDataEvaluatorArgs(unittest.TestCase):
-    def test_data_evaluator_args(self):
-        args = DataEvaluatorArgs(pred_model=DummyModel(), train_kwargs={"epochs": 5})
-        self.assertIsInstance(args.pred_model, Model)
-        self.assertEqual(args.train_kwargs["epochs"], 5)
-
-    def test_data_evaluator_args_default(self):
-        args = DataEvaluatorArgs(pred_model=DummyModel())
-        self.assertEqual(args.metric_name, "accuracy")
-
-
-class TestDataEvaluatorFactoryArgs(unittest.TestCase):
-    def test_data_evaluator_factory_args(self):
-        args = DataEvaluatorFactoryArgs(
-            pred_model_factory=lambda a, b, c: DummyModel(),
-            train_kwargs={"epochs": 5},
-            metric_name="f1_score",
-            device=torch.device("cpu"),
-        )
-        self.assertEqual(args.metric_name, "f1_score")
-        self.assertEqual(args.device.type, "cpu")
-
-    def test_data_evaluator_factory_args_default(self):
-        args = DataEvaluatorFactoryArgs(pred_model_factory=lambda a, b, c: DummyModel())
-        self.assertEqual(args.metric_name, "accuracy")
-        self.assertEqual(args.device.type, "cpu")
 
 
 class TestExperimentMediator(unittest.TestCase):
@@ -167,22 +118,21 @@ class TestExperimentMediator(unittest.TestCase):
                 metric_name="accuracy",
                 data_evaluators=[DummyEvaluator()],
             )
-        self.assertFalse(self.dataevaluator.trained)
 
-        self.assertWarns(
-            Warning,
-            ExperimentMediator.preset_setup,
-            DataFetcherArgs(
+        with self.assertRaises(ValueError):
+            ExperimentMediator.setup(
                 dataset_name="test_dataset",
                 force_download=False,
+                train_count=0.8,
+                valid_count=1.1,
+                add_noise_func=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
-            ),
-            DataEvaluatorFactoryArgs(
-                pred_model_factory=lambda a, b, c: BrokenDummyModel(),
-                device=torch.device("cpu"),
-            ),
-            data_evaluators=[BrokenEvaluator()],
-        )
+                pred_model=DummyModel(),
+                train_kwargs={"epochs": 5},
+                metric_name="accuracy",
+                data_evaluators=[BrokenEvaluator()],
+            )
+        self.assertFalse(self.dataevaluator.trained)
 
     def test_evaluate_mediator(self):
         mock_func = Mock(side_effect=[{"a": [1, 2], "b": [3]}, {"a": [4, 5], "b": [6]}])

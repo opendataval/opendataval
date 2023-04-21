@@ -31,6 +31,12 @@ class DataFetcher:
     ----------
     datapoints : tuple[torch.Tensor, ...]
         Train+Valid+Test covariates and labels
+    covar_dim : tuple[int, ...]
+        Covariates dimension of the loaded data set.
+    label_dim : tuple[int, ...]
+        Label dimension of the loaded data set.
+    num_points : int
+        Number of data points in the total data set
     train_indices : np.ndarray[int]
         The indices of the original data set used to make the training data set.
     valid_indices : np.ndarray[[int]
@@ -169,23 +175,35 @@ class DataFetcher:
         (torch.Tensor | Dataset, torch.Tensor)
             Test Covariates, Test Labels
         """
-        if isinstance(self.x_train, Dataset):
-            x_train, x_valid, x_test = self.x_train, self.x_valid, self.x_test
+        x_trn, x_val, x_test = self.x_train, self.x_valid, self.x_test
+
+        if not isinstance(self.x_train, Dataset):  # Turns arrays -> cpu tensors
+            x_trn = torch.tensor(x_trn, dtype=torch.float).view(-1, *self.covar_dim)
+            x_val = torch.tensor(x_val, dtype=torch.float).view(-1, *self.covar_dim)
+            x_test = torch.tensor(x_test, dtype=torch.float).view(-1, *self.covar_dim)
+
+        y_trn = torch.tensor(self.y_train, dtype=torch.float).view(-1, *self.label_dim)
+        y_val = torch.tensor(self.y_valid, dtype=torch.float).view(-1, *self.label_dim)
+        y_test = torch.tensor(self.y_test, dtype=torch.float).view(-1, *self.label_dim)
+
+        return x_trn, y_trn, x_val, y_val, x_test, y_test
+
+    @property
+    def covar_dim(self) -> tuple[int, ...]:
+        data = self.covar if hasattr(self, "covar") else self.x_train
+        return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
+
+    @property
+    def label_dim(self) -> tuple[int, ...]:
+        data = self.labels if hasattr(self, "labels") else self.y_train
+        return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
+
+    @property
+    def num_points(self) -> int:
+        if hasattr(self, "covar"):
+            return len(self.covar)
         else:
-            x_train = self._tensorify(self.x_train)
-            x_valid = self._tensorify(self.x_valid)
-            x_test = self._tensorify(self.x_test)
-
-        y_train = self._tensorify(self.y_train)
-        y_valid = self._tensorify(self.y_valid)
-        y_test = self._tensorify(self.y_test)
-
-        return x_train, y_train, x_valid, y_valid, x_test, y_test
-
-    def _tensorify(self, data: np.ndarray) -> torch.Tensor:
-        """Convert array to tensor with helper method."""
-        dim = (1,) if data.ndim == 1 else data.shape[1:]
-        return torch.tensor(data, dtype=torch.float).view(-1, *dim)
+            return len(self.x_train) + len(self.x_valid) + len(self.x_test)
 
     def split_dataset(
         self,

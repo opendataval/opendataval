@@ -29,25 +29,9 @@ Utils
 .. autosummary::
     :toctree: generated/
 
-    DataFetcherArgs
     DataEvaluatorArgs
     DataEvaluatorFactoryArgs
-
-
-Presets
--------
-.. autosummary::
-    :toctree: generated/
-
-    from_presets
-    new_evaluator
 """
 
-from dataoob.evaluator.api import (
-    DataEvaluatorArgs,
-    DataEvaluatorFactoryArgs,
-    DataFetcherArgs,
-    ExperimentMediator,
-)
+from dataoob.evaluator.api import ExperimentMediator
 from dataoob.evaluator.exper_methods import *
-from dataoob.evaluator.presets import from_presets, new_evaluator

@@ -1,6 +1,7 @@
 import os
 import warnings
-from typing import Any, Callable, TypeVar
+from functools import partial
+from typing import Callable, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,7 @@ import requests
 import tqdm
 from torch.utils.data import Dataset
 
-DatasetCallable = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
+DatasetFunc = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
 Self = TypeVar("Self")
 
 
@@ -53,19 +54,19 @@ def one_hot_encode(data: np.ndarray) -> np.ndarray:
     return np.eye(num_values)[data]
 
 
-def _read_csv(file_path: str, label_columns: str | list) -> DatasetCallable:
+def _read_csv(file_path: str, label_columns: str | list) -> DatasetFunc:
     """Create data set from csv file path, nested functions for api consistency."""
     return lambda: _from_pandas(pd.read_csv(file_path), label_columns)()
 
 
-def _from_pandas(df: pd.DataFrame, label_columns: str | list) -> DatasetCallable:
+def _from_pandas(df: pd.DataFrame, label_columns: str | list) -> DatasetFunc:
     """Create data set from pandas dataframe, nested functions for api consistency."""
     if all(isinstance(col, int) for col in label_columns):
         label_columns = df.columns[label_columns]
     return lambda: (df.drop(label_columns, axis=1).values, df[label_columns].values)
 
 
-def _from_numpy(array, label_columns: int | list[int]) -> DatasetCallable:
+def _from_numpy(array, label_columns: int | list[int]) -> DatasetFunc:
     """Create data set from numpy array, nested functions for api consistency."""
     if isinstance(label_columns, int):
         label_columns = [label_columns]
@@ -87,8 +88,6 @@ class Register:
         Whether the data set is categorically labeled, by default False
     cacheable : bool, optional
         Whether data set can be downloaded and cached, by default False
-    dataset_kwargs : dict[str, Any], optional
-        Keyword arguments to pass to the data set functions, by default None
 
     Warns
     ------
@@ -103,17 +102,12 @@ class Register:
     """Creates a directory for all registered/downloadable data set functions."""
 
     def __init__(
-        self,
-        dataset_name: str,
-        categorical: bool = False,
-        cacheable: bool = False,
-        dataset_kwargs: dict[str, Any] = None,
+        self, dataset_name: str, categorical: bool = False, cacheable: bool = False
     ):
         if dataset_name in Register.Datasets:
             warnings.warn(f"{dataset_name} has been registered, names must be unique")
 
         self.dataset_name = dataset_name
-        self.dataset_kwargs = dataset_kwargs if dataset_kwargs else {}
         self.categorical = categorical
 
         self.covar_transform = None
@@ -122,6 +116,9 @@ class Register:
             self.label_transform = one_hot_encode
 
         if cacheable:
+            if not os.path.isdir(Register.CACHE_DIR):
+                os.mkdir(Register.CACHE_DIR)
+
             self.download_dir = os.path.join(
                 os.getcwd(), f"{Register.CACHE_DIR}/{dataset_name}/"
             )
@@ -143,23 +140,23 @@ class Register:
         self.covar_label_func = _from_numpy(df, label_columns)
         return self
 
-    def __call__(self, func: DatasetCallable) -> DatasetCallable:
+    def __call__(self, func: DatasetFunc, *args, **kwargs) -> DatasetFunc:
         """Majority of provided datasets are in `from_covar_label_func` format."""
-        return self.from_covar_label_func(func)
+        return self.from_covar_label_func(func, *args, **kwargs)
 
-    def from_covar_label_func(self, func: DatasetCallable) -> DatasetCallable:
+    def from_covar_label_func(self, func: DatasetFunc, *args, **kwargs) -> DatasetFunc:
         """Register data set from Callable -> (covariates, labels)."""
-        self.covar_label_func = func
+        self.covar_label_func = partial(func, *args, **kwargs)
         return func
 
-    def from_covar_func(self, func: DatasetCallable) -> DatasetCallable:
+    def from_covar_func(self, func: DatasetFunc, *args, **kwargs) -> DatasetFunc:
         """Register data set from 2 Callables, registers covariates Callable."""
-        self.cov_func = func
+        self.cov_func = partial(func, *args, **kwargs)
         return func
 
-    def from_label_func(self, func: DatasetCallable) -> DatasetCallable:
+    def from_label_func(self, func: DatasetFunc, *args, **kwargs) -> DatasetFunc:
         """Register data set from 2 Callables, registers labels Callable."""
-        self.label_func = func
+        self.label_func = partial(func, *args, **kwargs)
         return func
 
     def add_covar_transform(self, transform: Callable[[np.ndarray], np.ndarray]):
@@ -188,15 +185,16 @@ class Register:
         (np.ndarray | Dataset, np.ndarray)
             Transformed covariates and labels of the data set
         """
+        dataset_kwargs = {}
         if hasattr(self, "download_dir"):
-            self.dataset_kwargs["cache_dir"] = self.download_dir
-            self.dataset_kwargs["force_download"] = force_download
+            dataset_kwargs["cache_dir"] = self.download_dir
+            dataset_kwargs["force_download"] = force_download
 
         if hasattr(self, "covar_label_func"):
-            covar, labels = self.covar_label_func(**self.dataset_kwargs)
+            covar, labels = self.covar_label_func(**dataset_kwargs)
         else:
-            covar = self.cov_func(**self.dataset_kwargs)
-            labels = self.label_func(**self.dataset_kwargs)
+            covar = self.cov_func(**dataset_kwargs)
+            labels = self.label_func(**dataset_kwargs)
 
         if self.covar_transform:
             if isinstance(covar, Dataset):

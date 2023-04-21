@@ -6,8 +6,8 @@ import torch
 
 from dataoob.dataloader import DataFetcher, Register, mix_labels
 from dataoob.evaluator import ExperimentMediator, discover_corrupted_sample
-from dataoob.evaluator.presets import dummy_evaluators
 from dataoob.model import Model
+from dataoob.presets import dummy_evaluators
 from dataoob.util import set_random_state
 
 

@@ -167,9 +167,9 @@ def download_election(cache_dir: str, force_download: bool):
 
 
 # Alternative registration methods, should only be used on ad-hoc basis
-Register(
-    "gaussian_classifier_high_dim", categorical=True, dataset_kwargs={"input_dim": 100}
-).from_covar_label_func(gaussian_classifier)
+Register("gaussian_classifier_high_dim", categorical=True).from_covar_label_func(
+    gaussian_classifier, input_dim=100
+)
 """Registers gaussian classifier, but the input_dim is changed."""
 
 # Regression data sets.

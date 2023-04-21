@@ -20,7 +20,6 @@ Torch Mixins
 .. autosummary::
     :toctree: generated/
 
-    TorchBinClassMixin
     TorchClassMixin
     TorchRegressMixin
     TorchPredictMixin
