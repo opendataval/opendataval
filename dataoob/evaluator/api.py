@@ -14,7 +14,6 @@ from sklearn.utils import check_random_state
 from dataoob.dataloader import DataFetcher, mix_labels
 from dataoob.dataval import DataEvaluator
 from dataoob.model.api import Model
-from dataoob.model.bert import BertClassifier
 
 # Models
 from dataoob.model.logistic_regression import LogisticRegression
@@ -47,7 +46,9 @@ def model_factory(
             return ClassifierMLP(*covar_dim, *label_dim).to(device=device)
         case "mlpregress":
             return RegressionMLP(*covar_dim, *label_dim).to(device=device)
-        case "bert":
+        case "bert":  # Temporary fix while I figure out a better way for model factory
+            from dataoob.model.bert import BertClassifier
+
             return BertClassifier(num_classes=label_dim[0]).to(device=device)
         case _:
             raise ValueError(f"{model_name} is not a valid predefined model")
@@ -150,7 +151,7 @@ class ExperimentMediator:
         )
 
     @classmethod
-    def placeholder(
+    def partial_setup(
         cls,
         dataset_name: str,
         force_download: bool = False,

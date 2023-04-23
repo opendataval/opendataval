@@ -1,7 +1,6 @@
 """NLP data sets.
 
-You must explicitly import this file in order to register the data
-sets below. This is because :py:mod:`transformers` is an optional dependency.
+Run ``make install-extra`` as :py:mod:`transformers` is an optional dependency.
 """
 from typing import Callable
 

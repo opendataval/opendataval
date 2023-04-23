@@ -28,7 +28,6 @@ dependencies = [
     "scikit-learn~=1.2",
     "torch~=2.0.0",
     "tqdm~=4.64",
-    "opendatasets~=0.1.22",
     "jupyterlab~=3.6.1",
     "notebook~=6.5.2"
 ]
@@ -40,7 +39,8 @@ dev = [
     "black~=22.10",
     "sphinx~=6.1",
     "pre-commit~=3.2",
-    "pip-tools~=6.13.0"
+    "pip-tools~=6.13.0",
+    "opendatasets~=0.1.22"
 ]
 test = [
     "pytest~=7.2.2",

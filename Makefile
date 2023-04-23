@@ -10,8 +10,7 @@ install:
 ## Install for development
 install-dev:
 	@echo ">> Installing dev dependencies"
-	python -m pip install --upgrade pip
-	pip-sync requirements-dev.txt
+	python -m pip install -e ".[dev, test]"
 	pre-commit install
 
 install-extra: install
