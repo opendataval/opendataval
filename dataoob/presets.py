@@ -26,8 +26,8 @@ dummy_evaluators = [
     InfluenceFunctionEval(1, random_state=RANDOM_STATE),
     LeaveOneOut(random_state=RANDOM_STATE),
     DataBanzhaf(samples=1, random_state=RANDOM_STATE),
-    DataBanzhafMargContrib(99, max_iterations=2, samples_per_iteration=1, cache_name="t", random_state=RANDOM_STATE),
-    BetaShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="t", random_state=RANDOM_STATE),
-    DataShapley(cache_name="t", random_state=RANDOM_STATE),
-    DataShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="r", random_state=RANDOM_STATE),
+    DataBanzhafMargContrib(99, max_iterations=2, samples_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    BetaShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    DataShapley(cache_name="cache_preset", random_state=RANDOM_STATE),
+    DataShapley(99, max_iterations=2, samples_per_iteration=1, cache_name="cache_preset_other", random_state=RANDOM_STATE),
 ]
