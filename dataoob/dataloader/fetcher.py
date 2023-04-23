@@ -188,16 +188,19 @@ class DataFetcher:
 
     @property
     def covar_dim(self) -> tuple[int, ...]:
+        """Get covar dimensions."""
         data = self.covar if hasattr(self, "covar") else self.x_train
         return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
 
     @property
     def label_dim(self) -> tuple[int, ...]:
+        """Get label dimensions."""
         data = self.labels if hasattr(self, "labels") else self.y_train
         return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
 
     @property
     def num_points(self) -> int:
+        """Get total number of data points."""
         if hasattr(self, "covar"):
             return len(self.covar)
         else:

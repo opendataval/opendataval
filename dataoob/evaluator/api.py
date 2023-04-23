@@ -13,11 +13,7 @@ from sklearn.utils import check_random_state
 
 from dataoob.dataloader import DataFetcher, mix_labels
 from dataoob.dataval import DataEvaluator
-from dataoob.model.api import Model
-
-# Models
-from dataoob.model.logistic_regression import LogisticRegression
-from dataoob.model.mlp import ClassifierMLP, RegressionMLP
+from dataoob.model import Model, ModelFactory
 
 
 def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
@@ -31,27 +27,6 @@ metrics_dict = {  # TODO add metrics and change this implementation
     "l2": lambda a, b: -torch.square(a - b).sum().sqrt().item(),
     "mse": lambda a, b: -F.mse_loss(a, b).item(),
 }
-
-
-def model_factory(
-    model_name: str,
-    covar_dim: tuple[int, ...],
-    label_dim: tuple[int, ...],
-    device: torch.device = torch.device("cpu"),
-):
-    if model_name == "logreg":
-        return LogisticRegression(*covar_dim, *label_dim).to(device=device)
-    elif model_name == "mlpclass":
-        return ClassifierMLP(*covar_dim, *label_dim).to(device=device)
-    elif model_name == "mlpregress":
-        return RegressionMLP(*covar_dim, *label_dim).to(device=device)
-    elif model_name == "bert":
-        # Temporary fix while I figure out a better way for model factory
-        from dataoob.model.bert import BertClassifier
-
-        return BertClassifier(num_classes=label_dim[0]).to(device=device)
-    else:
-        raise ValueError(f"{model_name} is not a valid predefined model")
 
 
 class ExperimentMediator:
@@ -230,10 +205,9 @@ class ExperimentMediator:
             noise_kwargs=noise_kwargs,
         )
 
-        pred_model = model_factory(
+        pred_model = ModelFactory(
             model_name=model_name,
-            covar_dim=fetcher.covar_dim,
-            label_dim=fetcher.label_dim,
+            fetcher=fetcher,
             device=device,
         )
 

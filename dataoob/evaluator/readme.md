@@ -2,9 +2,7 @@
 ## `ExperimentMediator`
 `ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and facilitate additional experiments.
 ```python
-expermed = ExperimentrMediator(
-    loader, data_evaluators, model, train_kwargs, metric_name
-)
+expermed = ExperimentrMediator(loader, data_evaluators, model, train_kwargs, metric_name)
 ```
 Metric name is one of predefined metrics in `evaluator`. # TODO
 
@@ -21,38 +19,20 @@ df = expermed.evaluate(noisy_detection, include_trian=True)
 ```
 
 ## Alternate constructors.
-
-We have two dataclasses that wrap the arguments so we can define exactly what we want to input into an `ExperimentMediator` prior. This is a quality of life feature to make it easier to understand the inputs to `ExperimentMediator`
-
-For example:
+Besides the intended constructor method, we can create an `ExperimentMediator` through other methods that may be easier to create all at once. This makes it easier to get started and set up the same experiment but with different ``DataEvaluator``.
 ```python
-from dataoob.evaluator import DataEvaluatorArgs, DataFetcherArgs, ExperimentMediator
-
-loader_args = DataFetcherArgs(
-    dataset="dataset_name",
-    force_download=True,
-    device=torch.device("cuda"),
-    train_count=.7,
-    valid_count=0.2,
-    test_count=0.1,
-    noise_kwargs={'noise_rate': .2}
-    add_noise_func=mix_labels  # (DataFetcher, ...) -> dict[str, np.ndarray]
+exper_med_partial = ExperimentMediator.partial_setup(
+    dataset_name=dataset_name,
+    force_download=False,
+    train_count=train_count,
+    valid_count=valid_count,
+    test_count=test_count,
+    noise_kwargs=noise_kwargs,
+    random_state=random_state,
+    model_name=model_name,
+    device=device,
+    train_kwargs=train_kwargs,
+    metric_name=metric_name
 )
-
-dataval_args = DataEvaluatorArgs(
-    pred_mode=ClassifierMLP(4, 3),
-    train_kwargs={'epochs': 32, 'batch_size': 20},
-    metric_name='accuracy'
-)
-
-exper_med = ExperimentMediator.from_dataclasses(loader_args, dataval_args)
-```
-
-## `presets.py`
-We define many presets to quickly get an `ExperimentMediator` and test `exper_methods.py`. To use call one of the following functions: `new_evaluator` if we're testing a new `DataEvaluator` with `DataFetcher` `Model` presets or `from_presets` if you want to just specify strings to get the `DataEvaluator` as well.
-```python
-from dataoob.evaluator import from_presets, new_evaluator
-exper_med = from_presets('iris_ann_low_noise', 'dummy')
-df = exper_med.evaluate(noisy_detection)
-
+exper_med = exper_med_partial(data_evaluators=[ChildEvaluator()])
 ```

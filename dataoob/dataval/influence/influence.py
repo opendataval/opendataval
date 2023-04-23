@@ -17,9 +17,9 @@ class InfluenceFunctionEval(DataEvaluator):
     References
     ----------
     .. [1] V. Feldman and C. Zhang,
-    What Neural Networks Memorize and Why: Discovering the Long Tail via
-    Influence Estimation,
-    arXiv.org, 2020. Available: https://arxiv.org/abs/2008.03703.
+        What Neural Networks Memorize and Why: Discovering the Long Tail via
+        Influence Estimation,
+        arXiv.org, 2020. Available: https://arxiv.org/abs/2008.03703.
 
     Parameters
     ----------

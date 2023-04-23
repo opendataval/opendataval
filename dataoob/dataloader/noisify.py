@@ -68,6 +68,7 @@ def add_gauss_noise(
     -------
     dict[str, np.ndarray]
         dictionary of updated data points
+
         - **"x_train"** -- Updated training covariates with added gaussian noise
         - **"noisy_train_indices"** -- Indices of training data set with mixed labels
     """

@@ -1,6 +1,8 @@
 """NLP data sets.
 
-Run ``make install-extra`` as :py:mod:`transformers` is an optional dependency.
+Run ``make install-extra`` as
+`transformers <https://huggingface.co/docs/transformers/index>`_. is an optional
+dependency.
 """
 from typing import Callable
 
@@ -66,8 +68,8 @@ def download_bbc(cache_dir: str, force_download: bool):
     References
     ----------
     .. [1] D. Greene and P. Cunningham,
-    Practical Solutions to the Problem of Diagonal Dominance in
-    Kernel Document Clustering, Proc. ICML 2006.
+        Practical Solutions to the Problem of Diagonal Dominance in
+        Kernel Document Clustering, Proc. ICML 2006.
     """
     github_url = (
         "https://raw.githubusercontent.com/"

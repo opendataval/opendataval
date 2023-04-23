@@ -423,10 +423,10 @@ class DveLoss(nn.Module):
         References
         ----------
         .. [1] R. J. Williams,
-        Simple statistical gradient-following algorithms for connectionist
-        reinforcement learning,
-        Machine Learning, vol. 8, no. 3-4, pp. 229-256, May 1992,
-        doi: https://doi.org/10.1007/bf00992696.
+            Simple statistical gradient-following algorithms for connectionist
+            reinforcement learning,
+            Machine Learning, vol. 8, no. 3-4, pp. 229-256, May 1992,
+            doi: https://doi.org/10.1007/bf00992696.
 
 
         Parameters

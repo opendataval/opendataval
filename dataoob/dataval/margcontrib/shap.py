@@ -284,8 +284,8 @@ class ShapEvaluator(DataEvaluator, ABC):
             arXiv.org, 2021. Available: https://arxiv.org/abs/2110.14049.
 
         .. [2] D. Vats and C. Knudson,
-        Revisiting the Gelman-Rubin Diagnostic,
-        arXiv.org, 2018. Available: https://arxiv.org/abs/1812.09384.
+            Revisiting the Gelman-Rubin Diagnostic,
+            arXiv.org, 2018. Available: https://arxiv.org/abs/1812.09384.
 
         Parameters
         ----------

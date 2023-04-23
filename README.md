@@ -164,12 +164,21 @@ Install Python 3.9 | 3.10 | 3.11.
 ### Quick Start
 To set up an experiment on DataEvaluators
 ```python
-from dataoob.evaluator import preset
-from dataoob.eval_method import discover_corrupted_sample, noisy
+from dataoob.evaluator import ExperimentMediator
 
-eval_med = preset.from_presets('iris_low_noise_ann', 'experiment')  # Allocate 20+ min
+exper_med_partial = ExperimentMediator.partial_setup(
+    dataset_name='iris',
+    force_download=False,
+    train_count=100,
+    valid_count=50,
+    test_count=50,
+    model_name='mlpclass',
+    train_kwargs={'epochs': 5, 'batch_size': 20},
+)
+list_of_data_evaluators = [ChildEvaluator(), ...]  # Define evaluators here
+eval_med = exper_med_partial(data_evaluators=list_of_data_evaluators)
 
-# Runs a discover the noisy data experiment for each DataFetcher
+# Runs a discover the noisy data experiment for each DataEvaluator
 # Plots the results in figure (if has plot arg), and returns the results as a DataFrame
 data, fig = eval_med.plot(discover_corrupted_sample)
 
@@ -216,11 +225,22 @@ expermed.evaluate(exper_func)
 from dataoob.model import ClassifierSkLearnWrapper
 from sklearn.linear_model import LogisticRegression
 
-wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression(), label_dim, device=torch.device('...'))
+wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression(), label_dim)
 
 wrapped_lr.fit(x, y)
 wrapped_lr.predict(x)  # equiv of `.predict_proba()`
 ```
+
+There is also a `ModelFactory` function to create the default specifications of certain models. It
+is recommended to import, instantiate, then inject the models and not use the ModelFactory.
+```python
+from dataoob.dataloader import DataFetcher
+from dataoob.model import ModelFactory
+
+fetcher = DataFetcher('datset_name')  # Fetcher has covar/label dim information
+mlp_classifier = ModelFactory('mlpclass', fetcher, torch.device(...))
+```
+
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 ### `DataEvaluator`
@@ -242,6 +262,7 @@ dataval = (
 data_values = dataval.evaluate_data_values()
 ```
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
 ### `DataFetcher`
 The DataFetcher accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
 ```python
