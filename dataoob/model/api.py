@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import TypeVar, Union
 
 import numpy as np
 import torch
@@ -20,7 +20,7 @@ class Model(ABC):
     @abstractmethod
     def fit(
         self,
-        x_train: torch.Tensor | Dataset,
+        x_train: Union[torch.Tensor, Dataset],
         y_train: torch.Tensor,
         *args,
         sample_weights: torch.Tensor = None,
@@ -50,7 +50,7 @@ class Model(ABC):
         return self
 
     @abstractmethod
-    def predict(self, x: torch.Tensor | Dataset, *args, **kwargs) -> torch.Tensor:
+    def predict(self, x: Union[torch.Tensor, Dataset], *args, **kwargs) -> torch.Tensor:
         """Predicts the label from the input covariates data.
 
         Parameters
@@ -89,7 +89,7 @@ class TorchClassMixin(Model, nn.Module):
 
     def fit(
         self,
-        x_train: torch.Tensor | Dataset,
+        x_train: Union[torch.Tensor, Dataset],
         y_train: torch.Tensor,
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
@@ -153,7 +153,7 @@ class TorchRegressMixin(Model, nn.Module):
 
     def fit(
         self,
-        x_train: torch.Tensor | Dataset,
+        x_train: Union[torch.Tensor, Dataset],
         y_train: torch.Tensor,
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
@@ -217,7 +217,7 @@ class TorchPredictMixin(Model, nn.Module):
     def device(self):
         return next(self.parameters()).device
 
-    def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
+    def predict(self, x: Union[torch.Tensor, Dataset]) -> torch.Tensor:
         """Predicts output from input tensor/data set.
 
         Parameters
@@ -269,7 +269,7 @@ class ClassifierSkLearnWrapper(Model):
 
     def fit(
         self,
-        x_train: torch.Tensor,
+        x_train: Union[torch.Tensor, Dataset],
         y_train: torch.Tensor,
         *args,
         sample_weight: torch.Tensor = None,
@@ -319,7 +319,7 @@ class ClassifierSkLearnWrapper(Model):
 
         return self
 
-    def predict(self, x: torch.Tensor | Dataset) -> torch.Tensor:
+    def predict(self, x: Union[torch.Tensor, Dataset]) -> torch.Tensor:
         """Predicts labels from sk-learn model.
 
         Makes a prediction based on the input tensor. Uses the `.predict_proba(x)`
@@ -367,7 +367,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
 
     def fit(
         self,
-        x_train: torch.Tensor,
+        x_train: Union[torch.Tensor, Dataset],
         y_train: torch.Tensor,
         *args,
         sample_weight: torch.Tensor = None,

@@ -6,7 +6,7 @@ import torch
 import tqdm
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Subset
 
 from dataoob.dataval.api import DataEvaluator
 
@@ -109,9 +109,9 @@ class ShapEvaluator(DataEvaluator, ABC):
 
     def input_data(
         self,
-        x_train: torch.Tensor | Dataset,
+        x_train: torch.Tensor,
         y_train: torch.Tensor,
-        x_valid: torch.Tensor | Dataset,
+        x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
         """Store and transform input data for Shapley-based predictors.

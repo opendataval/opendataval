@@ -1,7 +1,7 @@
 import os
 import warnings
 from functools import partial
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ import requests
 import tqdm
 from torch.utils.data import Dataset
 
-DatasetFunc = Callable[..., Dataset | np.ndarray | tuple[np.ndarray, np.ndarray]]
+DatasetFunc = Callable[..., Union[Dataset, np.ndarray, tuple[np.ndarray, np.ndarray]]]
 Self = TypeVar("Self")
 
 
@@ -54,19 +54,19 @@ def one_hot_encode(data: np.ndarray) -> np.ndarray:
     return np.eye(num_values)[data]
 
 
-def _read_csv(file_path: str, label_columns: str | list) -> DatasetFunc:
+def _read_csv(file_path: str, label_columns: Union[str, list]) -> DatasetFunc:
     """Create data set from csv file path, nested functions for api consistency."""
     return lambda: _from_pandas(pd.read_csv(file_path), label_columns)()
 
 
-def _from_pandas(df: pd.DataFrame, label_columns: str | list) -> DatasetFunc:
+def _from_pandas(df: pd.DataFrame, label_columns: Union[str, list]) -> DatasetFunc:
     """Create data set from pandas dataframe, nested functions for api consistency."""
     if all(isinstance(col, int) for col in label_columns):
         label_columns = df.columns[label_columns]
     return lambda: (df.drop(label_columns, axis=1).values, df[label_columns].values)
 
 
-def _from_numpy(array, label_columns: int | list[int]) -> DatasetFunc:
+def _from_numpy(array, label_columns: Union[str, list[int]]) -> DatasetFunc:
     """Create data set from numpy array, nested functions for api consistency."""
     if isinstance(label_columns, int):
         label_columns = [label_columns]
@@ -125,17 +125,17 @@ class Register:
 
         Register.Datasets[dataset_name] = self
 
-    def from_csv(self, file_path: str, label_columns: str | list):
+    def from_csv(self, file_path: str, label_columns: Union[str, list]):
         """Register data set from csv file."""
         self.covar_label_func = _read_csv(file_path, label_columns)
         return self
 
-    def from_pandas(self, df: pd.DataFrame, label_columns: str | list):
+    def from_pandas(self, df: pd.DataFrame, label_columns: Union[str, list]):
         """Register data set from pandas data frame."""
         self.covar_label_func = _from_pandas(df, label_columns)
         return self
 
-    def from_numpy(self, df: pd.DataFrame, label_columns: int | list[int]):
+    def from_numpy(self, df: pd.DataFrame, label_columns: Union[str, list[int]]):
         """Register data set from numpy array."""
         self.covar_label_func = _from_numpy(df, label_columns)
         return self

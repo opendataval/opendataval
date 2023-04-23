@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Sequence
+from typing import Sequence, Union
 
 import torch
 import torch.nn as nn
@@ -102,7 +102,7 @@ class BertClassifier(Model, nn.Module):
 
         return y_hat
 
-    def tokenize(self, sentences: Sequence[str | list[str]]) -> TensorDataset:
+    def tokenize(self, sentences: Sequence[Union[str, list[str]]]) -> TensorDataset:
         """Convert sequence of sentences or tokens into DistilBERT inputs.
 
         Given a sequence of sentences or tokens, computes the ``input_ids``,
@@ -149,7 +149,7 @@ class BertClassifier(Model, nn.Module):
 
     def fit(
         self,
-        x_train: Dataset[str | list[str]],
+        x_train: Dataset[Union[str, list[str]]],
         y_train: torch.Tensor,
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
@@ -216,7 +216,7 @@ class BertClassifier(Model, nn.Module):
 
         return self
 
-    def predict(self, x: Dataset[str | list[str]]):
+    def predict(self, x: Dataset[Union[str, list[str]]]):
         """Predict output from input sentences/tokens.
 
         Parameters

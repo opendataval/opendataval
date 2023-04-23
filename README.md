@@ -119,7 +119,7 @@ To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
 
-Install Python3.10 or Python 3.11.
+Install Python 3.9 | 3.10 | 3.11.
 * Brew
   ```sh
   brew install python@3.11

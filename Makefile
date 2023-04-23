@@ -35,7 +35,7 @@ format:
 
 ## Run tests
 test:
-	python -m pytest --cov=dataoob/ --cov-report xml --log-level=WARNING --disable-pytest-warnings
+	pytest --cov=dataoob/ --cov-report xml --log-level=WARNING --disable-pytest-warnings
 
 # Build dependencies
 build:

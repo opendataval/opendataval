@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import torch
 from sklearn.utils import check_random_state
@@ -48,7 +50,7 @@ def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.nd
 
 def add_gauss_noise(
     fetcher: DataFetcher, noise_rate: float = 0.2, mu: float = 0.0, sigma: float = 1.0
-) -> dict[str, Dataset | np.ndarray]:
+) -> dict[str, Union[Dataset, np.ndarray]]:
     """Add gaussian noise to covariates.
 
     Parameters

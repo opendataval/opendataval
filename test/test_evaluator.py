@@ -10,6 +10,7 @@ from dataoob.dataloader import DataFetcher, Register, mix_labels
 from dataoob.dataval import DataEvaluator
 from dataoob.evaluator import ExperimentMediator
 from dataoob.model import Model
+from dataoob.model.mlp import ClassifierMLP
 
 
 class DummyModel(Model):
@@ -151,6 +152,26 @@ class TestExperimentMediator(unittest.TestCase):
         self.assertTrue(res.loc["b", str(dummies[0])][0] == 3)
         self.assertTrue(res.loc["a", str(dummies[1])].eq([4, 5]).all())
         self.assertTrue(res.loc["b", str(dummies[1])][0] == 6)
+
+    def test_experiment_mediator_partial_setup(self):
+        exper_med_part = ExperimentMediator.partial_setup(
+            dataset_name="test_dataset",
+            force_download=False,
+            train_count=0.7,
+            valid_count=0.2,
+            test_count=0.1,
+            add_noise_func=mix_labels,
+            noise_kwargs={"noise_rate": 0.2},
+            model_name="mlpclass",
+            train_kwargs={"epochs": 5},
+            metric_name="accuracy",
+        )
+        experimentmediator = exper_med_part(data_evaluators=[self.dataevaluator])
+        self.assertEqual(experimentmediator.metric_name, "accuracy")
+        self.assertTrue(self.dataevaluator.trained)
+        self.assertIsInstance(
+            experimentmediator.data_evaluators[0].pred_model, ClassifierMLP
+        )
 
 
 if __name__ == "__main__":

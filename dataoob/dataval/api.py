@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
 import torch
@@ -104,9 +104,9 @@ class DataEvaluator(ABC):
 
     def input_data(
         self,
-        x_train: torch.Tensor | Dataset,
+        x_train: Union[torch.Tensor, Dataset],
         y_train: torch.Tensor,
-        x_valid: torch.Tensor | Dataset,
+        x_valid: Union[torch.Tensor, Dataset],
         y_valid: torch.Tensor,
     ):
         """Store and transform input data for DataEvaluator.

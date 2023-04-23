@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import tqdm
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Subset
 
 from dataoob.dataval.api import DataEvaluator
 
@@ -23,9 +23,9 @@ class LeaveOneOut(DataEvaluator):
 
     def input_data(
         self,
-        x_train: torch.Tensor | Dataset,
+        x_train: torch.Tensor,
         y_train: torch.Tensor,
-        x_valid: torch.Tensor | Dataset,
+        x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
         """Store and transform input data for Leave-One-Out data valuation.

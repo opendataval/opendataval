@@ -1,5 +1,5 @@
 from itertools import accumulate, chain
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, Callable, Sequence, TypeVar, Union
 
 import numpy as np
 import torch
@@ -94,9 +94,9 @@ class DataFetcher:
         dataset_name: str,
         force_download: bool = False,
         random_state: RandomState = None,
-        train_count: int | float = 0,
-        valid_count: int | float = 0,
-        test_count: int | float = 0,
+        train_count: Union[int, float] = 0,
+        valid_count: Union[int, float] = 0,
+        test_count: Union[int, float] = 0,
         add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
         noise_kwargs: dict[str, Any] = None,
     ):
@@ -112,7 +112,7 @@ class DataFetcher:
     @classmethod
     def from_data(
         cls,
-        covar: Dataset | np.ndarray,
+        covar: Union[Dataset, np.ndarray],
         labels: np.ndarray,
         random_state: RandomState = None,
     ):
@@ -129,11 +129,11 @@ class DataFetcher:
     @classmethod
     def from_data_splits(
         cls,
-        x_train: Dataset | np.ndarray,
+        x_train: Union[Dataset, np.ndarray],
         y_train: np.ndarray,
-        x_valid: Dataset | np.ndarray,
+        x_valid: Union[Dataset, np.ndarray],
         y_valid: np.ndarray,
-        x_test: Dataset | np.ndarray,
+        x_test: Union[Dataset, np.ndarray],
         y_test: np.ndarray,
         random_state: RandomState = None,
     ):
@@ -205,19 +205,19 @@ class DataFetcher:
 
     def split_dataset(
         self,
-        train_count: int | float = 0,
-        valid_count: int | float = 0,
-        test_count: int | float = 0,
+        train_count: Union[int, float] = 0,
+        valid_count: Union[int, float] = 0,
+        test_count: Union[int, float] = 0,
     ):
         """Split the covariates and labels to the specified counts/proportions.
 
         Parameters
         ----------
-        train_count : int | float
+        train_count : Union[int, float]
             Number/proportion training points
-        valid_count : int | float
+        valid_count : Union[int, float]
             Number/proportion validation points
-        test_count : int | float
+        test_count : Union[int, float]
             Number/proportion test points
 
         Returns
@@ -234,17 +234,18 @@ class DataFetcher:
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
         """
-        match (train_count, valid_count, test_count):
-            case int(tr), int(val), int(tes) if sum((tr, val, tes)) <= self.num_points:
-                sp = list(accumulate((tr, val, tes)))
-            case float(tr), float(val), float(tes) if sum((tr, val, tes)) <= 1.0:
-                splits = (round(self.num_points * prob) for prob in (tr, val, tes))
-                sp = list(accumulate(splits))
-            case _:
-                raise ValueError(
-                    f"Splits must be < {self.num_points=} and of the same type: "
-                    f"{type(train_count)=}|{type(valid_count)=}|{type(test_count)=}."
-                )
+        tr, val, tes = train_count, valid_count, test_count
+        type_tuple = (type(tr), type(val), type(tes))  # Fix without structral match
+        if sum((tr, val, tes)) <= self.num_points and type_tuple == (int, int, int):
+            sp = list(accumulate((tr, val, tes)))
+        elif sum((tr, val, tes)) <= 1.0 and type_tuple == (float, float, float):
+            splits = (round(self.num_points * prob) for prob in (tr, val, tes))
+            sp = list(accumulate(splits))
+        else:
+            raise ValueError(
+                f"Splits must be < {self.num_points=} and of the same type: "
+                f"{type(train_count)=}|{type(valid_count)=}|{type(test_count)=}."
+            )
 
         # Extra underscore to unpack any remainders
         idx = self.random_state.permutation(self.num_points)

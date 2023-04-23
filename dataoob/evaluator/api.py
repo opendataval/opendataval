@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 import pandas as pd
 import torch
@@ -39,19 +39,19 @@ def model_factory(
     label_dim: tuple[int, ...],
     device: torch.device = torch.device("cpu"),
 ):
-    match model_name:
-        case "logreg":
-            return LogisticRegression(*covar_dim, *label_dim).to(device=device)
-        case "mlpclass":
-            return ClassifierMLP(*covar_dim, *label_dim).to(device=device)
-        case "mlpregress":
-            return RegressionMLP(*covar_dim, *label_dim).to(device=device)
-        case "bert":  # Temporary fix while I figure out a better way for model factory
-            from dataoob.model.bert import BertClassifier
+    if model_name == "logreg":
+        return LogisticRegression(*covar_dim, *label_dim).to(device=device)
+    elif model_name == "mlpclass":
+        return ClassifierMLP(*covar_dim, *label_dim).to(device=device)
+    elif model_name == "mlpregress":
+        return RegressionMLP(*covar_dim, *label_dim).to(device=device)
+    elif model_name == "bert":
+        # Temporary fix while I figure out a better way for model factory
+        from dataoob.model.bert import BertClassifier
 
-            return BertClassifier(num_classes=label_dim[0]).to(device=device)
-        case _:
-            raise ValueError(f"{model_name} is not a valid predefined model")
+        return BertClassifier(num_classes=label_dim[0]).to(device=device)
+    else:
+        raise ValueError(f"{model_name} is not a valid predefined model")
 
 
 class ExperimentMediator:
@@ -116,9 +116,9 @@ class ExperimentMediator:
         cls,
         dataset_name: str,
         force_download: bool = False,
-        train_count: int | float = 0,
-        valid_count: int | float = 0,
-        test_count: int | float = 0,
+        train_count: Union[int, float] = 0,
+        valid_count: Union[int, float] = 0,
+        test_count: Union[int, float] = 0,
         add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels,
         noise_kwargs: dict[str, Any] = None,
         random_state: RandomState = None,
@@ -155,9 +155,9 @@ class ExperimentMediator:
         cls,
         dataset_name: str,
         force_download: bool = False,
-        train_count: int | float = 0,
-        valid_count: int | float = 0,
-        test_count: int | float = 0,
+        train_count: Union[int, float] = 0,
+        valid_count: Union[int, float] = 0,
+        test_count: Union[int, float] = 0,
         add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels,
         noise_kwargs: dict[str, Any] = None,
         random_state: RandomState = None,
@@ -177,11 +177,11 @@ class ExperimentMediator:
             :py:class:`~dataoob.dataloader.Register`
         force_download : bool, optional
             Forces download from source URL, by default False
-        train_count : int | float
+        train_count : Union[int, float]
             Number/proportion training points
-        valid_count : int | float
+        valid_count : Union[int, float]
             Number/proportion validation points
-        test_count : int | float
+        test_count : Union[int, float]
             Number/proportion test points
         add_noise_func : Callable
             If None, no changes are made. Takes as argument required arguments
