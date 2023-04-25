@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Optional, Sequence, Union
+from typing import Sequence, Union
 
 import torch
 import torch.nn as nn
@@ -75,9 +75,7 @@ class BertClassifier(Model, nn.Module):
             for param in layer.parameters():
                 param.requires_grad = False
 
-    def forward(
-        self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None
-    ):
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None):
         """Forward pass through DistilBert with inputs from DistilBERT tokenizer output.
 
         NOTE this is only applicable for a DistilBERT model that doesn't require
@@ -153,10 +151,9 @@ class BertClassifier(Model, nn.Module):
         self,
         x_train: Dataset[Union[str, list[str]]],
         y_train: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None,
+        sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
-        lr: float = 0.001,
     ):
         """Fit the model on the training data.
 
@@ -176,8 +173,6 @@ class BertClassifier(Model, nn.Module):
             Training batch size, by default 2
         epochs : int, optional
             Number of training epochs, by default 1
-        lr : float, optional
-            Learning rate for the Model, by default 0.01
 
         Returns
         -------
@@ -191,7 +186,7 @@ class BertClassifier(Model, nn.Module):
         dataset = CatDataset(bert_inputs, y_train, sample_weight)
 
         # Optimizer and scheduler specified for BERT per Huggingface
-        optimizer = torch.optim.AdamW(self.parameters(), lr=lr, eps=1e-8)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=0.001, eps=1e-8)
         scheduler = torch.optim.lr_scheduler.LinearLR(
             optimizer, start_factor=1, end_factor=0.1, total_iters=epochs * len(dataset)
         )

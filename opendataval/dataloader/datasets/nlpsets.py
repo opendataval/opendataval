@@ -1,9 +1,9 @@
 """NLP data sets.
 
-Uses HuggingFace
-`transformers <https://huggingface.co/docs/transformers/index>`_. as dependency.
+Run ``make install-extra`` as
+`transformers <https://huggingface.co/docs/transformers/index>`_. is an optional
+dependency.
 """
-from pathlib import Path
 from typing import Callable
 
 import numpy as np
@@ -13,11 +13,11 @@ import torch
 from opendataval.dataloader.register import Register, cache
 from opendataval.dataloader.util import ListDataset
 
-MAX_DATASET_SIZE = 2000
+MAX_DATASET_SIZE = 1000
 """Data Valuation algorithms can take a long time for large data sets, thus cap size."""
 
 
-def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
+def bert_embeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
     """Convert text data into pooled embeddings with DistilBERT model.
 
     Given a data set with a list of string, such as NLP data set function (see below),
@@ -37,56 +37,29 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
     """
 
     def wrapper(
-        cache_dir: str, force_download: bool, *args, **kwargs
-    ) -> tuple[torch.Tensor, np.ndarray]:
+        cache_dir: str, force_download: bool, **kwargs
+    ) -> tuple[np.ndarray, np.ndarray]:
         from transformers import DistilBertModel, DistilBertTokenizerFast
 
         BERT_PRETRAINED_NAME = "distilbert-base-uncased"  # TODO update this
 
-        cache_dir = Path(cache_dir)
-        embed_file_name = f"{func.__name__}_{MAX_DATASET_SIZE}_embed.pt"
-        embed_path = cache_dir / embed_file_name
+        tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_PRETRAINED_NAME)
+        bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME)
 
-        dataset, labels = func(cache_dir, force_download, *args, **kwargs)
-        subset = np.random.RandomState(10).permutation(len(dataset))
-
-        if embed_path.exists():
-            nlp_embeddings = torch.load(embed_path)
-            return nlp_embeddings, labels[subset[: len(nlp_embeddings)]]
-
-        labels = labels[subset[:MAX_DATASET_SIZE]]
-        entries = [entry for entry in dataset[subset[:MAX_DATASET_SIZE]]]
-
-        # Slow down on gpu vs cpu is quite substantial, uses gpu accel if available
-        device = torch.device(
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
+        dataset, labels = func(cache_dir, force_download, **kwargs)
+        entries = [entry for entry in dataset[:MAX_DATASET_SIZE]]
+        res = tokenizer.__call__(
+            entries, max_length=250, padding=True, truncation=True, return_tensors="pt"
         )
 
-        tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_PRETRAINED_NAME)
-        bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME).to(device)
-
-        res = tokenizer.__call__(
-            entries, max_length=200, padding=True, truncation=True, return_tensors="pt"
-        ).to(device)
-
         with torch.no_grad():
-            pooled_embeddings = (
-                torch.mean((bert_model(res.input_ids, res.attention_mask)[0]), dim=1)
-                .detach()
-                .cpu()
-            )
-
-        torch.save(pooled_embeddings.detach(), embed_path)
-        return pooled_embeddings, np.array(labels)
+            pooled_embeddings = bert_model(res.input_ids, res.attention_mask)[0][:, 0]
+        return pooled_embeddings.numpy(force=True), np.array(labels)
 
     return wrapper
 
 
-@Register("bbc", cacheable=True, one_hot=True)
+@Register("bbc", cacheable=True, categorical=True)
 def download_bbc(cache_dir: str, force_download: bool):
     """Classification data set registered as ``"bbc"``.
 
@@ -102,8 +75,8 @@ def download_bbc(cache_dir: str, force_download: bool):
         "https://raw.githubusercontent.com/"
         "mdsohaib/BBC-News-Classification/master/bbc-text.csv"
     )
-    filepath = cache(github_url, cache_dir, "bbc-text.csv", force_download)
-    df = pd.read_csv(filepath)
+    cache(github_url, cache_dir, "bbc-text.csv", force_download)
+    df = pd.read_csv(cache_dir + "bbc-text.csv")
 
     label_dict = {
         "business": 0,
@@ -117,7 +90,7 @@ def download_bbc(cache_dir: str, force_download: bool):
     return ListDataset(df["text"].values), labels
 
 
-@Register("imdb", cacheable=True, one_hot=True)
+@Register("imdb", cacheable=True, categorical=True)
 def download_imdb(cache_dir: str, force_download: bool):
     """Binary category sentiment analysis data set registered as ``"imdb"``.
 
@@ -134,8 +107,8 @@ def download_imdb(cache_dir: str, force_download: bool):
         "https://raw.githubusercontent.com/"
         "Ankit152/IMDB-sentiment-analysis/master/IMDB-Dataset.csv"
     )
-    filepath = cache(github_url, cache_dir, "imdb.csv", force_download)
-    df = pd.read_csv(filepath)
+    cache(github_url, cache_dir, "imdb.csv", force_download)
+    df = pd.read_csv(cache_dir + "imdb.csv")
 
     label_dict = {"negative": 0, "positive": 1}
     labels = np.fromiter((label_dict[label] for label in df["sentiment"]), dtype=int)
@@ -143,8 +116,8 @@ def download_imdb(cache_dir: str, force_download: bool):
     return ListDataset(df["review"].values), labels
 
 
-bbc_embedding = Register("bbc-embeddings", True, True)(BertEmbeddings(download_bbc))
+bbc_embedding = Register("bbc-embeddings", True, True)(bert_embeddings(download_bbc))
 """Classification data set registered as ``"bbc-embeddings"``, BERT text embeddings."""
 
-imdb_embedding = Register("imdb-embeddings", True, True)(BertEmbeddings(download_imdb))
+imdb_embedding = Register("imdb-embeddings", True, True)(bert_embeddings(download_imdb))
 """Classification data set registered as ``"imdb-embeddings"``, BERT text embeddings."""

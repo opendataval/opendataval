@@ -1,7 +1,6 @@
 import copy
-import warnings
 from abc import ABC, abstractmethod
-from typing import ClassVar, Optional, TypeVar, Union
+from typing import TypeVar, Union
 
 import numpy as np
 import torch
@@ -18,21 +17,14 @@ Self = TypeVar("Self")
 class Model(ABC):
     """Abstract class of Models. Provides a template for models."""
 
-    Models: ClassVar[dict[str, Self]] = {}
-
-    def __init_subclass__(cls, *args, **kwargs):
-        """Registers Model types, used as part of the CLI."""
-        super().__init_subclass__(*args, **kwargs)
-        cls.Models[cls.__name__.lower()] = cls
-
     @abstractmethod
     def fit(
         self,
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weights: Optional[torch.Tensor] = None,
-        **kwargs,
+        sample_weights: torch.Tensor = None,
+        **kwargs
     ) -> Self:
         """Fits the model on the training data.
 
@@ -88,25 +80,20 @@ class Model(ABC):
         return copy.deepcopy(self)
 
 
-class TorchModel(Model, nn.Module):
-    """Torch Models have a device they belong to and shared behavior"""
+class TorchClassMixin(Model, nn.Module):
+    """Classifier Mixin for Torch Neural Networks."""
 
     @property
     def device(self):
         return next(self.parameters()).device
 
-
-class TorchClassMixin(TorchModel):
-    """Classifier Mixin for Torch Neural Networks."""
-
     def fit(
         self,
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
-        sample_weight: Optional[torch.Tensor] = None,
+        sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
-        lr: float = 0.01,
     ):
         """Fits the model on the training data.
 
@@ -125,10 +112,8 @@ class TorchClassMixin(TorchModel):
             Number of training epochs, by default 1
         sample_weights : torch.Tensor, optional
             Weights associated with each data point, by default None
-        lr : float, optional
-            Learning rate for the Model, by default 0.01
         """
-        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
         criterion = F.binary_cross_entropy if self.num_classes == 2 else F.cross_entropy
         dataset = CatDataset(x_train, y_train, sample_weight)
@@ -159,17 +144,20 @@ class TorchClassMixin(TorchModel):
         return self
 
 
-class TorchRegressMixin(TorchModel):
+class TorchRegressMixin(Model, nn.Module):
     """Regressor Mixin for Torch Neural Networks."""
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def fit(
         self,
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
-        sample_weight: Optional[torch.Tensor] = None,
+        sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
-        lr: float = 0.01,
     ):
         """Fits the regression model on the training data.
 
@@ -187,10 +175,8 @@ class TorchRegressMixin(TorchModel):
             Number of training epochs, by default 1
         sample_weight : torch.Tensor, optional
             Weights associated with each data point, by default None
-        lr : float, optional
-            Learning rate for the Model, by default 0.01
         """
-        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
         criterion = F.mse_loss
         dataset = CatDataset(x_train, y_train, sample_weight)
@@ -224,8 +210,12 @@ class TorchRegressMixin(TorchModel):
         return self
 
 
-class TorchPredictMixin(TorchModel):
+class TorchPredictMixin(Model, nn.Module):
     """Torch ``.predict()`` method mixin for Torch Neural Networks."""
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def predict(self, x: Union[torch.Tensor, Dataset]) -> torch.Tensor:
         """Predict output from input tensor/data set.
@@ -246,7 +236,7 @@ class TorchPredictMixin(TorchModel):
 
         self.eval()
         with torch.no_grad():
-            y_hat = self.__call__(x)
+            y_hat = self.forward(x)
 
         return y_hat
 
@@ -271,8 +261,8 @@ class ClassifierSkLearnWrapper(Model):
         Label dimensionality
     """
 
-    def __init__(self, base_model, num_classes: int, *args, **kwargs):
-        self.model = base_model(*args, **kwargs)
+    def __init__(self, base_model, num_classes: int):
+        self.model = base_model
         self.num_classes = num_classes
 
     def fit(
@@ -280,15 +270,15 @@ class ClassifierSkLearnWrapper(Model):
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weight: Optional[torch.Tensor] = None,
-        **kwargs,
+        sample_weight: torch.Tensor = None,
+        **kwargs
     ):
         """Fits the model on the training data.
 
         Fits a sk-learn wrapped classifier Model. If there are less classes in the
         sample than num_classes, uses dummy model.
         ::
-            wrapped = ClassifierSkLearnWrapper(MLPClassifier, 2)
+            wrapped = ClassifierSkLearnWrapper(MLPClassifier(), 2)
 
         Parameters
         ----------
@@ -319,18 +309,14 @@ class ClassifierSkLearnWrapper(Model):
         y_train = np.argmax(y_train, axis=1)
         y_train_unique = np.unique(y_train)
 
-        with warnings.catch_warnings():  # Ignores warnings in the following block
-            warnings.simplefilter("ignore")
-
-            if len(y_train_unique) != self.num_classes:  # All labels must be in sample
-                dummy_strat = "most_frequent"
-                self.model = DummyClassifier(strategy=dummy_strat).fit(x_train, y_train)
-                self.model.n_classes_ = self.num_classes
-            elif sample_weight is not None:
-                weights = np.squeeze(weights[0])
-                self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
-            else:
-                self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
+        if len(y_train_unique) != self.num_classes:  # All labels must be in sample
+            self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
+            self.model.n_classes_ = self.num_classes
+        elif sample_weight is not None:
+            weights = np.squeeze(weights[0])
+            self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
+        else:
+            self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
 
         return self
 
@@ -366,7 +352,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
 
     Example:
     ::
-        wrapped = ClassifierSkLearnWrapper(KNeighborsClassifier, 2)
+        wrapped = ClassifierSkLearnWrapper(LinearDiscriminantAnalysis(), 2)
 
     Parameters
     ----------
@@ -381,8 +367,8 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weight: Optional[torch.Tensor] = None,
-        **kwargs,
+        sample_weight: torch.Tensor = None,
+        **kwargs
     ):
         """Fits the model on the training data.
 
@@ -419,23 +405,14 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         y_train = np.argmax(y_train, axis=1)
         y_train_unique = np.unique(y_train)
 
-        with warnings.catch_warnings():  # Ignores warnings in the following block
-            warnings.simplefilter("ignore")
-
-            if len(y_train_unique) != self.num_classes:  # All labels must be in sample
-                dummy_strat = "most_frequent"
-                self.model = DummyClassifier(strategy=dummy_strat).fit(x_train, y_train)
-                self.model.n_classes_ = self.num_classes
-            elif sample_weight is not None:
-                indices = np.random.choice(  # Random sample of the train data set
-                    num_samples,
-                    size=(num_samples),
-                    replace=True,
-                    p=weights[0].squeeze() / weights[0].sum(),
-                )
-                self.model.fit(x_train[indices], y_train[indices], *args, **kwargs)
-            else:
-                self.model.fit(x_train, y_train, *args, **kwargs)
+        if len(y_train_unique) != self.num_classes:  # All labels must be in sample
+            self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
+            self.model.n_classes_ = self.num_classes
+        elif sample_weight is not None:
+            weights = np.squeeze(weights[0])
+            self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
+        else:
+            self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
 
         return self
 
@@ -445,25 +422,27 @@ class RegressionSkLearnWrapper(Model):
 
     Example:
     ::
-        wrapped = RegressionSkLearnWrapper(LinearRegression)
+        wrapped = RegressionSkLearnWrapper(LinearRegression())
 
     Parameters
     ----------
     base_model : BaseModel
         Any sk-learn model that supports ``sample_weights``
+    num_classes : int
+        Label dimensionality
     """
 
-    def __init__(self, base_model, *args, **kwargs):
-        self.model = base_model(*args, **kwargs)
-        self.num_classes = 1
+    def __init__(self, base_model, num_classes: int = 1):
+        self.model = base_model
+        self.num_classes = num_classes  # Multi label regression, used for empty trains
 
     def fit(
         self,
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weight: Optional[torch.Tensor] = None,
-        **kwargs,
+        sample_weight: torch.Tensor = None,
+        **kwargs
     ):
         """Fits the model on the training data.
 
@@ -499,14 +478,11 @@ class RegressionSkLearnWrapper(Model):
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train, *weights = next(iter(dataloader))
 
-        with warnings.catch_warnings():  # Ignores warnings in the following block
-            warnings.simplefilter("ignore")
-
-            if sample_weight is not None:
-                weights = np.squeeze(weights[0])
-                self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
-            else:
-                self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
+        if sample_weight is not None:
+            weights = np.squeeze(weights[0])
+            self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
+        else:
+            self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
 
         return self
 

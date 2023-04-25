@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import torch
 import tqdm
@@ -7,16 +5,11 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader
 
-from opendataval.dataval.api import DataEvaluator, EmbeddingMixin
-from opendataval.model.api import Model
+from opendataval.dataval.api import DataEvaluator
 
 
-class KNNShapley(DataEvaluator, EmbeddingMixin):
+class KNNShapley(DataEvaluator):
     """Data valuation using KNNShapley implementation.
-
-    KNN Shapley is a model-less mixin. This means we cannot specify an underlying
-    prediction model for the DataEvaluator. However, we can specify a pretrained
-    embedding model.
 
     References
     ----------
@@ -30,8 +23,6 @@ class KNNShapley(DataEvaluator, EmbeddingMixin):
         Number of neighbors to group the data points, by default 10
     batch_size : int, optional
         Batch size of tensors to load at a time during training, by default 32
-    embedding_model : Model, optional
-        Pre-trained embedding model used by DataEvaluator, by default None
     random_state : RandomState, optional
         Random initial state, by default None
     """
@@ -40,23 +31,25 @@ class KNNShapley(DataEvaluator, EmbeddingMixin):
         self,
         k_neighbors: int = 10,
         batch_size: int = 32,
-        embedding_model: Optional[Model] = None,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
         self.k_neighbors = k_neighbors
         self.batch_size = batch_size
-        self.embedding_model = embedding_model
         self.random_state = check_random_state(random_state)
+
+    @property
+    def pred_model(self):
+        """KNNShapley does not support a model."""
+        raise NotImplementedError("KNNShapley does not support a model.")
 
     def match(self, y: torch.Tensor) -> torch.Tensor:
         """:math:`1.` for all matching rows and :math:`0.` otherwise."""
         return (y == self.y_valid).all(dim=1).float()
 
-    def train_data_values(self, *args, **kwargs):
+    def train_data_values(self):
         """Trains model to predict data values.
 
-        Computes KNN shapley data values, as implemented by the following. Ignores all
-        positional and key word arguments.
+        Computes KNN shapley data values, as implemented
 
         References
         ----------
@@ -65,11 +58,10 @@ class KNNShapley(DataEvaluator, EmbeddingMixin):
         """
         n = len(self.x_train)
         m = len(self.x_valid)
-        x_train, x_valid = self.embeddings(self.x_train, self.x_valid)
 
-        # Computes Euclidean distance by computing crosswise per batch
+        # Computes Euclidean distance by computing crosswise per batch, batch_size//2
         # Doesn't shuffle to maintain relative order
-        x_train_view, x_valid_view = x_train.view(n, -1), x_valid.view(m, -1)
+        x_train_view, x_valid_view = self.x_train.view(n, -1), self.x_valid.view(m, -1)
 
         dist_list = []  # Uses batching to only load at most `batch_size` tensors
         for x_train_batch in DataLoader(x_train_view, self.batch_size):  # No shuffle
@@ -84,7 +76,7 @@ class KNNShapley(DataEvaluator, EmbeddingMixin):
         y_train_sort = self.y_train[sort_indices]
 
         score = torch.zeros_like(dist)
-        score[sort_indices[n - 1], range(m)] = self.match(y_train_sort[n - 1]) / n
+        score[sort_indices[m - 1], range(m)] = self.match(y_train_sort[n - 1]) / n
 
         # fmt: off
         for i in tqdm.tqdm(range(n - 2, -1, -1)):
@@ -94,7 +86,7 @@ class KNNShapley(DataEvaluator, EmbeddingMixin):
                 * (self.match(y_train_sort[i]) - self.match(y_train_sort[i + 1]))
             )
 
-        self.data_values = score.mean(axis=1).detach().numpy()
+        self.data_values = score.mean(axis=1)
 
         return self
 

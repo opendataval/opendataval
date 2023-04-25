@@ -6,9 +6,9 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataFetcher
-from dataoob.dataval import DataEvaluator
-from dataoob.model import Model
+from opendataval.dataloader import DataFetcher
+from opendataval.dataval import DataEvaluator
+from opendataval.model import Model
 
 
 class DummyModel(Model):

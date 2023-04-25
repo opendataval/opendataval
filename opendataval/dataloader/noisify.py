@@ -7,14 +7,10 @@ from torch.utils.data import Dataset
 
 from opendataval.dataloader.fetcher import DataFetcher
 from opendataval.dataloader.util import IndexTransformDataset
-from opendataval.util import FuncEnum
 
 
 def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.ndarray]:
     """Mixes y_train labels of a DataFetcher, adding noise to data.
-
-    For a given set of unique labels, we shift the label forward up to n-1 steps. This
-    prevents selecting the same label when noise is added.
 
     Parameters
     ----------
@@ -37,28 +33,18 @@ def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.nd
     y_train, y_valid = fetcher.y_train, fetcher.y_valid
     num_train, num_valid = len(y_train), len(y_valid)
 
-    train_replace = rs.choice(num_train, round(num_train * noise_rate), replace=False)
-    valid_replace = rs.choice(num_valid, round(num_valid * noise_rate), replace=False)
+    replace_train = rs.choice(num_train, round(num_train * noise_rate), replace=False)
+    target_train = rs.choice(num_train, round(num_train * noise_rate), replace=False)
+    replace_valid = rs.choice(num_valid, round(num_valid * noise_rate), replace=False)
+    target_valid = rs.choice(num_valid, round(num_valid * noise_rate), replace=False)
 
-    # Gets unique classes and mapping of training data set to those classes
-    train_classes, train_mapping = np.unique(y_train, return_inverse=True, axis=0)
-    valid_classes, valid_mapping = np.unique(y_valid, return_inverse=True, axis=0)
-
-    # For each label, we determine a shift to pick a new label
-    # The new label cannot be the same as the prior, therefore start at 1
-    train_shift = rs.choice(len(train_classes) - 1, round(num_train * noise_rate)) + 1
-    valid_shift = rs.choice(len(valid_classes) - 1, round(num_valid * noise_rate)) + 1
-
-    train_noise = (train_mapping[train_replace] + train_shift) % len(train_classes)
-    valid_noise = (valid_mapping[valid_replace] + valid_shift) % len(valid_classes)
-
-    y_train[train_replace] = train_classes[train_noise]
-    y_valid[valid_replace] = valid_classes[valid_noise]
+    y_train[replace_train] = y_train[target_train]
+    y_valid[replace_valid] = y_valid[target_valid]
 
     return {
         "y_train": y_train,
         "y_valid": y_valid,
-        "noisy_train_indices": train_replace,
+        "noisy_train_indices": replace_train,
     }
 
 
@@ -88,8 +74,7 @@ def add_gauss_noise(
     """
     rs = check_random_state(fetcher.random_state)
 
-    x_train = np.array(fetcher.x_train, dtype=np.float64)
-    x_valid = np.array(fetcher.x_valid, dtype=np.float64)
+    x_train, x_valid = fetcher.x_train, fetcher.x_valid
     num_train, num_valid = len(x_train), len(x_valid)
     feature_dim = fetcher.covar_dim
 
@@ -128,8 +113,3 @@ def add_gauss_noise(
         "x_valid": x_valid,
         "noisy_train_indices": noisy_train_idx,
     }
-
-
-class NoiseFunc(FuncEnum):
-    MIX_LABELS = FuncEnum.wrap(mix_labels)
-    ADD_GAUSS_NOISE = FuncEnum.wrap(add_gauss_noise)

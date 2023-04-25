@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "dataoob"
+name = "opendataval"
 authors = [
     {name = "Kevin Jiang", email = "kfj2112@columbia.edu"},
     {name = "Yongchan Kwon", email = "yk3012@columbia.edu"},
@@ -50,10 +50,10 @@ nlp = ["transformers~=4.27"]
 image = ["torchvision~=0.15"]
 
 [tool.hatch]
-packages = ["dataoob"]  # TODO
+packages = ["opendataval"]  # TODO
 
 [tool.hatch.version]
-path = "dataoob/__init__.py"
+path = "opendataval/__init__.py"
 
 [tool.black]
 line-length = 88
@@ -81,7 +81,7 @@ select = ["E", "F", "I", "C90", "RUF"]
 convention = "numpy"
 
 [tool.ruff.isort]
-known-first-party = ["dataoob"]
+known-first-party = ["opendataval"]
 known-third-party = [
     "torch",
     "numpy",
@@ -96,8 +96,8 @@ known-third-party = [
 ]
 
 [tool.coverage.run]
-source = ["dataoob"]
-omit = ["dataoob/model/*", "dataoob/dataloader/datasets/*"]
+source = ["opendataval"]
+omit = ["opendataval/model/*", "opendataval/dataloader/datasets/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]

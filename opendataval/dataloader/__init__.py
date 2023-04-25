@@ -32,6 +32,6 @@ Utils
 """
 from opendataval.dataloader import datasets
 from opendataval.dataloader.fetcher import DataFetcher
-from opendataval.dataloader.noisify import NoiseFunc, add_gauss_noise, mix_labels
+from opendataval.dataloader.noisify import add_gauss_noise, mix_labels
 from opendataval.dataloader.register import Register, cache, one_hot_encode
 from opendataval.dataloader.util import CatDataset

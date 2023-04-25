@@ -11,9 +11,9 @@ from matplotlib.figure import Figure
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataFetcher, mix_labels
-from dataoob.dataval import DataEvaluator
-from dataoob.model import Model, ModelFactory
+from opendataval.dataloader import DataFetcher, mix_labels
+from opendataval.dataval import DataEvaluator
+from opendataval.model import Model, ModelFactory
 
 
 def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
@@ -149,7 +149,7 @@ class ExperimentMediator:
         ----------
         dataset_name : str
             Name of the data set, must be registered with
-            :py:class:`~dataoob.dataloader.Register`
+            :py:class:`~opendataval.dataloader.Register`
         force_download : bool, optional
             Forces download from source URL, by default False
         train_count : Union[int, float]
@@ -190,7 +190,7 @@ class ExperimentMediator:
         -------
         partial[ExperimentMediator]
             Partially initialized ExperimentMediator. When called, pass in the
-            list[:py:class:`~dataoob.dataval.DataEvaluator`] to run the experiment.
+            list[:py:class:`~opendataval.dataval.DataEvaluator`] to run the experiment.
         """
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 

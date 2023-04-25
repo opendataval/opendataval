@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import Optional
 
 import numpy as np
 import torch
@@ -8,10 +7,10 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
-from opendataval.dataval.api import DataEvaluator, ModelMixin
+from opendataval.dataval.api import DataEvaluator
 
 
-class DataOob(DataEvaluator, ModelMixin):
+class DataOob(DataEvaluator):
     """Data Out-of-Bag data valuation implementation.
 
     Input evaluation metrics are valid if we compare one data point across several
@@ -38,7 +37,7 @@ class DataOob(DataEvaluator, ModelMixin):
         self,
         num_models: int = 1000,
         proportion: int = 1.0,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
         self.num_models = num_models
         self.proportion = proportion
@@ -105,7 +104,7 @@ class DataOob(DataEvaluator, ModelMixin):
                 Subset(self.x_train, indices=in_bag),
                 Subset(self.y_train, indices=in_bag),
                 *args,
-                **kwargs,
+                **kwargs
             )
 
             y_hat = curr_model.predict(Subset(self.x_train, indices=out_bag))

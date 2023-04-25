@@ -9,7 +9,7 @@ Provides an ABC for DataEvaluator to inherit from. The work flow is as follows:
 :py:class:`~opendataval.dataloader.Register`,
 :py:class:`~opendataval.dataloader.DataFetcher`
 -> :py:class:`~opendataval.dataval.DataEvaluator`
--> :py:mod:`~opendataval.experiment.exper_methods`
+-> :py:mod:`~opendataval.evaluator.exper_methods`
 
 
 
@@ -19,44 +19,27 @@ Catalog
     :toctree: generated/
 
     DataEvaluator
-    ModelMixin
-    EmbeddingMixin
     AME
     DVRL
-    InfluenceFunction
-    InfluenceSubsample
+    InfluenceFunctionEval
     KNNShapley
     DataOob
     DataBanzhaf
     BetaShapley
     DataShapley
-    LavaEvaluator
     LeaveOneOut
     ShapEvaluator
-    RandomEvaluator
-    RobustVolumeShapley
-    Sampler
-    TMCSampler
-    GrTMCSampler
 """
 from opendataval.dataval.ame import AME
-from opendataval.dataval.api import DataEvaluator, EmbeddingMixin, ModelMixin
-from opendataval.dataval.csshap import ClassWiseShapley
+from opendataval.dataval.api import DataEvaluator
 from opendataval.dataval.dvrl import DVRL
-from opendataval.dataval.influence import InfluenceFunction, InfluenceSubsample
+from opendataval.dataval.influence import InfluenceFunctionEval
 from opendataval.dataval.knnshap import KNNShapley
-from opendataval.dataval.lava import LavaEvaluator
 from opendataval.dataval.margcontrib import (
     BetaShapley,
     DataBanzhaf,
-    DataBanzhafMargContrib,
     DataShapley,
-    GrTMCSampler,
     LeaveOneOut,
-    Sampler,
     ShapEvaluator,
-    TMCSampler,
 )
 from opendataval.dataval.oob import DataOob
-from opendataval.dataval.random import RandomEvaluator
-from opendataval.dataval.volume import RobustVolumeShapley

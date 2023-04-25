@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import torch
 import tqdm
@@ -9,10 +7,10 @@ from sklearn.linear_model import LassoCV
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
-from opendataval.dataval.api import DataEvaluator, ModelMixin
+from opendataval.dataval.api import DataEvaluator
 
 
-class AME(DataEvaluator, ModelMixin):
+class AME(DataEvaluator):
     """Implementation of Average Marginal Effect Data Valuation.
 
     References
@@ -30,9 +28,7 @@ class AME(DataEvaluator, ModelMixin):
         Random initial state, by default None
     """
 
-    def __init__(
-        self, num_models: int = 1000, random_state: Optional[RandomState] = None
-    ):
+    def __init__(self, num_models: int = 1000, random_state: RandomState = None):
         self.num_models = num_models
         self.random_state = check_random_state(random_state)
 
@@ -87,7 +83,7 @@ class AME(DataEvaluator, ModelMixin):
         return dv_ame.coef_
 
 
-class BaggingEvaluator(DataEvaluator, ModelMixin):
+class BaggingEvaluator(DataEvaluator):
     """Bagging Data Evaluator, samples data points from :math:`Bernouli(proportion)`.
 
     References
@@ -111,7 +107,7 @@ class BaggingEvaluator(DataEvaluator, ModelMixin):
         self,
         num_models: int = 1000,
         proportion: float = 1.0,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
         self.num_models = num_models
         self.proportion = proportion
@@ -172,7 +168,7 @@ class BaggingEvaluator(DataEvaluator, ModelMixin):
                 Subset(self.x_train, indices=subset),
                 Subset(self.y_train, indices=subset),
                 *args,
-                **kwargs,
+                **kwargs
             )
             y_valid_hat = curr_model.predict(self.x_valid)
 

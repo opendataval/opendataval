@@ -4,11 +4,11 @@ import warnings
 import numpy as np
 import torch
 
-from dataoob.dataloader import DataFetcher, Register, mix_labels
-from dataoob.evaluator import ExperimentMediator, discover_corrupted_sample
-from dataoob.model import Model
-from dataoob.presets import dummy_evaluators
-from dataoob.util import set_random_state
+from opendataval.dataloader import DataFetcher, Register, mix_labels
+from opendataval.evaluator import ExperimentMediator, discover_corrupted_sample
+from opendataval.model import Model
+from opendataval.presets import dummy_evaluators
+from opendataval.util import set_random_state
 
 
 class DummyModel(Model):

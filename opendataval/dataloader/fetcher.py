@@ -1,18 +1,13 @@
-import json
-import warnings
 from itertools import accumulate, chain
-from pathlib import Path
-from typing import Any, Callable, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Sequence, TypeVar, Union
 
 import numpy as np
-import pandas as pd
 import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import Dataset, Subset
 
 from opendataval.dataloader.register import Register
-from opendataval.dataloader.util import CatDataset
 
 Self = TypeVar("Self")
 
@@ -27,12 +22,9 @@ class DataFetcher:
     ----------
     dataset_name : str
         Name of the data set, must be registered with :py:class:`Register`
-    cache_dir : str, optional
-        Directory of where to cache the loaded data, by default None which uses
-        :py:attr:`Register.CACHE_DIR`
     force_download : bool, optional
         Forces download from source URL, by default False
-    random_state : RandomState, optional
+     random_state : RandomState, optional
         Random initial state, by default None
 
     Attributes
@@ -45,11 +37,13 @@ class DataFetcher:
         Label dimension of the loaded data set.
     num_points : int
         Number of data points in the total data set
-    one_hot : bool
-        If True, the data set has categorical labels as one hot encodings
-    [train/valid/test]_indices : np.ndarray[int]
+    train_indices : np.ndarray[int]
         The indices of the original data set used to make the training data set.
-    noisy_train_indices : np.ndarray[int]
+    valid_indices : np.ndarray[[int]
+        The indices of the original data set used to make the validation data set.
+    test_indices : np.ndarray[[int]
+        The indices of the original data set used to make the test data set.
+    noisy_train_indices : np.ndarray[[int]
         The indices of training data points with noise added to them.
     [x/y]_[train/valid/test] : np.ndarray
         Access to the raw split of the [covariate/label] [train/valid/test] data set
@@ -63,8 +57,6 @@ class DataFetcher:
     ValueError
         Loaded Data set covariates and labels must be of same length.
     ValueError
-        All covariates must be of same dimension. All labels must be of same dimension.
-    ValueError
         Splits must not exceed the length of the data set. In other words, if
         the splits are ints, the values must be less than the length. If they are
         floats they must be less than 1.0. If they are anything else, raises error
@@ -75,124 +67,61 @@ class DataFetcher:
     def __init__(
         self,
         dataset_name: str,
-        cache_dir: Optional[str] = None,
         force_download: bool = False,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
         if dataset_name not in Register.Datasets:
             raise KeyError(
                 "Must register data set in register_dataset."
-                "Ensure the data set is imported and optional dependencies installed."
+                "Ensure the data set is imported and installed optional dependencies."
             )
 
-        self.dataset = Register.Datasets[dataset_name]
-        self.one_hot = self.dataset.one_hot
-
-        if self.dataset.presplit:
-            self._presplit_data(*self.dataset.load_data(cache_dir, force_download))
-        else:
-            self._add_data(*self.dataset.load_data(cache_dir, force_download))
+        dataset = Register.Datasets[dataset_name]
+        self.covar, self.labels = dataset.load_data(force_download)
+        if not len(self.covar) == len(self.labels):
+            raise ValueError("Covariates and Labels must be of same length.")
 
         self.random_state = check_random_state(random_state)
 
-    def _presplit_data(self, x_train, x_valid, x_test, y_train, y_valid, y_test):
-        if not len(x_train) == len(y_train):
-            raise ValueError("Training Covariates and Labels must be of same length.")
-        if not len(x_valid) == len(y_valid):
-            raise ValueError("Validation Covariates and Labels must be of same length.")
-        if not len(x_test) == len(y_test):
-            raise ValueError("Testing Covariates and Labels must be of same length.")
-
-        if not (x_train[0].shape == x_valid[0].shape == x_test[0].shape):
-            raise ValueError("Covariates must be of same shape.")
-        if not (y_train[0].shape == y_valid[0].shape == y_test[0].shape):
-            raise ValueError("Labels must be of same shape.")
-
-        self.x_train, self.x_valid, self.x_test = x_train, x_valid, x_test
-        self.y_train, self.y_valid, self.y_test = y_train, y_valid, y_test
-
-        tr, val, test = len(self.x_train), len(self.x_valid), len(self.x_test)
-        self.train_indices = np.fromiter(range(tr), dtype=int)
-        self.valid_indices = np.fromiter(range(tr, tr + val), dtype=int)
-        self.test_indices = np.fromiter(range(tr + val, tr + val + test), dtype=int)
-
-    def _add_data(self, covar, labels):
-        if not len(covar) == len(labels):
-            raise ValueError("Covariates and Labels must be of same length.")
-        self.covar, self.labels = covar, labels
-
     @staticmethod
-    def datasets_available() -> set[str]:
-        """Get set of available data set names."""
-        return set(Register.Datasets.keys())
+    def datasets_available() -> list[str]:
+        """Get list of available data set names."""
+        return list(Register.Datasets.keys())
 
     @classmethod
     def setup(
         cls,
         dataset_name: str,
-        cache_dir: Optional[str] = None,
         force_download: bool = False,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
         test_count: Union[int, float] = 0,
-        add_noise: Optional[Callable[[Self, Any, ...], dict[str, Any]]] = None,
-        noise_kwargs: Optional[dict[str, Any]] = None,
+        add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
+        noise_kwargs: dict[str, Any] = None,
     ):
         """Create, split, and add noise to DataFetcher from input arguments."""
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
-        split_types = (type(train_count), type(valid_count), type(test_count))
-        if split_types == (int, int, int):
-            return (
-                cls(dataset_name, cache_dir, force_download, random_state)
-                .split_dataset_by_count(train_count, valid_count, test_count)
-                .noisify(add_noise, **noise_kwargs)
-            )
-        elif split_types == (float, float, float):
-            return (
-                cls(dataset_name, cache_dir, force_download, random_state)
-                .split_dataset_by_prop(train_count, valid_count, test_count)
-                .noisify(add_noise, **noise_kwargs)
-            )
-        else:
-            raise ValueError(
-                f"Expected split types to all of int or float but got "
-                f"{type(train_count)=}|{type(valid_count)}|{type(test_count)=}"
-            )
+        return (
+            cls(dataset_name, force_download, random_state)
+            .split_dataset(train_count, valid_count, test_count)
+            .noisify(add_noise_func, **noise_kwargs)
+        )
 
     @classmethod
     def from_data(
         cls,
         covar: Union[Dataset, np.ndarray],
         labels: np.ndarray,
-        one_hot: bool,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
-        """Return DataFetcher from input Covariates and Labels.
-
-        Parameters
-        ----------
-        covar : Union[Dataset, np.ndarray]
-            Input covariates
-        labels : np.ndarray
-            Input labels, no transformation is applied, therefore if the input data
-            should be one hot encoded, the transform is not applied
-        one_hot : bool
-            Whether the input data has already been one hot encoded. This is just a flag
-            and not transform will be applied
-        random_state : RandomState, optional
-            Initial random state, by default None
-
-        Raises
-        ------
-        ValueError
-            Input covariates and labels are of different length, no 1-to-1 mapping.
-        """
+        """Return DataFetcher from input Covariates and Labels."""
         fetcher = cls.__new__(cls)
-        fetcher._add_data(covar, labels)
+        fetcher.covar, fetcher.labels = covar, labels
+        if not len(fetcher.covar) == len(fetcher.labels):
+            raise ValueError("Covariates and Labels must be of same length.")
 
-        fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)
 
         return fetcher
@@ -206,43 +135,27 @@ class DataFetcher:
         y_valid: np.ndarray,
         x_test: Union[Dataset, np.ndarray],
         y_test: np.ndarray,
-        one_hot: bool,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
-        """Return DataFetcher from already split data.
+        """Return DataFetcher from already split data."""
+        if not (
+            len(x_train) == len(y_train)
+            and len(x_valid) == len(y_valid)
+            and len(x_test) == len(y_test)
+        ):
+            raise ValueError("Covariates and Labels must be of same length.")
 
-        Parameters
-        ----------
-        x_train : Union[Dataset, np.ndarray]
-            Input training covariates
-        y_train : np.ndarray
-            Input training labels
-        x_valid : Union[Dataset, np.ndarray]
-            Input validation covariates
-        y_valid : np.ndarray
-            Input validation labels
-        x_test : Union[Dataset, np.ndarray]
-            Input testing covariates
-        y_test : np.ndarray
-            Input testing labels
-        one_hot : bool
-            Whether the label data has already been one hot encoded. This is just a flag
-            and not transform will be applied
-        random_state : RandomState, optional
-            Initial random state, by default None
+        if not (
+            x_train[0].shape == x_valid[0].shape == x_test[0].shape
+            and y_train[0].shape == y_valid[0].shape == y_test[0].shape
+        ):
+            raise ValueError("Covariates and Labels inputs must be of same shape.")
 
-        Raises
-        ------
-        ValueError
-            Loaded Data set covariates and labels must be of same length.
-        ValueError
-            All covariates must be of same dimension.
-            All labels must be of same dimension.
-        """
         fetcher = cls.__new__(cls)
-        fetcher._presplit_data(x_train, x_valid, x_test, y_train, y_valid, y_test)
+        fetcher.x_train, fetcher.y_train = x_train, y_train
+        fetcher.x_valid, fetcher.y_valid = x_valid, y_valid
+        fetcher.x_test, fetcher.y_test = x_test, y_test
 
-        fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)
 
         return fetcher
@@ -262,9 +175,7 @@ class DataFetcher:
         """
         x_trn, x_val, x_test = self.x_train, self.x_valid, self.x_test
 
-        if not isinstance(self.x_train, Dataset) and not isinstance(
-            self.x_train, torch.Tensor
-        ):  # Turns arrays -> cpu tensors
+        if not isinstance(self.x_train, Dataset):  # Turns arrays -> cpu tensors
             x_trn = torch.tensor(x_trn, dtype=torch.float).view(-1, *self.covar_dim)
             x_val = torch.tensor(x_val, dtype=torch.float).view(-1, *self.covar_dim)
             x_test = torch.tensor(x_test, dtype=torch.float).view(-1, *self.covar_dim)
@@ -279,19 +190,13 @@ class DataFetcher:
     def covar_dim(self) -> tuple[int, ...]:
         """Get covar dimensions."""
         data = self.covar if hasattr(self, "covar") else self.x_train
-        if isinstance(data, Dataset):
-            return (1,) if isinstance(data[0], (str, float, int)) else data[0].shape
-        else:
-            return (1,) if data.ndim == 1 else data.shape[1:]
+        return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
 
     @property
     def label_dim(self) -> tuple[int, ...]:
         """Get label dimensions."""
         data = self.labels if hasattr(self, "labels") else self.y_train
-        if isinstance(data, Dataset):
-            return (1,) if isinstance(data[0], (str, float, int)) else data[0].shape
-        else:
-            return (1,) if data.ndim == 1 else data.shape[1:]
+        return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
 
     @property
     def num_points(self) -> int:
@@ -301,33 +206,21 @@ class DataFetcher:
         else:
             return len(self.x_train) + len(self.x_valid) + len(self.x_test)
 
-    def split_dataset_by_prop(
+    def split_dataset(
         self,
-        train_prop: float = 0.0,
-        valid_prop: float = 0.0,
-        test_prop: float = 0.0,
+        train_count: Union[int, float] = 0,
+        valid_count: Union[int, float] = 0,
+        test_count: Union[int, float] = 0,
     ):
-        """Split the covariates and labels to the specified proportions."""
-        train_count, valid_count, test_count = (
-            round(self.num_points * p) for p in (train_prop, valid_prop, test_prop)
-        )
-        return self.split_dataset_by_count(train_count, valid_count, test_count)
-
-    def split_dataset_by_count(
-        self,
-        train_count: int = 0,
-        valid_count: int = 0,
-        test_count: int = 0,
-    ):
-        """Split the covariates and labels to the specified counts.
+        """Split the covariates and labels to the specified counts/proportions.
 
         Parameters
         ----------
-        train_count : int
+        train_count : Union[int, float]
             Number/proportion training points
-        valid_count : int
+        valid_count : Union[int, float]
             Number/proportion validation points
-        test_count : int
+        test_count : Union[int, float]
             Number/proportion test points
 
         Returns
@@ -337,19 +230,25 @@ class DataFetcher:
 
         Raises
         ------
+        AttributeError
+            No specified Covariates or labels. Ensure that the Register object
+            has been fetched and your data set correctly
         ValueError
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
         """
-        if hasattr(self, "dataset") and self.dataset.presplit:
-            warnings.warn("Dataset is already presplit, no need to split data.")
-            return self
-
-        if sum((train_count, valid_count, test_count)) > self.num_points:
+        tr, val, tes = train_count, valid_count, test_count
+        type_tuple = (type(tr), type(val), type(tes))  # Fix without structral match
+        if sum((tr, val, tes)) <= self.num_points and type_tuple == (int, int, int):
+            sp = list(accumulate((tr, val, tes)))
+        elif sum((tr, val, tes)) <= 1.0 and type_tuple == (float, float, float):
+            splits = (round(self.num_points * prob) for prob in (tr, val, tes))
+            sp = list(accumulate(splits))
+        else:
             raise ValueError(
-                f"Split totals must be < {self.num_points=} and of the same type: "
+                f"Splits must be < {self.num_points=} and of the same type: "
+                f"{type(train_count)=}|{type(valid_count)=}|{type(test_count)=}."
             )
-        sp = list(accumulate((train_count, valid_count, test_count)))
 
         # Extra underscore to unpack any remainders
         idx = self.random_state.permutation(self.num_points)
@@ -372,9 +271,9 @@ class DataFetcher:
 
     def split_dataset_by_indices(
         self,
-        train_indices: Optional[Sequence[int]] = None,
-        valid_indices: Optional[Sequence[int]] = None,
-        test_indices: Optional[Sequence[int]] = None,
+        train_indices: Sequence[int] = None,
+        valid_indices: Sequence[int] = None,
+        test_indices: Sequence[int] = None,
     ):
         """Split the covariates and labels to the specified indices.
 
@@ -432,20 +331,20 @@ class DataFetcher:
 
     def noisify(
         self,
-        add_noise: Union[Callable[[Self, Any, ...], dict[str, Any]], str, None] = None,
+        add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
         *noise_args,
         **noise_kwargs,
     ):
         """Add noise to the data points.
 
         Adds noise to the data set and saves the indices of the noisy data.
-        Return object of `add_noise` is a dict with keys to signify how the
+        Return object of `add_noise_func` is a dict with keys to signify how the
         data are updated:
         {'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_train_indices'}
 
         Parameters
         ----------
-        add_noise : Callable
+        add_noise_func : Callable
             If None, no changes are made. Takes as argument required arguments
             DataFetcher and adds noise to those the data points of DataFetcher as
             needed. Returns dict[str, np.ndarray] that has the updated np.ndarray in a
@@ -459,24 +358,20 @@ class DataFetcher:
             - **"y_test"** -- Updated testing labels with noise, optional
             - **"noisy_train_indices"** -- Indices of training data set with noise.
         args : tuple[Any]
-            Additional positional arguments passed to ``add_noise``
+            Additional positional arguments passed to ``add_noise_func``
         kwargs: dict[str, Any]
-            Additional key word arguments passed to ``add_noise``
+            Additional key word arguments passed to ``add_noise_func``
 
         Returns
         -------
         self : object
             Returns a DataFetcher with noise added to the data set.
         """
-        if add_noise is None:
+        if add_noise_func is None:
             return self
-        if isinstance(add_noise, str):
-            from opendataval.dataloader.noisify import NoiseFunc
-
-            add_noise = NoiseFunc(add_noise)
 
         # Passes the DataFetcher to the noise_func, has access to all instance variables
-        noisy_data = add_noise(fetcher=self, *noise_args, **noise_kwargs)
+        noisy_data = add_noise_func(fetcher=self, *noise_args, **noise_kwargs)
 
         self.x_train = noisy_data.get("x_train", self.x_train)
         self.y_train = noisy_data.get("y_train", self.y_train)
@@ -487,51 +382,3 @@ class DataFetcher:
         self.noisy_train_indices = noisy_data.get("noisy_train_indices", np.array([]))
 
         return self
-
-    def export_dataset(
-        self,
-        covariates_names: list[str],
-        labels_names: list[str],
-        output_directory: Path = Path.cwd(),
-    ):
-        if isinstance(covariates_names, str):
-            covariates_names = [covariates_names]
-        if isinstance(labels_names, str):
-            labels_names = [labels_names]
-        if not isinstance(output_directory, Path):
-            output_directory = Path(output_directory)
-        if not output_directory.exists():
-            output_directory.mkdir(parents=True)
-
-        columns = covariates_names + labels_names
-        x_train, x_valid, x_test = self.x_train, self.x_valid, self.x_test
-        y_train, y_valid, y_test = self.y_train, self.y_valid, self.y_test
-
-        if self.one_hot:
-            y_train = np.argmax(y_train, axis=1, keepdims=True) if y_train.size else []
-            y_valid = np.argmax(y_valid, axis=1, keepdims=True) if y_valid.size else []
-            y_test = np.argmax(y_test, axis=1, keepdims=True) if y_test.size else []
-
-        def generate_data(covariates, labels):
-            data = CatDataset(covariates, labels)
-            for cov, lab in DataLoader(data, batch_size=1, shuffle=False):
-                yield from np.hstack((cov, lab))
-
-        def save_to_csv(data, file_name):
-            file_path = output_directory / file_name
-            pd.DataFrame(data, columns=columns).to_csv(file_path, index=False)
-
-        save_to_csv(generate_data(x_train, y_train), "train.csv")
-        save_to_csv(generate_data(x_valid, y_valid), "valid.csv")
-        save_to_csv(generate_data(x_test, y_test), "test.csv")
-
-        noisy_indices = (
-            self.noisy_train_indices.tolist()
-            if hasattr(self, "noisy_train_indices")
-            else []
-        )
-        out_path = output_directory / f"noisy-indices-{self.dataset.dataset_name}.json"
-        with open(out_path, "w+") as f:
-            json.dump(noisy_indices, f)
-
-        return

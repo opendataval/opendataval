@@ -1,0 +1,5 @@
+1. ResNet(50 or 34)
+2. Update the readme for the new datasets
+3. Update the readme for new models
+4. Python 3.9
+5. SImplify the models

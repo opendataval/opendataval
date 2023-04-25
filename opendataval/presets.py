@@ -4,15 +4,15 @@ Configurations for experiment presets.
 """
 
 # Data Evaluators
-from dataoob.dataval.ame.ame import AME
-from dataoob.dataval.dvrl.dvrl import DVRL
-from dataoob.dataval.influence.influence import InfluenceFunctionEval
-from dataoob.dataval.margcontrib.banzhaf import DataBanzhaf, DataBanzhafMargContrib
-from dataoob.dataval.margcontrib.betashap import BetaShapley
-from dataoob.dataval.margcontrib.datashap import DataShapley
-from dataoob.dataval.margcontrib.loo import LeaveOneOut
-from dataoob.dataval.oob.oob import DataOob
-from dataoob.util import set_random_state
+from opendataval.dataval.ame.ame import AME
+from opendataval.dataval.dvrl.dvrl import DVRL
+from opendataval.dataval.influence.influence import InfluenceFunctionEval
+from opendataval.dataval.margcontrib.banzhaf import DataBanzhaf, DataBanzhafMargContrib
+from opendataval.dataval.margcontrib.betashap import BetaShapley
+from opendataval.dataval.margcontrib.datashap import DataShapley
+from opendataval.dataval.margcontrib.loo import LeaveOneOut
+from opendataval.dataval.oob.oob import DataOob
+from opendataval.util import set_random_state
 
 RANDOM_STATE = set_random_state(10)  # Constant random state for testing
 

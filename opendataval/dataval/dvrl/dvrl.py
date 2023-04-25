@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Optional
 
 import numpy as np
 import torch
@@ -11,10 +10,10 @@ from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader, RandomSampler
 
 from opendataval.dataloader.util import CatDataset
-from opendataval.dataval.api import DataEvaluator, ModelMixin
+from opendataval.dataval.api import DataEvaluator
 
 
-class DVRL(DataEvaluator, ModelMixin):
+class DVRL(DataEvaluator):
     """Data valuation using reinforcement learning class, implemented with PyTorch.
 
     References
@@ -58,7 +57,7 @@ class DVRL(DataEvaluator, ModelMixin):
         lr: float = 0.01,
         threshold: float = 0.9,
         device: torch.device = torch.device("cpu"),
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
         # Value estimator parameters
         self.hidden_dim = hidden_dim
@@ -146,7 +145,7 @@ class DVRL(DataEvaluator, ModelMixin):
 
         self.y_pred_diff = torch.abs(self.y_train - y_pred)
 
-    def train_data_values(self, *args, num_workers: int = 0, **kwargs):
+    def train_data_values(self, *args, **kwargs):
         """Trains model to predict data values.
 
         Trains the VE to assign probabilities of each data point being selected
@@ -156,8 +155,6 @@ class DVRL(DataEvaluator, ModelMixin):
         ----------
         args : tuple[Any], optional
             Training positional args
-        num_workers : int, optional
-            Number of workers used to load data, by default 0, loaded in main process
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
@@ -179,8 +176,8 @@ class DVRL(DataEvaluator, ModelMixin):
             sampler=rs,
             generator=cpu_gen,
             pin_memory=True,
-            num_workers=num_workers,
-            persistent_workers=num_workers > 0,
+            num_workers=4,
+            persistent_workers=True,
         )
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(dataloader):
@@ -260,6 +257,7 @@ class DVRL(DataEvaluator, ModelMixin):
 
         # Estimates data value
         with torch.no_grad():  # No dropout layers so no need to set to eval
+
             data = CatDataset(self.x_train, self.y_train, y_hat)
             for x_batch, y_batch, y_hat_batch in DataLoader(
                 data, batch_size=self.rl_batch_size, shuffle=False
@@ -321,7 +319,7 @@ class DataValueEstimatorRL(nn.Module):
         hidden_dim: int,
         layer_number: int,
         comb_dim: int,
-        random_state: Optional[RandomState] = None,
+        random_state: RandomState = None,
     ):
         super().__init__()
 

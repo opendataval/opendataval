@@ -5,7 +5,7 @@ import torch
 from numpy.random import RandomState
 from sklearn.datasets import make_classification
 
-from dataoob.dataloader import DataFetcher, Register, add_gauss_noise, mix_labels
+from opendataval.dataloader import DataFetcher, Register, add_gauss_noise, mix_labels
 
 Data = make_classification(
     n_samples=100,

@@ -6,11 +6,11 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataFetcher, Register, mix_labels
-from dataoob.dataval import DataEvaluator
-from dataoob.evaluator import ExperimentMediator
-from dataoob.model import Model
-from dataoob.model.mlp import ClassifierMLP
+from opendataval.dataloader import DataFetcher, Register, mix_labels
+from opendataval.dataval import DataEvaluator
+from opendataval.evaluator import ExperimentMediator
+from opendataval.model import Model
+from opendataval.model.mlp import ClassifierMLP
 
 
 class DummyModel(Model):

@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from dataoob.dataloader import Register
+from opendataval.dataloader import Register
 
 
 class TestRegister(unittest.TestCase):

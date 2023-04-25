@@ -7,18 +7,18 @@ from numpy.random import RandomState
 from sklearn.datasets import make_classification
 from sklearn.utils import check_random_state
 
-from dataoob.dataloader import DataFetcher
-from dataoob.dataloader.noisify import mix_labels
-from dataoob.dataval import DataEvaluator
-from dataoob.evaluator.exper_methods import (
+from opendataval.dataloader import DataFetcher
+from opendataval.dataloader.noisify import mix_labels
+from opendataval.dataval import DataEvaluator
+from opendataval.evaluator.exper_methods import (
     discover_corrupted_sample,
     increasing_bin_removal,
     noisy_detection,
     remove_high_low,
     save_dataval,
 )
-from dataoob.model import Model
-from dataoob.util import set_random_state
+from opendataval.model import Model
+from opendataval.util import set_random_state
 
 
 class DummyModel(Model):

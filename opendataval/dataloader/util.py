@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Sequence, TypeVar
 
 from torch.utils.data import Dataset
 
@@ -53,20 +53,20 @@ class IndexTransformDataset(Dataset[T_co]):
     def __init__(
         self,
         dataset: Dataset[T_co],
-        index_transformation: Optional[Callable[[T_co, int], T_co]] = None,
+        index_transformation: Callable[[Sequence[T_co], Sequence[int]], T_co] = None,
     ):
         self.dataset = dataset
         self._transform = index_transformation
 
     @property
-    def transform(self) -> Callable[[T_co, int], T_co]:
+    def transform(self) -> Callable[[T_co, Sequence[int]], T_co]:
         """Gets the transform function, if None, no transformation applied."""
         if self._transform is None:
             return lambda data, _: data
         return self._transform
 
     @transform.setter
-    def transform(self, index_transformation: Callable[[T_co, int], T_co]):
+    def transform(self, index_transformation: Callable[[T_co, Sequence[int]], T_co]):
         """Assign new transform to the dataset."""
         self._transform = index_transformation
 

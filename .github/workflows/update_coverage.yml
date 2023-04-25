@@ -37,8 +37,8 @@ jobs:
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-xml-coverage-path: ./coverage.xml
-          badge-title: dataoob Coverage Badge
-          title: dataoob Coverage Report
+          badge-title: opendataval Coverage Badge
+          title: opendataval Coverage Report
           hide-comment: true
       - name: Update Readme with Coverage Html
         run: |

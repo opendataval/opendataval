@@ -31,23 +31,13 @@ To inject model, metrics, and data points for training
 ```python
 dataval = (
     dataval
-    .input_model(model)
-    .input_metric(metric)
+    .input_model_metric(model, metric)
     .input_data(x_train, y_train, x_valid, y_valid)
     .train_data_values()
 )
 
-data_values = dataval.data_values  # Cached
 data_values = dataval.evaluate_data_values()
 ```
 
-For a short cut, say we have the evaluator and just want to input the data and model.
-The model will infer a default evaluation metric based on the type of data specified by
-fetcher. fetcher is a `DataFetcher` and model is a `Model`
-```python
-data_values = ChildEvaluator.train(fetcher, model, *train_args, **train_kwargs).evaluate_data_values()
-```
-
-
 ## `ShapEvaluator`
-A number of DataEvaluators are actually semivalues, which means we can reuse the marginal computations of across several evaluators. To do so specify a `cache_name: str`.
+A number of DataEvaluators are actually semivalues, which means we can reuse the marginal computations of across several evaluators. To do so: #TODO

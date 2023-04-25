@@ -32,7 +32,7 @@
   </p>
 </div>
 
-# DataOob : Towards a Transparent Data Valuations
+# OpenDataVal : Towards a Transparent Data Valuations
 
 ----
 
@@ -55,9 +55,9 @@
 <!-- Pytest Coverage Comment:End -->
 
 
-**dataoob** is the first general-purpose lightweight library that provides a comprehensive list of functions to systematically evaluate the data valuations of several data valuation meta-frameworks. dataoob supports the development of new datasets (both synthetic and real-world) and explanation methods, with a strong bent towards promoting systematic, reproducible, and transparent evaluation of data values. TODO most of this is filler from OpenXAI, to change
+**opendataval** is the first general-purpose lightweight library that provides a comprehensive list of functions to systematically evaluate the data valuations of several data valuation meta-frameworks. opendataval supports the development of new datasets (both synthetic and real-world) and explanation methods, with a strong bent towards promoting systematic, reproducible, and transparent evaluation of data values. TODO most of this is filler from OpenXAI, to change
 
-**dataoob** is an open-source initiative that comprises of a collection of curated datasets, models, and data value estimators, and provides a simple and easy-to-use API that enables researchers and practitioners to benchmark explanation methods using just a few lines of code.
+**opendataval** is an open-source initiative that comprises of a collection of curated datasets, models, and data value estimators, and provides a simple and easy-to-use API that enables researchers and practitioners to benchmark explanation methods using just a few lines of code.
 
 
 
@@ -164,7 +164,7 @@ Install Python 3.9 | 3.10 | 3.11.
 ### Quick Start
 To set up an experiment on DataEvaluators
 ```python
-from dataoob.evaluator import ExperimentMediator
+from opendataval.evaluator import ExperimentMediator
 
 exper_med_partial = ExperimentMediator.partial_setup(
     dataset_name='iris',
@@ -222,7 +222,7 @@ expermed.evaluate(exper_func)
 
 `Model` was primarily designed with PyTorch models in mind, which is why there are additional mixins to inherit for PyTorch models. However, there is support for sk-learn models through a wrapper:
 ```python
-from dataoob.model import ClassifierSkLearnWrapper
+from opendataval.model import ClassifierSkLearnWrapper
 from sklearn.linear_model import LogisticRegression
 
 wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression(), label_dim)
@@ -234,8 +234,8 @@ wrapped_lr.predict(x)  # equiv of `.predict_proba()`
 There is also a `ModelFactory` function to create the default specifications of certain models. It
 is recommended to import, instantiate, then inject the models and not use the ModelFactory.
 ```python
-from dataoob.dataloader import DataFetcher
-from dataoob.model import ModelFactory
+from opendataval.dataloader import DataFetcher
+from opendataval.model import ModelFactory
 
 fetcher = DataFetcher('datset_name')  # Fetcher has covar/label dim information
 mlp_classifier = ModelFactory('mlpclass', fetcher, torch.device(...))
@@ -246,7 +246,7 @@ mlp_classifier = ModelFactory('mlpclass', fetcher, torch.device(...))
 ### `DataEvaluator`
 We have a catalog of `DataEvaluator` with many default arguments. Many DataEvaluators will do well with default arguments for data points `n`<100. To pull one in do the following
 ```python
-from dataoob.dataval.ame import AME
+from opendataval.dataval.ame import AME
 
 dataval = AME()
 ```
@@ -271,7 +271,7 @@ DataFetcher.datasets_available()  # ['name1', 'name2']
 
 A fetcher first takes a data set name to be fetched.
 ```python
-from dataoob.dataloader import DataFetcher
+from opendataval.dataloader import DataFetcher
 
 fetcher = DataFetcher(dataset_name='name1')
 ```

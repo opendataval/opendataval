@@ -1,8 +1,8 @@
-"""Experiments to test :py:class:`~dataoob.dataval.api.DataEvaluator`.
+"""Experiments to test :py:class:`~opendataval.dataval.api.DataEvaluator`.
 
-Experiments to pass into :py:meth:`~dataoob.evaluator.api.ExperimentMediator.evaluate`
-and :py:meth:`~dataoob.evaluator.api.ExperimentMediator.plot` evaluate performance of
-one :py:class:`~dataoob.dataval.api.DataEvaluator` at a time.
+Experiments pass into :py:meth:`~opendataval.evaluator.api.ExperimentMediator.evaluate`
+and :py:meth:`~opendataval.evaluator.api.ExperimentMediator.plot` evaluate performance
+of one :py:class:`~opendataval.dataval.api.DataEvaluator` at a time.
 """
 from typing import Any
 
@@ -13,8 +13,8 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import f1_score
 from torch.utils.data import Subset
 
-from dataoob.dataloader import DataFetcher
-from dataoob.dataval import DataEvaluator
+from opendataval.dataloader import DataFetcher
+from opendataval.dataval import DataEvaluator
 
 
 def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str, float]:

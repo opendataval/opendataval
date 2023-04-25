@@ -153,7 +153,7 @@ jupyter-ydoc==0.2.4
     #   jupyter-server-ydoc
     #   jupyterlab
 jupyterlab==3.6.3
-    # via dataoob (pyproject.toml)
+    # via opendataval (pyproject.toml)
 jupyterlab-pygments==0.2.2
     # via nbconvert
 jupyterlab-server==2.22.1
@@ -167,7 +167,7 @@ markupsafe==2.1.2
     #   jinja2
     #   nbconvert
 matplotlib==3.7.1
-    # via dataoob (pyproject.toml)
+    # via opendataval (pyproject.toml)
 matplotlib-inline==0.1.6
     # via
     #   ipykernel
@@ -203,14 +203,14 @@ networkx==3.1
     # via torch
 notebook==6.5.4
     # via
-    #   dataoob (pyproject.toml)
+    #   opendataval (pyproject.toml)
     #   jupyterlab
 notebook-shim==0.2.2
     # via nbclassic
 numpy==1.24.2
     # via
     #   contourpy
-    #   dataoob (pyproject.toml)
+    #   opendataval (pyproject.toml)
     #   matplotlib
     #   pandas
     #   scikit-learn
@@ -218,7 +218,7 @@ numpy==1.24.2
     #   torchvision
     #   transformers
 opendatasets==0.1.22
-    # via dataoob (pyproject.toml)
+    # via opendataval (pyproject.toml)
 packaging==23.1
     # via
     #   huggingface-hub
@@ -230,7 +230,7 @@ packaging==23.1
     #   nbconvert
     #   transformers
 pandas==2.0.0
-    # via dataoob (pyproject.toml)
+    # via opendataval (pyproject.toml)
 pandocfilters==1.5.0
     # via nbconvert
 parso==0.8.3
@@ -313,10 +313,10 @@ rfc3986-validator==0.1.1
     #   jsonschema
     #   jupyter-events
 scikit-learn==1.2.2
-    # via dataoob (pyproject.toml)
+    # via opendataval (pyproject.toml)
 scipy==1.10.1
     # via
-    #   dataoob (pyproject.toml)
+    #   opendataval (pyproject.toml)
     #   scikit-learn
 send2trash==1.8.0
     # via
@@ -354,10 +354,10 @@ tokenizers==0.13.3
     # via transformers
 torch==2.0.0
     # via
-    #   dataoob (pyproject.toml)
+    #   opendataval (pyproject.toml)
     #   torchvision
 torchvision==0.15.1
-    # via dataoob (pyproject.toml)
+    # via opendataval (pyproject.toml)
 tornado==6.3
     # via
     #   ipykernel
@@ -369,7 +369,7 @@ tornado==6.3
     #   terminado
 tqdm==4.65.0
     # via
-    #   dataoob (pyproject.toml)
+    #   opendataval (pyproject.toml)
     #   huggingface-hub
     #   kaggle
     #   opendatasets
@@ -390,7 +390,7 @@ traitlets==5.9.0
     #   nbformat
     #   notebook
 transformers==4.28.1
-    # via dataoob (pyproject.toml)
+    # via opendataval (pyproject.toml)
 typing-extensions==4.5.0
     # via
     #   huggingface-hub

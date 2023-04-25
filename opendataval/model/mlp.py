@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Callable, Optional
+from typing import Callable
 
 import torch
 import torch.nn as nn
@@ -9,10 +9,9 @@ from opendataval.model.api import (
     TorchPredictMixin,
     TorchRegressMixin,
 )
-from opendataval.model.grad import TorchGradMixin
 
 
-class ClassifierMLP(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
+class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
     """Initializes the Multilayer Perceptron  Classifier.
 
     Parameters
@@ -35,7 +34,7 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
         num_classes: int,
         layers: int = 5,
         hidden_dim: int = 25,
-        act_fn: Optional[Callable] = None,
+        act_fn: Callable = None,
     ):
         super().__init__()
 
@@ -52,6 +51,8 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
             mlp_layers[f"{i+1}_acti"] = act_fn
 
         mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, num_classes)
+        mlp_layers[f"{i+1}_out_acti"] = act_fn
+
         mlp_layers["output"] = nn.Softmax(-1)
 
         self.mlp = nn.Sequential(mlp_layers)
@@ -73,7 +74,7 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
         return x
 
 
-class RegressionMLP(TorchRegressMixin, TorchPredictMixin, TorchGradMixin):
+class RegressionMLP(TorchRegressMixin, TorchPredictMixin):
     """Initializes the Multilayer Perceptron Regression.
 
     Parameters
@@ -93,10 +94,10 @@ class RegressionMLP(TorchRegressMixin, TorchPredictMixin, TorchGradMixin):
     def __init__(
         self,
         input_dim: int,
-        num_classes: int = 1,
+        num_classes: int,
         layers: int = 5,
         hidden_dim: int = 25,
-        act_fn: Optional[Callable] = None,
+        act_fn: Callable = None,
     ):
         super().__init__()
 
@@ -112,6 +113,7 @@ class RegressionMLP(TorchRegressMixin, TorchPredictMixin, TorchGradMixin):
             mlp_layers[f"{i+1}_acti"] = act_fn
 
         mlp_layers["output"] = nn.Linear(hidden_dim, num_classes)
+
         self.mlp = nn.Sequential(mlp_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

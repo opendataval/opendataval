@@ -21,23 +21,8 @@ There is also support for sk-learn models through a wrapper. In edge cases where
 from opendataval.model import ClassifierSkLearnWrapper
 from sklearn.linear_model import LogisticRegression
 
-wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression, label_dim, device=torch.device('...'))
+wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression(), label_dim, device=torch.device('...'))
 
 wrapped_lr.fit(x, y)  # Accepts only tensor inputs and converts them to numpy
 wrapped_lr.predict(x)  # Equivalent of predict_proba(x) on classification, .predict() for regression. Returns tensor
-```
-
-A sklearn model's parameters can be specified as arguments of `ClassifierSkLearnWrapper` as follows. With this, users can investigate the influence of different hyperparameters on data values.
-```
-wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression, label_dim, fit_intercept=False, n_jobs=2, device=torch.device('...'))
-```
-
-There is also a `ModelFactory` to create models from a name. A fetcher
-will specify the input and output dimensions.
-```python
-from opendataval.dataloader import DataFetcher
-from opendataval.model import ModelFactory
-
-fetcher = DataFetcher('datset_name')  # Fetcher has covar/label dim information
-mlp_classifier = ModelFactory('ClassifierMLP', fetcher, torch.device(...), *args, **kwargs)
 ```
