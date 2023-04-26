@@ -36,6 +36,10 @@ Sci-kit learn wrappers
 """
 # Model Factory imports
 import torch
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression as SkLogReg
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 
 from opendataval.dataloader import DataFetcher
 from opendataval.model.api import (
@@ -98,5 +102,16 @@ def ModelFactory(
         from opendataval.model.bert import BertClassifier
 
         return BertClassifier(num_classes=label_dim[0]).to(device=device)
+
+    elif model_name == "sklogreg":
+        return ClassifierSkLearnWrapper(SkLogReg(), label_dim[0])
+    elif model_name == "skmlp":
+        return ClassifierSkLearnWrapper(MLPClassifier(), label_dim[0])
+    elif model_name == "skknn":
+        return ClassifierUnweightedSkLearnWrapper(
+            KNeighborsClassifier(label_dim), label_dim[0]
+        )
+    elif model_name == "sklinreg":
+        return RegressionSkLearnWrapper(LinearRegression(), label_dim[0])
     else:
         raise ValueError(f"{model_name} is not a valid predefined model")

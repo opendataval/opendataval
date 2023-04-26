@@ -1,4 +1,5 @@
 import copy
+import warnings
 from abc import ABC, abstractmethod
 from typing import TypeVar, Union
 
@@ -309,14 +310,18 @@ class ClassifierSkLearnWrapper(Model):
         y_train = np.argmax(y_train, axis=1)
         y_train_unique = np.unique(y_train)
 
-        if len(y_train_unique) != self.num_classes:  # All labels must be in sample
-            self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
-            self.model.n_classes_ = self.num_classes
-        elif sample_weight is not None:
-            weights = np.squeeze(weights[0])
-            self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
-        else:
-            self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
+        with warnings.catch_warnings():  # Ignores warnings in the following block
+            warnings.simplefilter("ignore")
+
+            if len(y_train_unique) != self.num_classes:  # All labels must be in sample
+                dummy_strat = "most_frequent"
+                self.model = DummyClassifier(strategy=dummy_strat).fit(x_train, y_train)
+                self.model.n_classes_ = self.num_classes
+            elif sample_weight is not None:
+                weights = np.squeeze(weights[0])
+                self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
+            else:
+                self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
 
         return self
 
@@ -405,14 +410,18 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         y_train = np.argmax(y_train, axis=1)
         y_train_unique = np.unique(y_train)
 
-        if len(y_train_unique) != self.num_classes:  # All labels must be in sample
-            self.model = DummyClassifier(strategy="most_frequent").fit(x_train, y_train)
-            self.model.n_classes_ = self.num_classes
-        elif sample_weight is not None:
-            weights = np.squeeze(weights[0])
-            self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
-        else:
-            self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
+        with warnings.catch_warnings():  # Ignores warnings in the following block
+            warnings.simplefilter("ignore")
+
+            if len(y_train_unique) != self.num_classes:  # All labels must be in sample
+                dummy_strat = "most_frequent"
+                self.model = DummyClassifier(strategy=dummy_strat).fit(x_train, y_train)
+                self.model.n_classes_ = self.num_classes
+            elif sample_weight is not None:
+                weights = np.squeeze(weights[0])
+                self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
+            else:
+                self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
 
         return self
 
@@ -478,11 +487,14 @@ class RegressionSkLearnWrapper(Model):
         # *weights helps check if we passed weights into the Dataloader
         x_train, y_train, *weights = next(iter(dataloader))
 
-        if sample_weight is not None:
-            weights = np.squeeze(weights[0])
-            self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
-        else:
-            self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
+        with warnings.catch_warnings():  # Ignores warnings in the following block
+            warnings.simplefilter("ignore")
+
+            if sample_weight is not None:
+                weights = np.squeeze(weights[0])
+                self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
+            else:
+                self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
 
         return self
 
