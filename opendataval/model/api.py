@@ -357,7 +357,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
 
     Example:
     ::
-        wrapped = ClassifierSkLearnWrapper(LinearDiscriminantAnalysis(), 2)
+        wrapped = ClassifierSkLearnWrapper(KNeighborsClassifier(), 2)
 
     Parameters
     ----------
@@ -418,10 +418,15 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
                 self.model = DummyClassifier(strategy=dummy_strat).fit(x_train, y_train)
                 self.model.n_classes_ = self.num_classes
             elif sample_weight is not None:
-                weights = np.squeeze(weights[0])
-                self.model.fit(x_train, y_train, *args, sample_weight=weights, **kwargs)
+                indices = np.random.choice(  # Random sample of the train data set
+                    num_samples,
+                    size=(num_samples),
+                    replace=True,
+                    p=sample_weight / sample_weight.sum(),
+                )
+                self.model.fit(x_train[indices], y_train[indices], *args, **kwargs)
             else:
-                self.model.fit(x_train, y_train, *args, sample_weight=None, **kwargs)
+                self.model.fit(x_train, y_train, *args, **kwargs)
 
         return self
 

@@ -166,7 +166,7 @@ To set up an experiment on DataEvaluators
 ```python
 from opendataval.evaluator import ExperimentMediator
 
-exper_med_partial = ExperimentMediator.partial_setup(
+exper_med = ExperimentMediator.model_factory_setup(
     dataset_name='iris',
     force_download=False,
     train_count=100,
@@ -176,7 +176,7 @@ exper_med_partial = ExperimentMediator.partial_setup(
     train_kwargs={'epochs': 5, 'batch_size': 20},
 )
 list_of_data_evaluators = [ChildEvaluator(), ...]  # Define evaluators here
-eval_med = exper_med_partial(data_evaluators=list_of_data_evaluators)
+eval_med = exper_med.compute_data_values(data_evaluators=list_of_data_evaluators)
 
 # Runs a discover the noisy data experiment for each DataEvaluator
 # Plots the results in figure (if has plot arg), and returns the results as a DataFrame
@@ -205,14 +205,13 @@ fetcher = (
 evaluator = ChildEvaluator()  # DataEvaluator is abstract
 model = ChildModel()  # Model is abstract
 
-expermed = ExperimentMediator(
+exper_med = ExperimentMediator(
     fetcher=fetcher,
-    data_evaluators=[evaluator],
     pred_model=model,
     metric_name='accuracy'
-)
+).compute_data_values(data_evaluators=[evaluator])
 
-expermed.evaluate(exper_func)
+exper_med.evaluate(exper_func)
 ```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
@@ -290,11 +289,11 @@ x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 ### `ExperimentMediator`
-`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and faciliatate additional experiments. NOTE when training `DataEvaluator`, errors might be raised and caught. A warning will be raised but training will continue because training can often take a long time.
+`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and facilitate additional experiments. NOTE when training `DataEvaluator`, errors might be raised and caught. A warning will be raised but training will continue because training can often take a long time.
 ```python
 expermed = ExperimentrMediator(
-    loader, data_evaluators, model, train_kwargs, metric_name
-)
+    loader, model, train_kwargs, metric_name
+).compute_data_values(data_evaluators)
 ```
 
 From here we can run experiments by passing in an experiment function `(DataEvaluator, DataFetcher) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable. All returns include a pandas `DataFrame`.

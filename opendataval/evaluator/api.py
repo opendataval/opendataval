@@ -1,5 +1,4 @@
 import math
-from functools import partial
 from typing import Any, Callable, Union
 
 import pandas as pd
@@ -37,8 +36,6 @@ class ExperimentMediator:
     fetcher : DataFetcher
         DataFetcher for the data set used for the experiment. All `exper_func` take a
         DataFetcher as an argument to have access to all data points and noisy indices.
-    data_evaluators : list[DataEvaluator]
-        List of DataEvaluators to be tested by `exper_func`
     pred_model : Model
         Prediction model for the DataEvaluators
     metric_name : str, optional
@@ -51,40 +48,16 @@ class ExperimentMediator:
     def __init__(
         self,
         fetcher: DataFetcher,
-        data_evaluators: list[DataEvaluator],
         pred_model: Model,
         train_kwargs: dict[str, Any] = None,
         metric_name: str = "accuracy",
     ):
         self.fetcher = fetcher
+        self.pred_model = pred_model
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
+
         self.metric_name = metric_name
         self.data_evaluators = []
-
-        for data_val in data_evaluators:
-            try:
-
-                self.data_evaluators.append(
-                    data_val.input_model_metric(pred_model, metrics_dict[metric_name])
-                    .input_fetcher(fetcher)
-                    .train_data_values(**self.train_kwargs)
-                )
-
-            except Exception as ex:
-                import warnings
-
-                warnings.warn(
-                    f"""
-                    An error occured during training, however training all evaluators
-                    takes a long time, so we will be ignoring the evaluator:
-                    {str(data_val)} and proceeding.
-
-                    The error is as follows: {str(ex)}
-                    """,
-                    stacklevel=10,
-                )
-
-        self.num_data_eval = len(self.data_evaluators)
 
     @classmethod
     def setup(
@@ -100,7 +73,6 @@ class ExperimentMediator:
         pred_model: Model = None,
         train_kwargs: dict[str, Any] = None,
         metric_name: str = "accuracy",
-        data_evaluators: list[DataEvaluator] = None,
     ):
         """Create a DataFetcher from args and passes it into the init."""
         random_state = check_random_state(random_state)
@@ -119,14 +91,13 @@ class ExperimentMediator:
 
         return cls(
             fetcher=fetcher,
-            data_evaluators=data_evaluators,
             pred_model=pred_model,
             train_kwargs=train_kwargs,
             metric_name=metric_name,
         )
 
     @classmethod
-    def partial_setup(
+    def model_factory_setup(
         cls,
         dataset_name: str,
         force_download: bool = False,
@@ -140,10 +111,11 @@ class ExperimentMediator:
         device: torch.device = torch.device("cpu"),
         train_kwargs: dict[str, Any] = None,
         metric_name: str = "accuracy",
-    ) -> partial:
-        """Set up ExperimentMediator without inputting the DataEvaluators
+    ):
+        """Set up ExperimentMediator from ModelFactory using an input string.
 
-        Return a partial[ExperimentMediator] initialized with the
+        Return a ExperimentMediator initialized with
+        py:function`~opendataval.model.ModelFactory`
 
         Parameters
         ----------
@@ -188,9 +160,8 @@ class ExperimentMediator:
 
         Returns
         -------
-        partial[ExperimentMediator]
-            Partially initialized ExperimentMediator. When called, pass in the
-            list[:py:class:`~opendataval.dataval.DataEvaluator`] to run the experiment.
+        ExperimentMediator
+            ExperimentMediator created from ModelFactory defaults
         """
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
@@ -217,15 +188,51 @@ class ExperimentMediator:
 
         model.fit(x_train, y_train, **train_kwargs)
         perf = metrics_dict[metric_name](y_test, model.predict(x_test).cpu())
-        print(f"Base line model {metric_name}: {perf}")
+        print(f"Base line model {metric_name=}: {perf=}")
 
-        return partial(
-            cls,
+        return cls(
             fetcher=fetcher,
             pred_model=pred_model,
             train_kwargs=train_kwargs,
             metric_name=metric_name,
         )
+
+    def compute_data_values(self, data_evaluators: list[DataEvaluator]):
+        """Computes the data values for the input data evaluators.
+
+        Parameters
+        ----------
+        data_evaluators : list[DataEvaluator]
+            List of DataEvaluators to be tested by `exper_func`
+        """
+
+        for data_val in data_evaluators:
+            try:
+
+                self.data_evaluators.append(
+                    data_val.input_model_metric(
+                        self.pred_model, metrics_dict[self.metric_name]
+                    )
+                    .input_fetcher(self.fetcher)
+                    .train_data_values(**self.train_kwargs)
+                )
+
+            except Exception as ex:
+                import warnings
+
+                warnings.warn(
+                    f"""
+                    An error occured during training, however training all evaluators
+                    takes a long time, so we will be ignoring the evaluator:
+                    {str(data_val)} and proceeding.
+
+                    The error is as follows: {str(ex)}
+                    """,
+                    stacklevel=10,
+                )
+
+        self.num_data_eval = len(self.data_evaluators)
+        return self
 
     def evaluate(
         self,

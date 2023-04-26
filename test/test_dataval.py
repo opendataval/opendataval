@@ -39,9 +39,8 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
             # a dry run with low data. Basically a sanity check.
             exper_med = ExperimentMediator(
                 fetcher=fetcher,
-                data_evaluators=dummy_evaluators,
                 pred_model=DummyModel(),
                 metric_name="accuracy",
-            )
+            ).compute_data_values(data_evaluators=dummy_evaluators)
 
             exper_med.evaluate(discover_corrupted_sample)

@@ -70,11 +70,10 @@ class TestExperimentMediator(unittest.TestCase):
     def test_experiment_mediator(self):
         experimentmediator = ExperimentMediator(
             self.fetcher,
-            [self.dataevaluator],
             DummyModel(),
             train_kwargs={"epochs": 10},
             metric_name="accuracy",
-        )
+        ).compute_data_values(data_evaluators=[self.dataevaluator])
         self.assertIsInstance(experimentmediator.fetcher, DataFetcher)
         self.assertIsInstance(experimentmediator.data_evaluators[0], DataEvaluator)
         self.assertIsInstance(experimentmediator.train_kwargs, dict)
@@ -83,8 +82,8 @@ class TestExperimentMediator(unittest.TestCase):
 
     def test_experiment_mediator_default(self):
         experimentmediator = ExperimentMediator(
-            self.fetcher, [self.dataevaluator], DummyModel()
-        )
+            self.fetcher, DummyModel()
+        ).compute_data_values([self.dataevaluator])
         self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
@@ -100,8 +99,7 @@ class TestExperimentMediator(unittest.TestCase):
             pred_model=DummyModel(),
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
-            data_evaluators=[self.dataevaluator],
-        )
+        ).compute_data_values(data_evaluators=[self.dataevaluator])
         self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
@@ -117,8 +115,7 @@ class TestExperimentMediator(unittest.TestCase):
                 pred_model=DummyModel(),
                 train_kwargs={"epochs": 5},
                 metric_name="accuracy",
-                data_evaluators=[DummyEvaluator()],
-            )
+            ).compute_data_values(data_evaluators=[DummyEvaluator()])
 
         with self.assertRaises(ValueError):
             ExperimentMediator.setup(
@@ -131,15 +128,16 @@ class TestExperimentMediator(unittest.TestCase):
                 pred_model=DummyModel(),
                 train_kwargs={"epochs": 5},
                 metric_name="accuracy",
-                data_evaluators=[BrokenEvaluator()],
-            )
+            ).compute_data_values(data_evaluators=[BrokenDummyModel()])
         self.assertFalse(self.dataevaluator.trained)
 
     def test_evaluate_mediator(self):
         mock_func = Mock(side_effect=[{"a": [1, 2], "b": [3]}, {"a": [4, 5], "b": [6]}])
         kwargs = {"c": 1, "d": "2"}
         dummies = [DummyEvaluator(1), DummyEvaluator(2)]
-        experimentmediator = ExperimentMediator(self.fetcher, dummies, DummyModel())
+        experimentmediator = ExperimentMediator(
+            self.fetcher, DummyModel()
+        ).compute_data_values(dummies)
         res = experimentmediator.evaluate(exper_func=mock_func, **kwargs)
         mock_func.assert_has_calls(
             [
@@ -153,8 +151,8 @@ class TestExperimentMediator(unittest.TestCase):
         self.assertTrue(res.loc["a", str(dummies[1])].eq([4, 5]).all())
         self.assertTrue(res.loc["b", str(dummies[1])][0] == 6)
 
-    def test_experiment_mediator_partial_setup(self):
-        exper_med_part = ExperimentMediator.partial_setup(
+    def test_experiment_mediator_model_factory_setup(self):
+        exper_med = ExperimentMediator.model_factory_setup(
             dataset_name="test_dataset",
             force_download=False,
             train_count=0.7,
@@ -166,7 +164,9 @@ class TestExperimentMediator(unittest.TestCase):
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
         )
-        experimentmediator = exper_med_part(data_evaluators=[self.dataevaluator])
+        experimentmediator = exper_med.compute_data_values(
+            data_evaluators=[self.dataevaluator]
+        )
         self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
         self.assertIsInstance(

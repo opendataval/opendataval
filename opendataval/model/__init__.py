@@ -109,7 +109,7 @@ def ModelFactory(
         return ClassifierSkLearnWrapper(MLPClassifier(), label_dim[0])
     elif model_name == "skknn":
         return ClassifierUnweightedSkLearnWrapper(
-            KNeighborsClassifier(label_dim), label_dim[0]
+            KNeighborsClassifier(label_dim[0]), label_dim[0]
         )
     elif model_name == "sklinreg":
         return RegressionSkLearnWrapper(LinearRegression(), label_dim[0])
