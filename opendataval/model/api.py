@@ -422,7 +422,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
                     num_samples,
                     size=(num_samples),
                     replace=True,
-                    p=sample_weight / sample_weight.sum(),
+                    p=weights[0].squeeze() / weights[0].sum(),
                 )
                 self.model.fit(x_train[indices], y_train[indices], *args, **kwargs)
             else:

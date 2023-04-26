@@ -1,4 +1,7 @@
 import math
+import os
+import warnings
+from collections import deque
 from typing import Any, Callable, Union
 
 import pandas as pd
@@ -218,8 +221,6 @@ class ExperimentMediator:
                 )
 
             except Exception as ex:
-                import warnings
-
                 warnings.warn(
                     f"""
                     An error occured during training, however training all evaluators
@@ -238,6 +239,7 @@ class ExperimentMediator:
         self,
         exper_func: Callable[[DataEvaluator, DataFetcher, ...], dict[str, Any]],
         include_train: bool = False,
+        save_output: bool = False,
         **exper_kwargs,
     ) -> pd.DataFrame:
         """Evaluate `exper_func` on each DataEvaluator.
@@ -255,6 +257,8 @@ class ExperimentMediator:
         include_train : bool, optional
             Whether to pass to exper_func the training kwargs defined for the
             ExperimentMediator. If True, also passes in metric_name, by default False
+        save_output : bool, optional
+            Wether to save the outputs to ``self.output_dir``, by default False
         eval_kwargs : dict[str, Any], optional
             Additional key word arguments to be passed to the exper_func
 
@@ -280,7 +284,10 @@ class ExperimentMediator:
             data_eval_perf[str(data_val)] = eval_resp
 
         # index=[result_title, DataEvaluator] columns=[range(len(axis))]
-        return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series)
+        df_resp = pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series)
+        if save_output:
+            self.save_output(f"{exper_func.__name__}.csv", df_resp)
+        return df_resp
 
     def plot(
         self,
@@ -289,6 +296,7 @@ class ExperimentMediator:
         row: int = None,
         col: int = 2,
         include_train: bool = False,
+        save_output: bool = False,
         **exper_kwargs,
     ) -> tuple[pd.DataFrame, Figure]:
         """Evaluate `exper_func` on each DataEvaluator and plots result in `fig`.
@@ -312,6 +320,8 @@ class ExperimentMediator:
         include_train : bool, optional
             Whether to pass to exper_func the training kwargs defined for the
             ExperimentMediator. If True, passes in metric_name, by default False
+        save_output : bool, optional
+            Wether to save the outputs to ``self.output_dir``, by default False
         eval_kwargs : dict[str, Any], optional
             Additional key word arguments to be passed to the exper_func
 
@@ -346,4 +356,41 @@ class ExperimentMediator:
             data_eval_perf[str(data_val)] = eval_resp
 
         # index=[result_title, DataEvaluator] columns=[range(len(axis))]
-        return pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series), figure
+        df_resp = pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series)
+
+        if save_output:
+            self.save_output(f"{exper_func.__name__}.csv", df_resp)
+        return df_resp, figure
+
+    def set_output_directory(self, output_directory: str):
+        """Set directory to save output of experiment."""
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+        self.output_directory = output_directory
+        return self
+
+    def save_output(self, file_name: str, df: pd.DataFrame):
+        """Saves the output of the DataFrame to f"{self.output_directory}/{file_name}".
+
+        Parameters
+        ----------
+        file_name : str
+            Name of the file to save the DataFrame to.
+        df : pd.DataFrame
+            Output DataFrame from an experiment run by ExperimentMediator
+        """
+        if not hasattr(self, "last_outputs"):
+            # Storing some old outputs in case we forgot set output_directory
+            # Optional if we should include or delete, open to debate
+            self.last_outputs = deque([], maxlen=5)
+
+        self.last_outputs.append((file_name, df))
+
+        if not hasattr(self, "output_directory"):
+            warnings.warn("Output directory not set, holding last 10 saved outputs.")
+            return
+
+        while self.last_outputs:
+            curr_file_name, curr_df = self.last_outputs.popleft()
+            file_path = os.path.join(self.output_directory, curr_file_name)
+            curr_df.to_csv(file_path)
