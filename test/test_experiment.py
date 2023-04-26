@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher, Register, mix_labels
-from opendataval.dataval import DataEvaluator, ModelMixin
+from opendataval.dataval import DataEvaluator
 from opendataval.experiment import ExperimentMediator
 from opendataval.model import Model
 from opendataval.model.mlp import ClassifierMLP
@@ -29,7 +29,7 @@ class BrokenDummyModel(Model):
         return torch.ones((len(x_train), 1))
 
 
-class DummyEvaluator(DataEvaluator, ModelMixin):
+class DummyEvaluator(DataEvaluator):
     """Random data evaluator. Mainly used for testing purposes."""
 
     def __init__(self, random_state: RandomState = None):
@@ -64,9 +64,7 @@ Register("test_dataset").from_numpy(np.array([[1, 2], [3, 4], [5, 6]]), 1)
 
 class TestExperimentMediator(unittest.TestCase):
     def setUp(self):
-        self.fetcher = DataFetcher.setup(
-            "test_dataset", "dummy_dir", False, 10, 0.7, 0.2, 0.1
-        )
+        self.fetcher = DataFetcher.setup("test_dataset", False, 10, 0.7, 0.2, 0.1)
         self.dataevaluator = DummyEvaluator()
 
     def test_experiment_mediator(self):
@@ -78,26 +76,15 @@ class TestExperimentMediator(unittest.TestCase):
         ).compute_data_values(data_evaluators=[self.dataevaluator])
         self.assertIsInstance(experimentmediator.fetcher, DataFetcher)
         self.assertIsInstance(experimentmediator.data_evaluators[0], DataEvaluator)
-        self.assertEqual(experimentmediator.train_kwargs, {"epochs": 10})
-        self.assertEqual(experimentmediator.metric, "accuracy")
-        self.assertTrue(self.dataevaluator.trained)
-
-    def test_experiment_mediator_pass_args(self):
-        experimentmediator = ExperimentMediator(
-            self.fetcher,
-            DummyModel(),
-            metric_name="accuracy",
-        ).compute_data_values(data_evaluators=[self.dataevaluator], epochs=10)
-        self.assertIsInstance(experimentmediator.fetcher, DataFetcher)
-        self.assertIsInstance(experimentmediator.data_evaluators[0], DataEvaluator)
-        self.assertEqual(experimentmediator.metric, "accuracy")
+        self.assertIsInstance(experimentmediator.train_kwargs, dict)
+        self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_default(self):
         experimentmediator = ExperimentMediator(
             self.fetcher, DummyModel()
         ).compute_data_values([self.dataevaluator])
-        self.assertEqual(experimentmediator.metric, "neg_mse")
+        self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_create_fetcher(self):
@@ -107,13 +94,13 @@ class TestExperimentMediator(unittest.TestCase):
             train_count=0.7,
             valid_count=0.2,
             test_count=0.1,
-            add_noise=mix_labels,
+            add_noise_func=mix_labels,
             noise_kwargs={"noise_rate": 0.2},
             pred_model=DummyModel(),
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
         ).compute_data_values(data_evaluators=[self.dataevaluator])
-        self.assertEqual(experimentmediator.metric, "accuracy")
+        self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_exceptions(self):
@@ -122,9 +109,8 @@ class TestExperimentMediator(unittest.TestCase):
                 dataset_name="test_dataset",
                 force_download=False,
                 train_count=0.8,
-                valid_count=3.1,
-                test_count=0.0,
-                add_noise=mix_labels,
+                valid_count=1.1,
+                add_noise_func=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
                 pred_model=DummyModel(),
                 train_kwargs={"epochs": 5},
@@ -136,9 +122,8 @@ class TestExperimentMediator(unittest.TestCase):
                 dataset_name="test_dataset",
                 force_download=False,
                 train_count=0.8,
-                valid_count=0.1,
-                test_count=0,
-                add_noise=mix_labels,
+                valid_count=1.1,
+                add_noise_func=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
                 pred_model=DummyModel(),
                 train_kwargs={"epochs": 5},
@@ -147,10 +132,8 @@ class TestExperimentMediator(unittest.TestCase):
         self.assertFalse(self.dataevaluator.trained)
 
     def test_evaluate_mediator(self):
-        mock_func = Mock(
-            side_effect=[{"a": [1, 2], "b": [3, 4]}, {"a": [5, 6], "b": [7, 8]}]
-        )
-        kwargs = {"c": 1, "d": "2"}  # Makes sure the undesired kwargs are filtered out
+        mock_func = Mock(side_effect=[{"a": [1, 2], "b": [3]}, {"a": [4, 5], "b": [6]}])
+        kwargs = {"c": 1, "d": "2"}
         dummies = [DummyEvaluator(1), DummyEvaluator(2)]
         experimentmediator = ExperimentMediator(
             self.fetcher, DummyModel()
@@ -158,15 +141,15 @@ class TestExperimentMediator(unittest.TestCase):
         res = experimentmediator.evaluate(exper_func=mock_func, **kwargs)
         mock_func.assert_has_calls(
             [
-                call(dummies[0], self.fetcher),
-                call(dummies[1], self.fetcher),
+                call(dummies[0], self.fetcher, **kwargs),
+                call(dummies[1], self.fetcher, **kwargs),
             ]
         )
-        print(res)
-        self.assertTrue(res.loc[str(dummies[0])]["a"].eq([1, 2]).all())
-        self.assertTrue(res.loc[str(dummies[0])]["b"].eq([3, 4]).all())
-        self.assertTrue(res.loc[str(dummies[1])]["a"].eq([5, 6]).all())
-        self.assertTrue(res.loc[str(dummies[1])]["b"].eq([7, 8]).all())
+
+        self.assertTrue(res.loc["a", str(dummies[0])].eq([1, 2]).all())
+        self.assertTrue(res.loc["b", str(dummies[0])][0] == 3)
+        self.assertTrue(res.loc["a", str(dummies[1])].eq([4, 5]).all())
+        self.assertTrue(res.loc["b", str(dummies[1])][0] == 6)
 
     def test_experiment_mediator_model_factory_setup(self):
         exper_med = ExperimentMediator.model_factory_setup(
@@ -175,16 +158,20 @@ class TestExperimentMediator(unittest.TestCase):
             train_count=0.7,
             valid_count=0.2,
             test_count=0.1,
-            add_noise=mix_labels,
+            add_noise_func=mix_labels,
             noise_kwargs={"noise_rate": 0.2},
-            model_name="ClassifierMLP",
+            model_name="mlpclass",
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
         )
-        exper_med = exper_med.compute_data_values(data_evaluators=[self.dataevaluator])
-        self.assertEqual(exper_med.metric, "accuracy")
+        experimentmediator = exper_med.compute_data_values(
+            data_evaluators=[self.dataevaluator]
+        )
+        self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
-        self.assertIsInstance(exper_med.data_evaluators[0].pred_model, ClassifierMLP)
+        self.assertIsInstance(
+            experimentmediator.data_evaluators[0].pred_model, ClassifierMLP
+        )
 
 
 if __name__ == "__main__":

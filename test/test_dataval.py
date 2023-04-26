@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from opendataval.dataloader import DataFetcher, Register, mix_labels
-from opendataval.evaluator import ExperimentMediator, discover_corrupted_sample
+from opendataval.experiment import ExperimentMediator, discover_corrupted_sample
 from opendataval.model import Model
 from opendataval.presets import dummy_evaluators
 from opendataval.util import set_random_state

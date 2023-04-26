@@ -10,7 +10,7 @@ is easily extendable via adding/registering new datasets via
 :py:class:`~opendataval.dataloader.DataFetcher` +
 :py:class:`~opendataval.dataloader.Register`, creating your own
 :py:class:`~opendataval.dataval.DataEvaluator` via inheritance, or creating new
-experiments to be run by :py:class:`~opendataval.evaluator.ExperimentMediator`.
+experiments to be run by :py:class:`~opendataval.experiment.ExperimentMediator`.
 The framework provides a robust and replicable way of loading data, selecting a model,
 training (several) data evaluators, and running an experiment to determine performance
 on all of them.
@@ -23,7 +23,7 @@ Modules
     dataloader
     dataval
     model
-    evaluator
+    experiment
 
 Utils
 -----

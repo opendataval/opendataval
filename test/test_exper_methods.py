@@ -10,7 +10,7 @@ from sklearn.utils import check_random_state
 from opendataval.dataloader import DataFetcher
 from opendataval.dataloader.noisify import mix_labels
 from opendataval.dataval import DataEvaluator
-from opendataval.evaluator.exper_methods import (
+from opendataval.experiment.exper_methods import (
     discover_corrupted_sample,
     increasing_bin_removal,
     noisy_detection,

@@ -164,7 +164,7 @@ Install Python 3.9 | 3.10 | 3.11.
 ### Quick Start
 To set up an experiment on DataEvaluators
 ```python
-from opendataval.evaluator import ExperimentMediator
+from opendataval.experiment import ExperimentMediator
 
 exper_med = ExperimentMediator.model_factory_setup(
     dataset_name='iris',

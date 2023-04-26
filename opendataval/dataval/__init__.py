@@ -9,7 +9,7 @@ Provides an ABC for DataEvaluator to inherit from. The work flow is as follows:
 :py:class:`~opendataval.dataloader.Register`,
 :py:class:`~opendataval.dataloader.DataFetcher`
 -> :py:class:`~opendataval.dataval.DataEvaluator`
--> :py:mod:`~opendataval.evaluator.exper_methods`
+-> :py:mod:`~opendataval.experiment.exper_methods`
 
 
 
