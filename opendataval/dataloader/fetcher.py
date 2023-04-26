@@ -24,7 +24,7 @@ class DataFetcher:
         Name of the data set, must be registered with :py:class:`Register`
     force_download : bool, optional
         Forces download from source URL, by default False
-     random_state : RandomState, optional
+    random_state : RandomState, optional
         Random initial state, by default None
 
     Attributes

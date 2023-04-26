@@ -32,5 +32,7 @@ Utils
 
     ~opendataval.util.set_random_state
     ~opendataval.util.load_mediator_output
+    __version__
 """
 __version__ = "0.0.1"
+"""Version release number."""

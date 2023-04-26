@@ -42,8 +42,10 @@ from opendataval.model.api import (
     ClassifierSkLearnWrapper,
     ClassifierUnweightedSkLearnWrapper,
     Model,
+    RegressionSkLearnWrapper,
     TorchClassMixin,
     TorchPredictMixin,
+    TorchRegressMixin,
 )
 from opendataval.model.logistic_regression import LogisticRegression
 from opendataval.model.mlp import ClassifierMLP, RegressionMLP

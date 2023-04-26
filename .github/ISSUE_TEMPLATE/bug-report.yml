@@ -4,7 +4,7 @@ body:
 - type: markdown
   attributes:
     value: >
-      #### Before submitting a bug, please make sure the issue hasn't been already addressed by searching through [the existing and past issues](https://github.com/opendataval/opendataval/issues).
+      #### Before submitting a bug, please make sure the issue hasn't been already addressed by searching through [the existing and past issues](https://github.com/kevinfjiang/opendataval/issues).
       #### If urgent, please reach out to the maintainers directly through email.
 - type: textarea
   attributes:
