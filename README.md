@@ -388,9 +388,9 @@ Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - kevinfjiang@
 ## Sharing TODO delete me
 To share this repository with non-contributers prior to making this public, run the following command.
 Expiration date:
-![Token expiration](https://img.shields.io/date/1683432000?style=for-the-badge)
+![Token expiration](https://img.shields.io/date/1685141566?style=for-the-badge)
 ```sh
-git clone https://oauth2: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@github.com/kevinfjiang/opendataval.git
+git clone https://oauth2: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@github.com/kevinfjiang/opendataval.git
 ```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
