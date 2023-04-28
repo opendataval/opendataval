@@ -1,7 +1,6 @@
 import math
 import os
 import warnings
-from collections import deque
 from typing import Any, Callable, Union
 
 import pandas as pd
@@ -386,18 +385,9 @@ class ExperimentMediator:
         df : pd.DataFrame
             Output DataFrame from an experiment run by ExperimentMediator
         """
-        if not hasattr(self, "last_outputs"):
-            # Storing some old outputs in case we forgot set output_directory
-            # Optional if we should include or delete, open to debate
-            self.last_outputs = deque([], maxlen=5)
-
-        self.last_outputs.append((file_name, df))
-
         if not hasattr(self, "output_directory"):
-            warnings.warn("Output directory not set, holding last 10 saved outputs.")
+            warnings.warn("Output directory not set, output has not been saved")
             return
 
-        while self.last_outputs:
-            curr_file_name, curr_df = self.last_outputs.popleft()
-            file_path = os.path.join(self.output_directory, curr_file_name)
-            curr_df.to_csv(file_path)
+        file_path = os.path.join(self.output_directory, file_name)
+        df.to_csv(file_path)

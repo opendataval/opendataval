@@ -168,14 +168,10 @@ class TestExperimentMediator(unittest.TestCase):
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
         )
-        experimentmediator = exper_med.compute_data_values(
-            data_evaluators=[self.dataevaluator]
-        )
-        self.assertEqual(experimentmediator.metric_name, "accuracy")
+        exper_med = exper_med.compute_data_values(data_evaluators=[self.dataevaluator])
+        self.assertEqual(exper_med.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
-        self.assertIsInstance(
-            experimentmediator.data_evaluators[0].pred_model, ClassifierMLP
-        )
+        self.assertIsInstance(exper_med.data_evaluators[0].pred_model, ClassifierMLP)
 
 
 if __name__ == "__main__":

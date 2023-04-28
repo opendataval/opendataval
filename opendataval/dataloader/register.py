@@ -49,7 +49,14 @@ def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str
 
 
 def one_hot_encode(data: np.ndarray) -> np.ndarray:
-    """One hot encodes a 1D numpy array."""
+    """One hot encodes a numpy array.
+
+    Raises
+    ------
+    ValueError
+        When the input array is not of shape (N,), (N,1), (N,1,1)...
+    """
+    data = data.reshape(len(data))  # Reduces shape to (N,) array
     num_values = np.max(data) + 1
     return np.eye(num_values)[data]
 
@@ -59,11 +66,11 @@ def _read_csv(file_path: str, label_columns: Union[str, list]) -> DatasetFunc:
     return lambda: _from_pandas(pd.read_csv(file_path), label_columns)()
 
 
-def _from_pandas(df: pd.DataFrame, label_columns: Union[str, list]) -> DatasetFunc:
+def _from_pandas(df: pd.DataFrame, labels: Union[str, list]) -> DatasetFunc:
     """Create data set from pandas dataframe, nested functions for api consistency."""
-    if all(isinstance(col, int) for col in label_columns):
-        label_columns = df.columns[label_columns]
-    return lambda: (df.drop(label_columns, axis=1).values, df[label_columns].values)
+    if all(isinstance(col, int) for col in labels):
+        labels = df.columns[labels]
+    return lambda: (df.drop(labels, axis=1).values, df[labels].values)
 
 
 def _from_numpy(array: np.ndarray, label_columns: Union[str, list[int]]) -> DatasetFunc:
