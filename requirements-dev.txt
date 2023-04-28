@@ -226,15 +226,15 @@ nodeenv==1.7.0
     # via pre-commit
 notebook==6.5.4
     # via
-    #   opendataval (pyproject.toml)
     #   jupyterlab
+    #   opendataval (pyproject.toml)
 notebook-shim==0.2.2
     # via nbclassic
 numpy==1.24.2
     # via
     #   contourpy
-    #   opendataval (pyproject.toml)
     #   matplotlib
+    #   opendataval (pyproject.toml)
     #   pandas
     #   scikit-learn
     #   scipy
@@ -413,9 +413,9 @@ tornado==6.2
     #   terminado
 tqdm==4.65.0
     # via
-    #   opendataval (pyproject.toml)
     #   kaggle
     #   opendatasets
+    #   opendataval (pyproject.toml)
 traitlets==5.9.0
     # via
     #   comm
