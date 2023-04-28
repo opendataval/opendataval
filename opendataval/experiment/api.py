@@ -59,6 +59,7 @@ class ExperimentMediator:
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
 
         self.metric_name = metric_name
+        self.metric = metrics_dict[self.metric_name]
         self.data_evaluators = []
 
     @classmethod
@@ -217,13 +218,10 @@ class ExperimentMediator:
 
         for data_val in data_evaluators:
             try:
-
                 self.data_evaluators.append(
-                    data_val.input_model_metric(
-                        self.pred_model, metrics_dict[self.metric_name]
+                    data_val.train(
+                        self.fetcher, self.pred_model, self.metric, **self.train_kwargs
                     )
-                    .input_fetcher(self.fetcher)
-                    .train_data_values(**self.train_kwargs)
                 )
 
             except Exception as ex:

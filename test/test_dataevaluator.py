@@ -70,10 +70,6 @@ class TestDataEvaluator(unittest.TestCase):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
         y = torch.randn(100, 1)
         y_hat = torch.randn(100, 1)
-
-        with self.assertRaises(ValueError):
-            evaluator.evaluate(y, y_hat)
-
         evaluator.input_model_metric(self.model, self.metric)
 
         self.assertEqual(evaluator.evaluate(y, y_hat), 1.0)
@@ -107,6 +103,18 @@ class TestDataEvaluator(unittest.TestCase):
         self.assertTrue(torch.equal(evaluator.x_valid, self.x_valid))
         self.assertTrue(torch.equal(evaluator.y_valid, self.y_valid))
         self.assertEqual(evaluator.evaluate(evaluator.y_train, self.y_train), 0.0)
+        self.assertTrue(evaluator.trained)
+
+        # Tests categorical default
+        self.fetcher.categorical = True
+        evaluator = DummyDataEvaluator(random_state=self.random_state)
+        evaluator = evaluator.train(self.fetcher, self.model)
+
+        self.assertTrue(torch.equal(evaluator.x_train, self.x_train))
+        self.assertTrue(torch.equal(evaluator.y_train, self.y_train))
+        self.assertTrue(torch.equal(evaluator.x_valid, self.x_valid))
+        self.assertTrue(torch.equal(evaluator.y_valid, self.y_valid))
+        self.assertEqual(evaluator.evaluate(evaluator.y_train, self.y_train), 1.0)
         self.assertTrue(evaluator.trained)
 
     def test_input_fetcher(self):
