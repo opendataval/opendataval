@@ -31,8 +31,10 @@ class TestDataFetcher(unittest.TestCase):
         Register("dummy2", categorical=True)
         self.assertTrue(n + 1 == len(DataFetcher.datasets_available()))
 
-    def test_split_dataset(self):
-        self.fetcher.split_dataset(train_count=0.7, valid_count=0.2, test_count=0.1)
+    def test_split_dataset_prop(self):
+        self.fetcher.split_dataset_by_prop(
+            train_prop=0.7, valid_prop=0.2, test_prop=0.1
+        )
         x_train, y_train, x_valid, y_valid, x_test, y_test = self.fetcher.datapoints
         self.assertIsInstance(x_train, torch.Tensor)
         self.assertIsInstance(y_train, torch.Tensor)
@@ -71,7 +73,7 @@ class TestDataFetcher(unittest.TestCase):
 
     def test_noisify(self):
         # Test with no noise
-        self.fetcher.split_dataset(train_count=80, valid_count=20)
+        self.fetcher.split_dataset_by_count(train_count=80, valid_count=20)
         x_train = self.fetcher.x_train.copy()
         y_train = self.fetcher.y_train.copy()
         self.fetcher.noisify(mix_labels, noise_rate=0.0)
@@ -80,7 +82,7 @@ class TestDataFetcher(unittest.TestCase):
         self.assertTrue(not self.fetcher.noisy_train_indices.any())
 
         # Test with noise
-        self.fetcher.split_dataset(train_count=80, valid_count=20)
+        self.fetcher.split_dataset_by_count(train_count=80, valid_count=20)
         x_train = self.fetcher.x_train.copy()
         y_train = self.fetcher.y_train.copy()
         self.fetcher.noisify(mix_labels, noise_rate=0.5)
@@ -89,7 +91,7 @@ class TestDataFetcher(unittest.TestCase):
         self.assertTrue(self.fetcher.noisy_train_indices.any())
 
         # Test with gauss noise
-        self.fetcher.split_dataset(train_count=80, valid_count=20)
+        self.fetcher.split_dataset_by_count(train_count=80, valid_count=20)
         x_train = self.fetcher.x_train.copy()
         y_train = self.fetcher.y_train.copy()
         self.fetcher.noisify(add_gauss_noise, mu=10, sigma=10, noise_rate=0.5)
@@ -109,17 +111,17 @@ class TestDataFetcher(unittest.TestCase):
         self.assertRaises(KeyError, DataFetcher, dataset_name="nonexistent")
         self.assertRaises(
             ValueError,
-            self.fetcher.split_dataset,
+            self.fetcher.split_dataset_by_count,
             train_count=80,
             valid_count=100,
             test_count=100,
         )
         self.assertRaises(
             ValueError,
-            self.fetcher.split_dataset,
-            train_count=0.8,
-            valid_count=0.3,
-            test_count=0.1,
+            self.fetcher.split_dataset_by_prop,
+            train_prop=0.8,
+            valid_prop=0.3,
+            test_prop=0.1,
         )
 
         self.assertRaises(

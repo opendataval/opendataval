@@ -31,7 +31,7 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
             random_state = set_random_state(10)
             fetcher = (
                 DataFetcher("iris", random_state=random_state)
-                .split_dataset(3, 2, 2)
+                .split_dataset_by_count(3, 2, 2)
                 .noisify(mix_labels, noise_rate=0.2)
             )
 

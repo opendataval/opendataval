@@ -75,8 +75,8 @@ def download_bbc(cache_dir: str, force_download: bool):
         "https://raw.githubusercontent.com/"
         "mdsohaib/BBC-News-Classification/master/bbc-text.csv"
     )
-    cache(github_url, cache_dir, "bbc-text.csv", force_download)
-    df = pd.read_csv(cache_dir + "bbc-text.csv")
+    filepath = cache(github_url, cache_dir, "bbc-text.csv", force_download)
+    df = pd.read_csv(filepath)
 
     label_dict = {
         "business": 0,
@@ -107,8 +107,8 @@ def download_imdb(cache_dir: str, force_download: bool):
         "https://raw.githubusercontent.com/"
         "Ankit152/IMDB-sentiment-analysis/master/IMDB-Dataset.csv"
     )
-    cache(github_url, cache_dir, "imdb.csv", force_download)
-    df = pd.read_csv(cache_dir + "imdb.csv")
+    filepath = cache(github_url, cache_dir, "imdb.csv", force_download)
+    df = pd.read_csv(filepath)
 
     label_dict = {"negative": 0, "positive": 1}
     labels = np.fromiter((label_dict[label] for label in df["sentiment"]), dtype=int)

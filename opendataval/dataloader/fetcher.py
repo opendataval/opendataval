@@ -22,6 +22,9 @@ class DataFetcher:
     ----------
     dataset_name : str
         Name of the data set, must be registered with :py:class:`Register`
+    cache_dir : str, optional
+        Directory of where to cache the loaded data, by default None which uses
+        :py:attr:`Register.CACHE_DIR`
     force_download : bool, optional
         Forces download from source URL, by default False
     random_state : RandomState, optional
@@ -67,6 +70,7 @@ class DataFetcher:
     def __init__(
         self,
         dataset_name: str,
+        cache_dir: str = None,
         force_download: bool = False,
         random_state: RandomState = None,
     ):
@@ -77,7 +81,7 @@ class DataFetcher:
             )
 
         dataset = Register.Datasets[dataset_name]
-        self.covar, self.labels = dataset.load_data(force_download)
+        self.covar, self.labels = dataset.load_data(cache_dir, force_download)
         if not len(self.covar) == len(self.labels):
             raise ValueError("Covariates and Labels must be of same length.")
 
@@ -92,6 +96,7 @@ class DataFetcher:
     def setup(
         cls,
         dataset_name: str,
+        cache_dir: str = None,
         force_download: bool = False,
         random_state: RandomState = None,
         train_count: Union[int, float] = 0,
@@ -103,11 +108,24 @@ class DataFetcher:
         """Create, split, and add noise to DataFetcher from input arguments."""
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
 
-        return (
-            cls(dataset_name, force_download, random_state)
-            .split_dataset(train_count, valid_count, test_count)
-            .noisify(add_noise_func, **noise_kwargs)
-        )
+        split_types = (type(train_count), type(valid_count), type(test_count))
+        if split_types == (int, int, int):
+            return (
+                cls(dataset_name, cache_dir, force_download, random_state)
+                .split_dataset_by_count(train_count, valid_count, test_count)
+                .noisify(add_noise_func, **noise_kwargs)
+            )
+        elif split_types == (float, float, float):
+            return (
+                cls(dataset_name, cache_dir, force_download, random_state)
+                .split_dataset_by_prop(train_count, valid_count, test_count)
+                .noisify(add_noise_func, **noise_kwargs)
+            )
+        else:
+            raise ValueError(
+                f"Expected split types to all of int or float but got "
+                f"{type(train_count)=}|{type(valid_count)}|{type(test_count)=}"
+            )
 
     @classmethod
     def from_data(
@@ -206,21 +224,33 @@ class DataFetcher:
         else:
             return len(self.x_train) + len(self.x_valid) + len(self.x_test)
 
-    def split_dataset(
+    def split_dataset_by_prop(
         self,
-        train_count: Union[int, float] = 0,
-        valid_count: Union[int, float] = 0,
-        test_count: Union[int, float] = 0,
+        train_prop: float = 0.0,
+        valid_prop: float = 0.0,
+        test_prop: float = 0.0,
     ):
-        """Split the covariates and labels to the specified counts/proportions.
+        """Split the covariates and labels to the specified proportions."""
+        train_count, valid_count, test_count = (
+            round(self.num_points * p) for p in (train_prop, valid_prop, test_prop)
+        )
+        return self.split_dataset_by_count(train_count, valid_count, test_count)
+
+    def split_dataset_by_count(
+        self,
+        train_count: int = 0,
+        valid_count: int = 0,
+        test_count: int = 0,
+    ):
+        """Split the covariates and labels to the specified counts.
 
         Parameters
         ----------
-        train_count : Union[int, float]
+        train_count : int
             Number/proportion training points
-        valid_count : Union[int, float]
+        valid_count : int
             Number/proportion validation points
-        test_count : Union[int, float]
+        test_count : int
             Number/proportion test points
 
         Returns
@@ -230,25 +260,15 @@ class DataFetcher:
 
         Raises
         ------
-        AttributeError
-            No specified Covariates or labels. Ensure that the Register object
-            has been fetched and your data set correctly
         ValueError
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
         """
-        tr, val, tes = train_count, valid_count, test_count
-        type_tuple = (type(tr), type(val), type(tes))  # Fix without structral match
-        if sum((tr, val, tes)) <= self.num_points and type_tuple == (int, int, int):
-            sp = list(accumulate((tr, val, tes)))
-        elif sum((tr, val, tes)) <= 1.0 and type_tuple == (float, float, float):
-            splits = (round(self.num_points * prob) for prob in (tr, val, tes))
-            sp = list(accumulate(splits))
-        else:
+        if sum((train_count, valid_count, test_count)) > self.num_points:
             raise ValueError(
-                f"Splits must be < {self.num_points=} and of the same type: "
-                f"{type(train_count)=}|{type(valid_count)=}|{type(test_count)=}."
+                f"Split totals must be < {self.num_points=} and of the same type: "
             )
+        sp = list(accumulate((train_count, valid_count, test_count)))
 
         # Extra underscore to unpack any remainders
         idx = self.random_state.permutation(self.num_points)

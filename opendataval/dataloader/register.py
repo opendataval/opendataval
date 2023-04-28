@@ -1,7 +1,7 @@
 import os
 import warnings
 from functools import partial
-from typing import Callable, TypeVar, Union
+from typing import Callable, Sequence, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -66,7 +66,7 @@ def _from_pandas(df: pd.DataFrame, label_columns: Union[str, list]) -> DatasetFu
     return lambda: (df.drop(label_columns, axis=1).values, df[label_columns].values)
 
 
-def _from_numpy(array, label_columns: Union[str, list[int]]) -> DatasetFunc:
+def _from_numpy(array: np.ndarray, label_columns: Union[str, list[int]]) -> DatasetFunc:
     """Create data set from numpy array, nested functions for api consistency."""
     if isinstance(label_columns, int):
         label_columns = [label_columns]
@@ -97,6 +97,7 @@ class Register:
     """
 
     CACHE_DIR = "data_files"
+    """Default directory to cache downloads to."""
 
     Datasets: dict[str, Self] = {}
     """Creates a directory for all registered/downloadable data set functions."""
@@ -112,16 +113,12 @@ class Register:
 
         self.covar_transform = None
         self.label_transform = None
+
+        self.categorical = True
         if categorical:
             self.label_transform = one_hot_encode
 
-        if cacheable:
-            if not os.path.isdir(Register.CACHE_DIR):
-                os.mkdir(Register.CACHE_DIR)
-
-            self.download_dir = os.path.join(
-                os.getcwd(), f"{Register.CACHE_DIR}/{dataset_name}/"
-            )
+        self.cacheable = cacheable
 
         Register.Datasets[dataset_name] = self
 
@@ -135,9 +132,14 @@ class Register:
         self.covar_label_func = _from_pandas(df, label_columns)
         return self
 
-    def from_numpy(self, df: pd.DataFrame, label_columns: Union[str, list[int]]):
-        """Register data set from numpy array."""
-        self.covar_label_func = _from_numpy(df, label_columns)
+    def from_numpy(self, array: np.ndarray, labels: int | Sequence[int]):
+        """Register data set from covariate and label numpy array."""
+        self.covar_label_func = _from_numpy(array, labels)
+        return self
+
+    def from_covariates_labels(self, covariates: np.ndarray, labels: np.ndarray):
+        """Register data set from covariate and label numpy array."""
+        self.covar_label_func = lambda: (covariates, labels)
         return self
 
     def __call__(self, func: DatasetFunc, *args, **kwargs) -> DatasetFunc:
@@ -169,7 +171,9 @@ class Register:
         self.label_transform = transform
         return self
 
-    def load_data(self, force_download: bool = False) -> tuple[Dataset, np.ndarray]:
+    def load_data(
+        self, cache_dir: str = None, force_download: bool = False
+    ) -> tuple[Dataset, np.ndarray]:
         """Retrieve data from specified data input functions.
 
         Loads the covariates and labels from the registered callables, applies
@@ -177,6 +181,9 @@ class Register:
 
         Parameters
         ----------
+        cache_dir : str, optional
+            Directory of where to cache the loaded data, by default None which uses
+            :py:attr:`Register.CACHE_DIR`
         force_download : bool, optional
             Forces download from source URL, by default False
 
@@ -186,8 +193,14 @@ class Register:
             Transformed covariates and labels of the data set
         """
         dataset_kwargs = {}
-        if hasattr(self, "download_dir"):
-            dataset_kwargs["cache_dir"] = self.download_dir
+
+        if self.cacheable:
+            cache_dir = cache_dir if cache_dir is not None else Register.CACHE_DIR
+            if not os.path.isdir(cache_dir):
+                os.mkdir(cache_dir)
+
+            full_path = os.path.join(os.getcwd(), cache_dir, self.dataset_name)
+            dataset_kwargs["cache_dir"] = full_path
             dataset_kwargs["force_download"] = force_download
 
         if hasattr(self, "covar_label_func"):

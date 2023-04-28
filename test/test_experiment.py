@@ -64,7 +64,9 @@ Register("test_dataset").from_numpy(np.array([[1, 2], [3, 4], [5, 6]]), 1)
 
 class TestExperimentMediator(unittest.TestCase):
     def setUp(self):
-        self.fetcher = DataFetcher.setup("test_dataset", False, 10, 0.7, 0.2, 0.1)
+        self.fetcher = DataFetcher.setup(
+            "test_dataset", "dummy_dir", False, 10, 0.7, 0.2, 0.1
+        )
         self.dataevaluator = DummyEvaluator()
 
     def test_experiment_mediator(self):
@@ -109,7 +111,8 @@ class TestExperimentMediator(unittest.TestCase):
                 dataset_name="test_dataset",
                 force_download=False,
                 train_count=0.8,
-                valid_count=1.1,
+                valid_count=3.1,
+                test_count=0.0,
                 add_noise_func=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
                 pred_model=DummyModel(),
@@ -122,7 +125,8 @@ class TestExperimentMediator(unittest.TestCase):
                 dataset_name="test_dataset",
                 force_download=False,
                 train_count=0.8,
-                valid_count=1.1,
+                valid_count=0.1,
+                test_count=0,
                 add_noise_func=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
                 pred_model=DummyModel(),

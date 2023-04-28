@@ -13,8 +13,8 @@ fetcher = DataFetcher(dataset_name='dataset')
 
 From there we must define how we will split the data set into train/valid/test splits
 ```python
-fetcher = fetcher.split_dataset(70, 20, 10)  # Data set counts
-fetcher = fetcher.split_dataset(.7, .2, .1)  # Splits on proportions
+fetcher = fetcher.split_dataset_by_count(70, 20, 10)  # Data set counts
+fetcher = fetcher.split_dataset_by_prop(.7, .2, .1)  # Splits on proportions
 ```
 
 Finally we can specify a function on how to add noise to the data points. The function should be allowed to access every instance variable of a data fetcher.
@@ -37,6 +37,7 @@ another way of constructing the DataFetcher by passing all arguments in at once:
 ```python
 fetcher = DataFetcher.setup(
     dataset_name=dataset_name,
+    cache_dir=cache_dir,
     force_download=force_download,
     random_state=random_state,
     train_count=train_count,
@@ -106,5 +107,5 @@ covar, labels = pd_dataset.load_data()
 
 To wrap back around, this is the api to get the data from any of the Registered data sets.
 ```python
-datapoints = DataFetcher("pd").split_dataset(.7, .2, .1).datapoints
+datapoints = DataFetcher("pd").split_dataset_by_prop(.7, .2, .1).datapoints
 ```

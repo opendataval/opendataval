@@ -45,11 +45,11 @@ def download_adult(cache_dir: str, force_download: bool = False):
         arXiv.org, 2019. Available: https://arxiv.org/abs/1909.11671.
     """
     uci_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult"
-    train_url = cache(uci_url + "/adult.data", cache_dir, "train.csv", force_download)
-    test_url = cache(uci_url + "/adult.test", cache_dir, "test.csv", force_download)
+    train_path = cache(uci_url + "/adult.data", cache_dir, "train.csv", force_download)
+    test_path = cache(uci_url + "/adult.test", cache_dir, "test.csv", force_download)
 
-    data_train = pd.read_csv(train_url, header=None)
-    data_test = pd.read_csv(test_url, skiprows=1, header=None)
+    data_train = pd.read_csv(train_path, header=None)
+    data_test = pd.read_csv(test_path, skiprows=1, header=None)
 
     df = pd.concat((data_train, data_test), axis=0)
 
@@ -144,9 +144,9 @@ def download_election(cache_dir: str, force_download: bool):
         os.makedirs(cache_dir)
 
     url = "https://dataverse.harvard.edu/api/access/datafile/4299753?gbrecs=false"
-    cache(url, cache_dir, "1976-2020-president.tab", force_download)
+    filepath = cache(url, cache_dir, "1976-2020-president.tab", force_download)
 
-    df = pd.read_csv(f"{cache_dir}/1976-2020-president.tab", delimiter="\t")
+    df = pd.read_csv(filepath, delimiter="\t")
     drop_col = [
         "notes",
         "party_detailed",

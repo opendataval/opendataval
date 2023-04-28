@@ -198,7 +198,7 @@ Here are the 4 interacting parts of opendataval
 ```python
 fetcher = (
     DataFetcher(dataset_name='name')
-    .split_dataset(train_count=.7, valid_count=.2, test_count=.1)
+    .split_dataset_by_prop(train_count=.7, valid_count=.2, test_count=.1)
     .noisify(noise_func)  # (DataFetcher, ...) -> dict
 )
 
@@ -277,8 +277,8 @@ fetcher = DataFetcher(dataset_name='name1')
 
 From there we must define how we will split the data set into train/valid/test splits
 ```python
-fetcher = fetcher.split_dataset(70, 20, 10)  # Data set counts
-fetcher = fetcher.split_dataset(.7, .2, .1)  # Replits on proportions
+fetcher = fetcher.split_dataset_by_count(70, 20, 10)  # Data set counts
+fetcher = fetcher.split_dataset_by_prop(.7, .2, .1)  # Splits on proportions
 ```
 
 To get data points

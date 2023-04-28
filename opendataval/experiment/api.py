@@ -66,6 +66,7 @@ class ExperimentMediator:
     def setup(
         cls,
         dataset_name: str,
+        cache_dir: str = None,
         force_download: bool = False,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
@@ -83,6 +84,7 @@ class ExperimentMediator:
 
         fetcher = DataFetcher.setup(
             dataset_name=dataset_name,
+            cache_dir=cache_dir,
             force_download=force_download,
             random_state=random_state,
             train_count=train_count,
@@ -103,6 +105,7 @@ class ExperimentMediator:
     def model_factory_setup(
         cls,
         dataset_name: str,
+        cache_dir: str = None,
         force_download: bool = False,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
@@ -125,6 +128,9 @@ class ExperimentMediator:
         dataset_name : str
             Name of the data set, must be registered with
             :py:class:`~opendataval.dataloader.Register`
+        cache_dir : str, optional
+            Directory of where to cache the loaded data, by default None which uses
+            :py:attr:`Register.CACHE_DIR`
         force_download : bool, optional
             Forces download from source URL, by default False
         train_count : Union[int, float]
@@ -170,6 +176,7 @@ class ExperimentMediator:
 
         fetcher = DataFetcher.setup(
             dataset_name=dataset_name,
+            cache_dir=cache_dir,
             force_download=force_download,
             random_state=random_state,
             train_count=train_count,

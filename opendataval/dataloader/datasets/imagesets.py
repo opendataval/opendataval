@@ -1,46 +1,29 @@
-"""TorchVision data sets.
-
-Uses `torchvision <https://github.com/pytorch/vision>`_. as a dependency.
-"""
-
-import os
-from pathlib import Path
-from typing import TypeVar, Union
+from abc import ABC, abstractmethod
+from typing import Sequence, Type, TypeVar
 
 import matplotlib as plt
 import numpy as np
 import torch
-import torch.nn as nn
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
-import tqdm
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset, Subset
-from torchvision.datasets import (
-    CIFAR10,
-    CIFAR100,
-    MNIST,
-    STL10,
-    SVHN,
-    FashionMNIST,
-    VisionDataset,
-)
-
-from opendataval.dataloader.register import Register
+from torch.utils.data import DataLoader, Dataset
+from torchvision.datasets import MNIST, VisionDataset
 
 Self = TypeVar("Self")
 
-MAX_DATASET_SIZE = 50000
+MAX_DATASET_SIZE = 10
+"""Data Valuation algorithms can take a long time for large data sets, thus cap size."""
 
 
-def ResnetEmbeding(
-    dataset_class: type[VisionDataset], size: tuple[int, int] = (224, 224)
+def resnet_embeddings(
+    image_set: Type[VisionDataset], size: tuple[int, int] = (224, 224)
 ):
-    """Convert PIL color Images into embeddings with ResNet50 model.
+    """Convert PIL Images into embeddings with ResNet18 model.
 
-    Given a PIL Images, passes through ResNet50 (as done by prior Data Valuation papers)
+    Given a PIL Images, passes through ResNet18 (as done by prior Data Valuation papers)
     and saves the vector embeddings. The embeddings are extracted from the ``avgpool``
-    layer of ResNet50. The extraction is through the PyTorch forward hook feature.
+    layer of ResNet18. The extraction is through the PyTorch forward hook feature.
 
     References
     ----------
@@ -51,25 +34,13 @@ def ResnetEmbeding(
     .. [2] A. Ghorbani and J. Zou,
         Data Shapley: Equitable Valuation of Data for Machine Learning
         arXiv.org, 2019. Available: https://arxiv.org/abs/1904.02868.
-
-    Parameters
-    ----------
-    image_set : type[VisionDataset]
-        Class of Dataset to compute the embeddings of.
-    size : tuple[int, int], optional
-        Size to resize images to, by default (224, 224)
-
-    Returns
-    -------
-    Callable
-        Wrapped function when called returns a covariate embedding array and label array
     """
 
     def wrapper(
-        cache_dir: str, force_download: bool, *args, **kwargs
-    ) -> tuple[torch.Tensor, np.ndarray]:
+        cache_dir: str, force_download: bool, **kwargs
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Methods: `@christiansafka <https://github.com/christiansafka/img2vec>`_."""
-        from torchvision.models.resnet import ResNet50_Weights, resnet50
+        from torchvision.models.resnet import ResNet18_Weights, resnet18
 
         img2vec_transforms = transforms.Compose(
             [
@@ -79,68 +50,40 @@ def ResnetEmbeding(
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ]
         )
-        cache_dir = Path(cache_dir)
-        embed_file_name = f"{dataset_class.__name__}_{MAX_DATASET_SIZE}_embed.pt"
-        embed_path = cache_dir / embed_file_name
-
-        # Resnet inputs expect `img2vec_transforms`ed images as input
-        dataset = dataset_class(
-            root=cache_dir,
-            download=force_download or not cache_dir.exists(),
-            transform=img2vec_transforms,
-            *args,
-            **kwargs,
-        )
-        subset = np.random.RandomState(10).permutation(len(dataset))
-
-        if embed_path.exists():
-            image_embeddings = torch.load(embed_path)
-            return (
-                image_embeddings,
-                np.fromiter(
-                    (dataset.targets[i] for i in subset),
-                    count=len(image_embeddings),
-                    dtype=int,
-                ),
-            )
-
-        dataset = Subset(dataset, subset[:MAX_DATASET_SIZE])
-
-        # Slow down on gpu vs cpu is quite substantial, uses gpu accel if available
-        device = torch.device(
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
 
         # Gets the avgpool layer, the outputs of this layer are our embeddings
-        embedder = resnet50(weights=ResNet50_Weights.DEFAULT).to(device)
-        embedder.fc = nn.Identity()
+        embedder = resnet18(weights=ResNet18_Weights.DEFAULT)
+        embedding_layer = embedder._modules.get("avgpool")
 
         # We will register a hook to extract the ouput of avgpool layers.
-        image_embeddings = torch.zeros(0, 2048)
+        image_embeddings = torch.zeros(0, 512, 1, 1)
+
+        def extract(_model, _inputs, output: torch.Tensor):
+            nonlocal image_embeddings  # Allows us to reassign to image_embeddings
+            image_embeddings = torch.cat((image_embeddings, output.detach()))
+
+        hook = embedding_layer.register_forward_hook(extract)
         labels_list = []
 
-        with torch.no_grad():  # Passes through model, and our hook extracts outputs
-            for img, labels in tqdm.tqdm(
-                DataLoader(dataset, 256, pin_memory=True, num_workers=4)
-            ):
-                img = img.to(device)
-                embedding = embedder(img).detach().cpu()
-                image_embeddings = torch.cat((image_embeddings, embedding), dim=0)
-                labels_list.extend(labels)
+        # Resnet inputs expect `BASE_TRANSFORM`ed images as input
+        dataset = image_set(root=cache_dir, download=force_download, **kwargs)
+        dataset.transform = img2vec_transforms
 
-        image_embeddings = image_embeddings.detach()
-        embed_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(image_embeddings, embed_path)
-        return image_embeddings, np.array(labels_list)
+        with torch.no_grad():  # Passes through model, and our hook extracts outputs
+            for img, labels in DataLoader(dataset, 64):
+                embedder(img)
+                labels_list.extend(labels)
+                if len(image_embeddings) > MAX_DATASET_SIZE:  # Caps data set size
+                    break
+
+        hook.remove()  # Cleans up the hook
+
+        return image_embeddings.numpy(force=True), np.array(labels)
 
     return wrapper
 
 
-def show_image(imgs: Union[list[Image.Image], Image.Image]) -> None:
+def show_image(imgs: list[Image.Image] | Image.Image) -> None:
     """Displays an image or a list of images."""
     if not isinstance(imgs, list):
         imgs = [imgs]
@@ -153,95 +96,67 @@ def show_image(imgs: Union[list[Image.Image], Image.Image]) -> None:
     return
 
 
-class VisionAdapter(Dataset):
-    """Adapter for PyTorch vision data sets. __call__ is called by :py:class:`Register`.
+class DatasetAdapter(Dataset, ABC):
+    """Abstract class to adapt a PyTorch data set to separate covariates from labels."""
 
-    Adapter for MNIST data sets. __init__ inputs the class and __call__ initializes the
-    Dataset and extracts labels. __call__ returns tuple[Self, np.array] where Self is
-    a Dataset of covariates and np.array is an array of labels.
+    @classmethod
+    def __new__(cls, *args, **kwargs):
+        dataset = cls(*args, **kwargs)
+        return dataset, dataset.labels()
+
+    def labels(self):
+        return np.array(self.targets, dtype=int)
+
+    def __len__(self) -> int:
+        """Gets length of data set."""
+        return len(self.targets)
+
+    @abstractmethod
+    def __getitem__(self, index: int | Sequence[int]) -> torch.Tensor:
+        """Extract covariates only of a data set."""
+        raise NotImplementedError
+
+
+class MnistAdapter(DatasetAdapter, MNIST):
+    """Adapter for PyTorch MNIST data sets. Valid input for Register.__call__
 
     Parameters
     ----------
-    dataset_class : type[VisionDataset]
-        Torchvision data set class provided.
+    torch_dataset : VisionDatasetClass
+        MNIST data set class provided by torchvision.
     """
 
-    def __init__(self, dataset_class: type[VisionDataset]):
-        self.dataset_class = dataset_class
-        self.transform = None  # Additional transforms applied to the wrapper Dataset.
+    def __init__(self, cache_dir, force_download, *args, **kwargs):
+        super().__init__(root=cache_dir, download=force_download, *args, **kwargs)
 
-    def __call__(
-        self, cache_dir: str, force_download: bool, *args, **kwargs
-    ) -> tuple[Self, np.ndarray]:
-        """Return covariates as PyTorch Dataset and labels as np.array.
+    def __getitem__(self, index: int | Sequence[int]) -> torch.Tensor:
+        """Getitem from MNIST except we do not return the label."""
+        img = self.ds.data[index]
 
-        Parameters
-        ----------
-        cache_dir : str
-            Directory to download cached files to.
-        force_download : bool
-            Whether to force a download of the data files.
-
-        Returns
-        -------
-        tuple[Self, np.ndarray]
-            Returns covariates as PyTorch Dataset and labels as np.array. This approach
-            was chosen because we need to perform vectorized operations on the labels
-            in some data valuators but not necessarily on the covariates, thus, to save
-            memory, we leave the Covariates as a PyTorch Dataset.
-        """
-        # force_download is set to true if  directory doesn't exist, initial download
-        force_download = force_download or not os.path.exists(cache_dir)
-        self.dataset = self.dataset_class(
-            root=cache_dir, download=force_download, *args, **kwargs
-        )
-        labels = np.array(self.dataset.targets, dtype=int)
-
-        # Incase we forget to apply transform, ensures output is tensor
-        if self.dataset.transform is None:
-            self.transform = transforms.ToTensor()
-
-        return self, labels
-
-    def __getitem__(self, index: int) -> torch.Tensor:
-        """Getitem extracts only the covariates.
-
-        Parameters
-        ----------
-        index : int
-            Index to get covariate from the dataset
-
-        Returns
-        -------
-        torch.Tensor
-            Tensor representing the image with transforms added
-        """
-        img, _ = self.dataset.__getitem__(index)  # Ignores label
+        img = Image.fromarray(img.numpy(), mode="L")
+        if self.transform is not None:
+            img = self.transform(img)
         if self.transform is not None:
             img = self.transform(img)
         return img
 
-    def __len__(self) -> int:
-        return len(self.dataset)
 
+if __name__ == "__main__":
+    MnistAdapter("data_files/mnist", force_download=True)
 
-numbers = Register("mnist", True, True)(VisionAdapter(MNIST))
-"""Vision Classification data set registered as ``"mnist"``, from TorchVision."""
+# numbers = Register(
+#     "mnist", categorical=True, cacheable=True
+# ).add_covar_transform(BASE_TRANSFORM)(MnistAdapter(MNIST))
+# """Template for registering any MNIST data set."""
 
-fashion = Register("fashion", True, True)(VisionAdapter(FashionMNIST))
-"""Vision Classification data set registered as ``"fashion"``, from TorchVision."""
+# fashion = Register(
+#     "fashionmnist", categorical=True, cacheable=True
+# ).add_covar_transform(BASE_TRANSFORM)(MnistAdapter(FashionMNIST))
 
-cifar100 = Register("cifar100", True, True)(VisionAdapter(CIFAR100))
-"""Vision Classification data set registered as ``"cifar100"``, from TorchVision."""
+# cifar100 = Register(
+#     "cifar100", categorical=True, cacheable=True
+# ).add_covar_transform(BASE_TRANSFORM)(MnistAdapter(CIFAR100))
 
-cifar10 = Register("cifar10", True, True)(VisionAdapter(CIFAR10))
-"""Vision Classification registered as ``"cifar10"``, from TorchVision."""
-
-cifar10_embed = Register("cifar10-embeddings", True, True)(ResnetEmbeding(CIFAR10))
-"""Vision Classification registered as ``"cifar10-embeddings"`` ResNet50 embeddings"""
-
-stl10_embed = Register("stl10-embeddings", True, True)(ResnetEmbeding(STL10))
-"""Vision Classification registered as ``"stl10-embeddings"`` ResNet50 embeddings"""
-
-svhn_embed = Register("svhn-embeddings", True, True)(ResnetEmbeding(SVHN))
-"""Vision Classification registered as ``"svhn-embeddings"`` ResNet50 embeddings"""
+# cifar10 = Register(
+#     "cifar10", categorical=True, cacheable=True
+# ).add_covar_transform(BASE_TRANSFORM)(MnistAdapter(CIFAR10))
