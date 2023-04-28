@@ -11,10 +11,34 @@ from opendataval.dataloader import DataFetcher
 fetcher = DataFetcher(dataset_name='dataset')
 ```
 
+
+Alternatively specify the covariates, labels, and categoricalness to be loaded.
+This is best if you have the data already in the desired format.
+```python
+from opendataval.dataloader import DataFetcher
+
+fetcher = DataFetcher.from_data(covariates, labels, categorical=True)
+```
+
 From there we must define how we will split the data set into train/valid/test splits
 ```python
 fetcher = fetcher.split_dataset_by_count(70, 20, 10)  # Data set counts
 fetcher = fetcher.split_dataset_by_prop(.7, .2, .1)  # Splits on proportions
+```
+
+Alternatively, if we've already split the data, we can do the following:
+```python
+from opendataval.dataloader import DataFetcher
+
+fetcher = DataFetcher. DataFetcher.from_data_splits(
+    x_train,
+    y_train,
+    x_valid,
+    y_valid,
+    x_test,
+    y_test,
+    categorical=False,
+)
 ```
 
 Finally we can specify a function on how to add noise to the data points. The function should be allowed to access every instance variable of a data fetcher.

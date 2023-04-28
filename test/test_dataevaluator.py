@@ -58,6 +58,7 @@ class TestDataEvaluator(unittest.TestCase):
             self.y_valid,
             self.x_test,
             self.y_test,
+            categorical=False,
         )
 
     def test_init_(self):
@@ -91,22 +92,21 @@ class TestDataEvaluator(unittest.TestCase):
             self.x_train, self.y_train, self.x_valid, self.y_valid
         )
 
-        self.assertTrue((evaluator.x_train == self.x_train).all().item())
-        self.assertTrue((evaluator.y_train == self.y_train).all().item())
-        self.assertTrue((evaluator.x_valid == self.x_valid).all().item())
-        self.assertTrue((evaluator.y_valid == self.y_valid).all().item())
+        self.assertTrue(torch.equal(evaluator.x_train, self.x_train))
+        self.assertTrue(torch.equal(evaluator.y_train, self.y_train))
+        self.assertTrue(torch.equal(evaluator.x_valid, self.x_valid))
+        self.assertTrue(torch.equal(evaluator.y_valid, self.y_valid))
         self.assertFalse(evaluator.trained)
 
     def test_train(self):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
-        evaluator = evaluator.train(
-            self.x_train, self.y_train, self.x_valid, self.y_valid
-        )
+        evaluator = evaluator.train(self.fetcher, self.model)
 
-        self.assertTrue((evaluator.x_train == self.x_train).all().item())
-        self.assertTrue((evaluator.y_train == self.y_train).all().item())
-        self.assertTrue((evaluator.x_valid == self.x_valid).all().item())
-        self.assertTrue((evaluator.y_valid == self.y_valid).all().item())
+        self.assertTrue(torch.equal(evaluator.x_train, self.x_train))
+        self.assertTrue(torch.equal(evaluator.y_train, self.y_train))
+        self.assertTrue(torch.equal(evaluator.x_valid, self.x_valid))
+        self.assertTrue(torch.equal(evaluator.y_valid, self.y_valid))
+        self.assertEqual(evaluator.evaluate(evaluator.y_train, self.y_train), 0.0)
         self.assertTrue(evaluator.trained)
 
     def test_input_fetcher(self):

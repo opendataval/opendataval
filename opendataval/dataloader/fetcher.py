@@ -40,6 +40,8 @@ class DataFetcher:
         Label dimension of the loaded data set.
     num_points : int
         Number of data points in the total data set
+    categorical : bool
+        If True, the data set has categorical labels as one hot encodings
     train_indices : np.ndarray[int]
         The indices of the original data set used to make the training data set.
     valid_indices : np.ndarray[[int]
@@ -81,6 +83,7 @@ class DataFetcher:
             )
 
         dataset = Register.Datasets[dataset_name]
+        self.categorical = dataset.categorical
         self.covar, self.labels = dataset.load_data(cache_dir, force_download)
         if not len(self.covar) == len(self.labels):
             raise ValueError("Covariates and Labels must be of same length.")
@@ -132,6 +135,7 @@ class DataFetcher:
         cls,
         covar: Union[Dataset, np.ndarray],
         labels: np.ndarray,
+        categorical: bool,
         random_state: RandomState = None,
     ):
         """Return DataFetcher from input Covariates and Labels."""
@@ -140,6 +144,7 @@ class DataFetcher:
         if not len(fetcher.covar) == len(fetcher.labels):
             raise ValueError("Covariates and Labels must be of same length.")
 
+        fetcher.categorical = categorical
         fetcher.random_state = check_random_state(random_state)
 
         return fetcher
@@ -153,6 +158,7 @@ class DataFetcher:
         y_valid: np.ndarray,
         x_test: Union[Dataset, np.ndarray],
         y_test: np.ndarray,
+        categorical: bool,
         random_state: RandomState = None,
     ):
         """Return DataFetcher from already split data."""
@@ -174,6 +180,7 @@ class DataFetcher:
         fetcher.x_valid, fetcher.y_valid = x_valid, y_valid
         fetcher.x_test, fetcher.y_test = x_test, y_test
 
+        fetcher.categorical = categorical
         fetcher.random_state = check_random_state(random_state)
 
         return fetcher

@@ -57,7 +57,7 @@ class TestExperiment(unittest.TestCase):
         )
 
         self.fetcher = (
-            DataFetcher.from_data(covar, labels, random_state=random_state)
+            DataFetcher.from_data(covar, labels, False, random_state=random_state)
             .split_dataset_by_indices(range(20), range(20, 40), range(40, 60))
             .noisify(mix_labels, noise_rate=0.25)
         )
