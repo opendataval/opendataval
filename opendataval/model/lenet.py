@@ -32,6 +32,8 @@ class LeNet(TorchClassMixin, TorchPredictMixin):
 
         super().__init__()
         # 1 input image channel, 6 output channels, 5x5 kernel
+        self.num_classes = num_classes
+
         self.conv1 = nn.Conv2d(1 if gray_scale else 3, out_channels=6, kernel_size=5)
         self.conv2 = nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5)
 
@@ -57,6 +59,6 @@ class LeNet(TorchClassMixin, TorchPredictMixin):
         x = self.fc2(x)
         x = F.relu(x)
         x = self.fc3(x)
-        x = F.softmax(x)
+        x = F.softmax(x, -1)
 
         return x

@@ -51,6 +51,7 @@ from opendataval.model.api import (
     TorchPredictMixin,
     TorchRegressMixin,
 )
+from opendataval.model.lenet import LeNet
 from opendataval.model.logistic_regression import LogisticRegression
 from opendataval.model.mlp import ClassifierMLP, RegressionMLP
 
@@ -102,7 +103,10 @@ def ModelFactory(
         from opendataval.model.bert import BertClassifier
 
         return BertClassifier(num_classes=label_dim[0]).to(device=device)
-
+    elif model_name == "lenet":
+        return LeNet(
+            num_classes=label_dim[0], gray_scale=covar_dim[0] == 1  # 1 means grey
+        ).to(device=device)
     elif model_name == "sklogreg":
         return ClassifierSkLearnWrapper(SkLogReg(), label_dim[0])
     elif model_name == "skmlp":

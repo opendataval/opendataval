@@ -20,7 +20,7 @@ run `make install-extra`.
 from opendataval.dataloader.datasets import datasets
 
 try:
-    from opendataval.dataloader.datasets import nlpsets
+    from opendataval.dataloader.datasets import imagesets, nlpsets
 except ImportError as e:
     print(
         f"Failed to import nlpsets or imagesets, likely optional dependency not found."

@@ -79,7 +79,7 @@ class DataFetcher:
         if dataset_name not in Register.Datasets:
             raise KeyError(
                 "Must register data set in register_dataset."
-                "Ensure the data set is imported and installed optional dependencies."
+                "Ensure the data set is imported and optional dependencies installed."
             )
 
         dataset = Register.Datasets[dataset_name]
@@ -238,13 +238,19 @@ class DataFetcher:
     def covar_dim(self) -> tuple[int, ...]:
         """Get covar dimensions."""
         data = self.covar if hasattr(self, "covar") else self.x_train
-        return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
+        if isinstance(data, Dataset):
+            return (1,) if isinstance(data[0], (str, float, int)) else data[0].shape
+        else:
+            return (1,) if data.ndim == 1 else data.shape[1:]
 
     @property
     def label_dim(self) -> tuple[int, ...]:
         """Get label dimensions."""
         data = self.labels if hasattr(self, "labels") else self.y_train
-        return (1,) if isinstance(data[0], str) or data.ndim == 1 else data.shape[1:]
+        if isinstance(data, Dataset):
+            return (1,) if isinstance(data[0], (str, float, int)) else data[0].shape
+        else:
+            return (1,) if data.ndim == 1 else data.shape[1:]
 
     @property
     def num_points(self) -> int:
