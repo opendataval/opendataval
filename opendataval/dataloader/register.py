@@ -95,6 +95,8 @@ class Register:
         Whether the data set is categorically labeled, by default False
     cacheable : bool, optional
         Whether data set can be downloaded and cached, by default False
+    presplit : bool, optional
+        Whether the data set was presplit, by default False
 
     Warns
     ------
@@ -110,13 +112,18 @@ class Register:
     """Creates a directory for all registered/downloadable data set functions."""
 
     def __init__(
-        self, dataset_name: str, categorical: bool = False, cacheable: bool = False
+        self,
+        dataset_name: str,
+        categorical: bool = False,
+        cacheable: bool = False,
+        presplit: bool = False,
     ):
         if dataset_name in Register.Datasets:
             warnings.warn(f"{dataset_name} has been registered, names must be unique")
 
         self.dataset_name = dataset_name
         self.categorical = categorical
+        self.presplit = presplit
 
         self.covar_transform = None
         self.label_transform = None
@@ -211,18 +218,23 @@ class Register:
             dataset_kwargs["force_download"] = force_download
 
         if hasattr(self, "covar_label_func"):
-            covar, labels = self.covar_label_func(**dataset_kwargs)
+            covar, label = self.covar_label_func(**dataset_kwargs)
         else:
             covar = self.cov_func(**dataset_kwargs)
-            labels = self.label_func(**dataset_kwargs)
+            label = self.label_func(**dataset_kwargs)
+
+        # Wraps response in tuple in case data is not presplit
+        covar_tup = covar if self.presplit else (covar,)
+        label_tup = label if self.presplit else (label,)
 
         if self.covar_transform:
             if isinstance(covar, Dataset):
-                covar.transform = self.covar_transform
+                for cov in covar_tup:
+                    cov.transform = self.covar_transform
             else:
-                covar = self.covar_transform(covar)
+                covar_tup = tuple(self.covar_transform(cov) for cov in covar_tup)
 
         if self.label_transform:
-            labels = self.label_transform(labels)
+            label_tup = tuple(self.label_transform(lab) for lab in label_tup)
 
-        return covar, labels
+        return *covar_tup, *label_tup

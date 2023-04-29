@@ -84,9 +84,32 @@ class DataFetcher:
 
         dataset = Register.Datasets[dataset_name]
         self.categorical = dataset.categorical
-        self.covar, self.labels = dataset.load_data(cache_dir, force_download)
-        if not len(self.covar) == len(self.labels):
-            raise ValueError("Covariates and Labels must be of same length.")
+
+        if dataset.presplit:
+            x_train, x_valid, x_test, y_train, y_valid, y_test = dataset.load_data(
+                cache_dir, force_download
+            )
+
+            if not (
+                len(x_train) == len(y_train)
+                and len(x_valid) == len(y_valid)
+                and len(x_test) == len(y_test)
+            ):
+                raise ValueError("Covariates and Labels must be of same length.")
+
+            if not (
+                x_train[0].shape == x_valid[0].shape == x_test[0].shape
+                and y_train[0].shape == y_valid[0].shape == y_test[0].shape
+            ):
+                raise ValueError("Covariates and Labels inputs must be of same shape.")
+
+            self.x_train, self.x_valid, self.x_test = x_train, x_valid, x_test
+            self.y_train, self.y_valid, self.y_test = y_train, y_valid, y_test
+
+        else:
+            self.covar, self.labels = dataset.load_data(cache_dir, force_download)
+            if not len(self.covar) == len(self.labels):
+                raise ValueError("Covariates and Labels must be of same length.")
 
         self.random_state = check_random_state(random_state)
 
