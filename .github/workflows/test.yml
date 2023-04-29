@@ -1,15 +1,8 @@
 name: Build and Test
 
 on:
-  push:
-    paths-ignore:
-      - README.md
-      - CHANGELOG.md
-      - .gitignore
-      - .github/**
-      - demo/**
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened, closed]
 
 jobs:
   test:
