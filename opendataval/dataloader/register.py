@@ -146,14 +146,18 @@ class Register:
         self.covar_label_func = _from_pandas(df, label_columns)
         return self
 
-    def from_numpy(self, array: np.ndarray, labels: int | Sequence[int]):
+    def from_numpy(self, array: np.ndarray, label: Union[int, Sequence[int]]):
         """Register data set from covariate and label numpy array."""
-        self.covar_label_func = _from_numpy(array, labels)
+        self.covar_label_func = _from_numpy(array, label)
         return self
 
-    def from_covariates_labels(self, covariates: np.ndarray, labels: np.ndarray):
+    def from_data(self, covar: np.ndarray, label: np.ndarray, categorical: bool = None):
         """Register data set from covariate and label numpy array."""
-        self.covar_label_func = lambda: (covariates, labels)
+        self.covar_label_func = lambda: (covar, label)
+        # Overrides default categorical if specified
+        if categorical is not None:
+            self.categorical = categorical
+
         return self
 
     def __call__(self, func: DatasetFunc, *args, **kwargs) -> DatasetFunc:

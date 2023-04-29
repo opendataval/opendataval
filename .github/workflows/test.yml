@@ -9,7 +9,7 @@ on:
       - .github/**
       - demo/**
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [closed]
 
 jobs:
   test:
