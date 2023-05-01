@@ -252,12 +252,12 @@ class ModelLessMixin:
             f"{self.__class__} only supports an embedding model. Calling this property"
             "may indicate you're running an experiment that requires a model"
         )
-        return self._pred_model
+        return self.embedding_model if hasattr(self, "embedding_model") else None
 
     @pred_model.setter
-    def pred_model(self, pred_model: Model):
+    def pred_model(self, _: Model):
         """Setter to ignore the injected prediction model."""
-        self._pred_model = pred_model
+        pass
 
     def get_embeddings(
         self, *tensors: tuple[Union[Dataset, torch.Tensor]]
