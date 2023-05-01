@@ -22,14 +22,14 @@ class DataBanzhaf(DataEvaluator):
 
     Parameters
     ----------
-    samples : int, optional
-        Number of samples to take to compute Banzhaf values, by default 1000
+    num_models : int, optional
+        Number of models to take to compute Banzhaf values, by default 1000
     random_state : RandomState, optional
         Random initial state, by default None
     """
 
-    def __init__(self, samples: int = 1000, random_state: RandomState = None):
-        self.samples = samples
+    def __init__(self, num_models: int = 1000, random_state: RandomState = None):
+        self.num_models = num_models
         self.random_state = check_random_state(random_state)
 
     def input_data(
@@ -83,10 +83,10 @@ class DataBanzhaf(DataEvaluator):
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
-        sample_dim = (self.samples, self.num_points)
+        sample_dim = (self.num_models, self.num_points)
         subsets = self.random_state.binomial(1, 0.5, size=sample_dim)
 
-        for i in tqdm.tqdm(range(self.samples)):
+        for i in tqdm.tqdm(range(self.num_models)):
             subset = subsets[i].nonzero()[0]
             if not subset.any():
                 continue
@@ -145,12 +145,12 @@ class DataBanzhafMargContrib(ShapEvaluator):
     gr_threshold : float, optional
         Convergence threshold for the Gelman-Rubin statistic.
         Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
-    max_iterations : int, optional
+    max_mc_epochs : int, optional
         Max number of outer iterations of MCMC sampling, by default 100
-    samples_per_iteration : int, optional
-        Number of samples to take per iteration prior to checking GR convergence,
+    models_per_iteration : int, optional
+        Number of model fittings to take per iteration prior to checking GR convergence,
         by default 100
-    min_samples : int, optional
+    mc_epochs : int, optional
         Minimum samples before checking MCMC convergence, by default 1000
     cache_name : str, optional
         Unique cache_name of the model, caches marginal contributions, by default None
@@ -161,17 +161,17 @@ class DataBanzhafMargContrib(ShapEvaluator):
     def __init__(
         self,
         gr_threshold: float = 1.05,
-        max_iterations: int = 100,
-        samples_per_iteration: int = 100,
-        min_samples: int = 1000,
+        max_mc_epochs: int = 100,
+        models_per_iteration: int = 100,
+        mc_epochs: int = 1000,
         cache_name: str = None,
         random_state: RandomState = None,
     ):
         super().__init__(
             gr_threshold=gr_threshold,
-            max_iterations=max_iterations,
-            samples_per_iteration=samples_per_iteration,
-            min_samples=min_samples,
+            max_mc_epochs=max_mc_epochs,
+            models_per_iteration=models_per_iteration,
+            mc_epochs=mc_epochs,
             cache_name=cache_name,
             random_state=random_state,
         )

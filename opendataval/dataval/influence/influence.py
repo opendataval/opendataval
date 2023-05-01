@@ -24,7 +24,7 @@ class InfluenceFunctionEval(DataEvaluator):
     Parameters
     ----------
     samples : int, optional
-        Number of samples/models to fit to take to find data values, by default 1000
+        Number of models to fit to take to find data values, by default 1000
     proportion : float, optional
         Proportion of data points to be in each sample, cardinality of each subset is
         :math:`(p)(num_points)`, by default 0.7 as specified by V. Feldman and C. Zhang
@@ -34,11 +34,11 @@ class InfluenceFunctionEval(DataEvaluator):
 
     def __init__(
         self,
-        samples: int = 1000,
+        num_models: int = 1000,
         proportion: float = 0.7,
         random_state: RandomState = None,
     ):
-        self.samples = samples
+        self.num_models = num_models
         self.proportion = proportion
         self.random_state = check_random_state(random_state)
 
@@ -90,7 +90,7 @@ class InfluenceFunctionEval(DataEvaluator):
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
-        for i in tqdm.tqdm(range(self.samples)):
+        for i in tqdm.tqdm(range(self.num_models)):
             subset = self.random_state.choice(
                 self.num_points, round(self.proportion * self.num_points), replace=False
             )  # Random subset of cardinality `round(self.proportion * self.num_points)`

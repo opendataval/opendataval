@@ -18,12 +18,12 @@ class DataShapley(ShapEvaluator):
     gr_threshold : float, optional
         Convergence threshold for the Gelman-Rubin statistic.
         Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
-    max_iterations : int, optional
+    max_mc_epochs : int, optional
         Max number of outer iterations of MCMC sampling, by default 100
-    samples_per_iteration : int, optional
-        Number of samples to take per iteration prior to checking GR convergence,
+    models_per_iteration : int, optional
+        Number of model fittings to take per iteration prior to checking GR convergence,
         by default 100
-    min_samples : int, optional
+    mc_epochs : int, optional
         Minimum samples before checking MCMC convergence, by default 1000
     cache_name : str, optional
         Unique cache_name of the model, caches marginal contributions, by default None
@@ -34,17 +34,17 @@ class DataShapley(ShapEvaluator):
     def __init__(
         self,
         gr_threshold: float = 1.05,
-        max_iterations: int = 100,
-        samples_per_iteration: int = 100,
-        min_samples: int = 1000,
+        max_mc_epochs: int = 100,
+        models_per_iteration: int = 100,
+        mc_epochs: int = 1000,
         cache_name: str = None,
         random_state: RandomState = None,
     ):
         super().__init__(
             gr_threshold=gr_threshold,
-            max_iterations=max_iterations,
-            samples_per_iteration=samples_per_iteration,
-            min_samples=min_samples,
+            max_mc_epochs=max_mc_epochs,
+            models_per_iteration=models_per_iteration,
+            mc_epochs=mc_epochs,
             cache_name=cache_name,
             random_state=random_state,
         )

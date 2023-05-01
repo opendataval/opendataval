@@ -30,12 +30,12 @@ class ShapEvaluator(DataEvaluator, ABC):
     gr_threshold : float, optional
         Convergence threshold for the Gelman-Rubin statistic.
         Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
-    max_iterations : int, optional
-        Max number of outer iterations of MCMC sampling, by default 100
-    samples_per_iteration : int, optional
-        Number of samples to take per iteration prior to checking GR convergence,
+    max_mc_epochs : int, optional
+        Max number of outer epochs of MCMC sampling, by default 100
+    models_per_iteration : int, optional
+        Number of model fittings to take per iteration prior to checking GR convergence,
         by default 100
-    min_samples : int, optional
+    mc_epochs : int, optional
         Minimum samples before checking MCMC convergence, by default 1000
     cache_name : str, optional
         Unique cache_name of the model, caches marginal contributions, by default None
@@ -50,16 +50,16 @@ class ShapEvaluator(DataEvaluator, ABC):
     def __init__(
         self,
         gr_threshold: float = 1.05,
-        max_iterations: int = 100,
-        samples_per_iteration: int = 100,
-        min_samples: int = 1000,
+        max_mc_epochs: int = 100,
+        models_per_iteration: int = 100,
+        mc_epochs: int = 1000,
         cache_name: str = None,
         random_state: RandomState = None,
     ):
-        self.max_iterations = max_iterations
+        self.max_mc_epochs = max_mc_epochs
         self.gr_threshold = gr_threshold
-        self.samples_per_iteration = samples_per_iteration
-        self.min_samples = min_samples
+        self.models_per_iteration = models_per_iteration
+        self.mc_epochs = mc_epochs
 
         self.cache_name = cache_name
 
@@ -168,12 +168,12 @@ class ShapEvaluator(DataEvaluator, ABC):
         gr_stat = ShapEvaluator.GR_MAX  # Converges when < gr_threshold
         iteration = 0  # Iteration wise terminator, in case MCMC goes on for too long
 
-        while iteration < self.max_iterations and gr_stat > self.gr_threshold:
+        while iteration < self.max_mc_epochs and gr_stat > self.gr_threshold:
             # we check the convergence every 100 random samples.
             # we terminate iteration if Shapley value is converged.
             samples_array = [
                 self._calculate_marginal_contributions(*args, **kwargs)
-                for _ in tqdm.tqdm(range(self.samples_per_iteration))
+                for _ in tqdm.tqdm(range(self.models_per_iteration))
             ]
             self.marginal_increment_array_stack = np.vstack(
                 [self.marginal_increment_array_stack, *samples_array],
@@ -299,7 +299,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         float
             Gelman-Rubin statistic
         """
-        if len(samples) < self.min_samples:
+        if len(samples) < self.mc_epochs:
             return ShapEvaluator.GR_MAX  # If not burn-in, returns a high GR value
 
         # Set up
