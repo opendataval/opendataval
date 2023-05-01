@@ -58,7 +58,7 @@ class TestDataEvaluator(unittest.TestCase):
             self.y_valid,
             self.x_test,
             self.y_test,
-            categorical=False,
+            one_hot=False,
         )
 
     def test_init_(self):
@@ -106,7 +106,7 @@ class TestDataEvaluator(unittest.TestCase):
         self.assertTrue(evaluator.trained)
 
         # Tests categorical default
-        self.fetcher.categorical = True
+        self.fetcher.one_hot = True
         evaluator = DummyDataEvaluator(random_state=self.random_state)
         evaluator = evaluator.train(self.fetcher, self.model)
 

@@ -23,6 +23,14 @@ class TestRegister(unittest.TestCase):
         self.assertTrue(np.array_equal(result[0], arr[:, [0]]))
         self.assertTrue(np.array_equal(result[1], arr[:, [1]]))
 
+    def test_from_data(self):
+        reg = Register("test_from_data")
+        arr = np.array([[1, 0], [3, 1], [5, 2]])
+        result = reg.from_data(arr[:, [0]], arr[:, [1]], True).load_data()
+        self.assertTrue(np.array_equal(result[0], arr[:, [0]]))
+        # Defined labels to be the identity matrix
+        self.assertTrue(np.array_equal(result[1], np.identity(3)))
+
     def test_from_covar_label_func(self):
         reg = Register("test_covar_label")
         a, b = np.array([[1, 2], [3, 4], [5, 6]]), np.array([0, 1, 1])

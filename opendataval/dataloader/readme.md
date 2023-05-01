@@ -17,7 +17,7 @@ This is best if you have the data already in the desired format.
 ```python
 from opendataval.dataloader import DataFetcher
 
-fetcher = DataFetcher.from_data(covariates, labels, categorical=True)
+fetcher = DataFetcher.from_data(covariates, labels, one_hot=True)
 ```
 
 From there we must define how we will split the data set into train/valid/test splits
@@ -37,7 +37,7 @@ fetcher = DataFetcher. DataFetcher.from_data_splits(
     y_valid,
     x_test,
     y_test,
-    categorical=False,
+    one_hot=False,
 )
 ```
 
@@ -91,7 +91,7 @@ def image_labels() -> np.ndarray:
 To ensure that these two separate functions are fetched together, we define a `Register` object to link these two.
 
 ```python
-image_dataset = Register('image', categorical=True, cacheable=True)
+image_dataset = Register('image', one_hot=True, cacheable=True)
 
 @image_dataset.from_covar_func
 class ImageDataset(Dataset):

@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler, minmax_scale
 from opendataval.dataloader.register import Register, cache
 
 
-@Register("gaussian_classifier", categorical=True)
+@Register("gaussian_classifier", one_hot=True)
 def gaussian_classifier(n: int = 10000, input_dim: int = 10):
     """Binary category data set registered as ``"gaussian_classifier"``.
 
@@ -25,7 +25,7 @@ def gaussian_classifier(n: int = 10000, input_dim: int = 10):
     return covar, labels
 
 
-adult_dataset = Register("adult", categorical=True, cacheable=True)
+adult_dataset = Register("adult", one_hot=True, cacheable=True)
 
 
 @adult_dataset.add_covar_transform(StandardScaler().fit_transform)
@@ -110,13 +110,13 @@ def download_adult(cache_dir: str, force_download: bool = False):
     return df.drop("Income", axis=1).values, df["Income"].values
 
 
-@Register("iris", categorical=True)
+@Register("iris", one_hot=True)
 def download_iris():
     """Categorical data set registered as ``"iris"``."""
     return ds.load_iris(return_X_y=True)
 
 
-@Register("digits", categorical=True)
+@Register("digits", one_hot=True)
 def download_digits():
     """Categorical data set registered as ``"digits"``."""
     return ds.load_digits(return_X_y=True)
@@ -128,7 +128,7 @@ def download_breast_cancer():
     return ds.load_breast_cancer(return_X_y=True)
 
 
-@Register("election", categorical=True, cacheable=True)
+@Register("election", one_hot=True, cacheable=True)
 def download_election(cache_dir: str, force_download: bool):
     """Categorical data set registered as ``"election"``.
 
@@ -167,7 +167,7 @@ def download_election(cache_dir: str, force_download: bool):
 
 
 # Alternative registration methods, should only be used on ad-hoc basis
-Register("gaussian_classifier_high_dim", categorical=True).from_covar_label_func(
+Register("gaussian_classifier_high_dim", one_hot=True).from_covar_label_func(
     gaussian_classifier, input_dim=100
 )
 """Registers gaussian classifier, but the input_dim is changed."""

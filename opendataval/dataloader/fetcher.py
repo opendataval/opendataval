@@ -40,7 +40,7 @@ class DataFetcher:
         Label dimension of the loaded data set.
     num_points : int
         Number of data points in the total data set
-    categorical : bool
+    one_hot : bool
         If True, the data set has categorical labels as one hot encodings
     train_indices : np.ndarray[int]
         The indices of the original data set used to make the training data set.
@@ -61,6 +61,8 @@ class DataFetcher:
         :py:class:`Register`
     ValueError
         Loaded Data set covariates and labels must be of same length.
+    ValueError
+        All covariates must be of same dimension. All labels must be of same dimension.
     ValueError
         Splits must not exceed the length of the data set. In other words, if
         the splits are ints, the values must be less than the length. If they are
@@ -83,7 +85,7 @@ class DataFetcher:
             )
 
         dataset = Register.Datasets[dataset_name]
-        self.categorical = dataset.categorical
+        self.one_hot = dataset.one_hot
 
         if dataset.presplit:
             x_train, x_valid, x_test, y_train, y_valid, y_test = dataset.load_data(
@@ -158,16 +160,35 @@ class DataFetcher:
         cls,
         covar: Union[Dataset, np.ndarray],
         labels: np.ndarray,
-        categorical: bool,
+        one_hot: bool,
         random_state: RandomState = None,
     ):
-        """Return DataFetcher from input Covariates and Labels."""
+        """Return DataFetcher from input Covariates and Labels.
+
+        Parameters
+        ----------
+        covar : Union[Dataset, np.ndarray]
+            Input covariates
+        labels : np.ndarray
+            Input labels, no transformation is applied, therefore if the input data
+            should be one hot encoded, the transform is not applied
+        one_hot : bool
+            Whether the input data has already been one hot encoded. This is just a flag
+            and not transform will be applied
+        random_state : RandomState, optional
+            Initial random state, by default None
+
+        Raises
+        ------
+        ValueError
+            Input covariates and labels are of different length, no 1-to-1 mapping.
+        """
         fetcher = cls.__new__(cls)
         fetcher.covar, fetcher.labels = covar, labels
         if not len(fetcher.covar) == len(fetcher.labels):
             raise ValueError("Covariates and Labels must be of same length.")
 
-        fetcher.categorical = categorical
+        fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)
 
         return fetcher
@@ -181,10 +202,39 @@ class DataFetcher:
         y_valid: np.ndarray,
         x_test: Union[Dataset, np.ndarray],
         y_test: np.ndarray,
-        categorical: bool,
+        one_hot: bool,
         random_state: RandomState = None,
     ):
-        """Return DataFetcher from already split data."""
+        """Return DataFetcher from already split data.
+
+        Parameters
+        ----------
+        x_train : Union[Dataset, np.ndarray]
+            Input training covariates
+        y_train : np.ndarray
+            Input training labels
+        x_valid : Union[Dataset, np.ndarray]
+            Input validation covariates
+        y_valid : np.ndarray
+            Input validation labels
+        x_test : Union[Dataset, np.ndarray]
+            Input testing covariates
+        y_test : np.ndarray
+            Input testing labels
+        one_hot : bool
+            Whether the label data has already been one hot encoded. This is just a flag
+            and not transform will be applied
+        random_state : RandomState, optional
+            Initial random state, by default None
+
+        Raises
+        ------
+        ValueError
+            Loaded Data set covariates and labels must be of same length.
+        ValueError
+            All covariates must be of same dimension.
+            All labels must be of same dimension.
+        """
         if not (
             len(x_train) == len(y_train)
             and len(x_valid) == len(y_valid)
@@ -203,7 +253,7 @@ class DataFetcher:
         fetcher.x_valid, fetcher.y_valid = x_valid, y_valid
         fetcher.x_test, fetcher.y_test = x_test, y_test
 
-        fetcher.categorical = categorical
+        fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)
 
         return fetcher

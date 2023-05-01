@@ -15,7 +15,7 @@ Data = make_classification(
     random_state=123,
 )
 
-Register("dummy", categorical=True).from_covar_label_func(lambda: Data)
+Register("dummy", one_hot=True).from_covar_label_func(lambda: Data)
 
 
 class TestDataFetcher(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestDataFetcher(unittest.TestCase):
         self.assertIsInstance(datasets, list)
         self.assertTrue(len(datasets) > 0)
         n = len(datasets)
-        Register("dummy2", categorical=True)
+        Register("dummy2", one_hot=True)
         self.assertTrue(n + 1 == len(DataFetcher.datasets_available()))
 
     def test_split_dataset_prop(self):
@@ -101,7 +101,7 @@ class TestDataFetcher(unittest.TestCase):
 
     def test_invalid_dataset(self):
         self.assertRaises(KeyError, DataFetcher, dataset_name="nonexistent")
-        Register("dummy3", categorical=True).from_covar_label_func(
+        Register("dummy3", one_hot=True).from_covar_label_func(
             lambda: (np.array([1]), Data[1])
         )
 

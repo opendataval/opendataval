@@ -59,7 +59,7 @@ def bert_embeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]])
     return wrapper
 
 
-@Register("bbc", cacheable=True, categorical=True)
+@Register("bbc", cacheable=True, one_hot=True)
 def download_bbc(cache_dir: str, force_download: bool):
     """Classification data set registered as ``"bbc"``.
 
@@ -90,7 +90,7 @@ def download_bbc(cache_dir: str, force_download: bool):
     return ListDataset(df["text"].values), labels
 
 
-@Register("imdb", cacheable=True, categorical=True)
+@Register("imdb", cacheable=True, one_hot=True)
 def download_imdb(cache_dir: str, force_download: bool):
     """Binary category sentiment analysis data set registered as ``"imdb"``.
 

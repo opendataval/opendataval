@@ -91,8 +91,8 @@ class Register:
     ----------
     dataset_name : str
         Data set name
-    categorical : bool, optional
-        Whether the data set is categorically labeled, by default False
+    one_hot : bool, optional
+        Whether the data set is one hot encoded labeled, by default False
     cacheable : bool, optional
         Whether data set can be downloaded and cached, by default False
     presplit : bool, optional
@@ -114,7 +114,7 @@ class Register:
     def __init__(
         self,
         dataset_name: str,
-        categorical: bool = False,
+        one_hot: bool = False,
         cacheable: bool = False,
         presplit: bool = False,
     ):
@@ -122,14 +122,13 @@ class Register:
             warnings.warn(f"{dataset_name} has been registered, names must be unique")
 
         self.dataset_name = dataset_name
-        self.categorical = categorical
+        self.one_hot = one_hot
         self.presplit = presplit
 
         self.covar_transform = None
         self.label_transform = None
 
-        self.categorical = True
-        if categorical:
+        if self.one_hot:
             self.label_transform = one_hot_encode
 
         self.cacheable = cacheable
@@ -146,17 +145,18 @@ class Register:
         self.covar_label_func = _from_pandas(df, label_columns)
         return self
 
-    def from_numpy(self, array: np.ndarray, label: Union[int, Sequence[int]]):
+    def from_numpy(self, array: np.ndarray, label_columns: Union[int, Sequence[int]]):
         """Register data set from covariate and label numpy array."""
-        self.covar_label_func = _from_numpy(array, label)
+        self.covar_label_func = _from_numpy(array, label_columns)
         return self
 
-    def from_data(self, covar: np.ndarray, label: np.ndarray, categorical: bool = None):
+    def from_data(self, covar: np.ndarray, label: np.ndarray, one_hot: bool = None):
         """Register data set from covariate and label numpy array."""
         self.covar_label_func = lambda: (covar, label)
-        # Overrides default categorical if specified
-        if categorical is not None:
-            self.categorical = categorical
+        # Overrides default one_hot if specified
+        if one_hot is not None:
+            self.one_hot = one_hot
+            self.label_transform = one_hot_encode if one_hot else None
 
         return self
 

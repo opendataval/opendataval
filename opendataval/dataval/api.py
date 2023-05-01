@@ -161,7 +161,7 @@ class DataEvaluator(ABC):
         self.input_fetcher(fetcher)
 
         if metric is None:
-            if fetcher.categorical:
+            if fetcher.one_hot:
                 metric = _acc
             else:
                 metric = _negmse
