@@ -7,6 +7,7 @@ Configurations for experiment presets.
 from opendataval.dataval.ame.ame import AME
 from opendataval.dataval.dvrl.dvrl import DVRL
 from opendataval.dataval.influence.influence import InfluenceFunctionEval
+from opendataval.dataval.knnshap import KNNShapley
 from opendataval.dataval.margcontrib.banzhaf import DataBanzhaf, DataBanzhafMargContrib
 from opendataval.dataval.margcontrib.betashap import BetaShapley
 from opendataval.dataval.margcontrib.datashap import DataShapley
@@ -24,6 +25,7 @@ dummy_evaluators = [
     DVRL(1, rl_epochs=1, random_state=RANDOM_STATE),
     DataOob(1, random_state=RANDOM_STATE),
     InfluenceFunctionEval(1, random_state=RANDOM_STATE),
+    KNNShapley(5, random_state=RANDOM_STATE),
     LeaveOneOut(random_state=RANDOM_STATE),
     DataBanzhaf(num_models=1, random_state=RANDOM_STATE),
     DataBanzhafMargContrib(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),

@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from typing import Callable, Union
 
@@ -215,3 +216,46 @@ class DataEvaluator(ABC):
     def __str__(self) -> str:  # For publication keep it simple
         """Get unique string representation for a DataEvaluator."""
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
+
+
+class ModelLessMixin:
+    """Mixin for DataEvaluators without a prediction model and use embeddings.
+
+    Using embeddings and then predictiong the data values has been used by
+    Ruoxi Jia Group with their KNN Shapley and LAVA data evaluators.
+
+    References
+    ----------
+    .. [1] R. Jia et al.,
+        Efficient Task-Specific Data Valuation for Nearest Neighbor Algorithms,
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1908.08619.
+
+    Attributes
+    ----------
+    embedding_model : Model
+        Embedding model used by model-less DataEvaluator to compute the data values for
+        the embeddings and not the raw input.
+    """
+
+    @property
+    def pred_model(self) -> Model:
+        """DataEvaluator only supports an embedding prediction model."""
+        warnings.warn(
+            f"{self.__class__} only supports an embedding model. Calling this property"
+            "may indicate you're running an experiment that requires a model"
+        )
+        return self.embedding_model if hasattr(self, "embedding_model") else None
+
+    @pred_model.setter
+    def pred_model(self, _: Model):
+        """Setter to ignore the injected prediction model."""
+        pass
+
+    def get_embeddings(
+        self, *tensors: tuple[Union[Dataset, torch.Tensor]]
+    ) -> tuple[torch.Tensor, ...]:
+        if hasattr(self, "embedding_model") and self.embedding_model is not None:
+            return tuple(self.embedding_model.predict(tensor) for tensor in tensors)
+
+        # No embedding is used
+        return tensors
