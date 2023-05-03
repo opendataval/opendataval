@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Push documentation to organization repo
 
 on:
   # Runs on pushes targeting the default branch
@@ -9,40 +9,36 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  # Pushes to organization repo after building documentation
+  push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('requirements-extra.txt') }}
       - name: Build
         run: |
+          make install-extra
           pip install -U sphinx furo
           cd docs
           make html
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+      - run: touch docs/_build/html/.nojekyll
+      - name: Pushes to another repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DOCS_TOKEN }}
         with:
-          # Upload entire repository
-          path: 'docs/_build'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+          source-directory: 'docs/_build/html'
+          destination-github-username: 'opendataval'
+          destination-repository-name: 'opendataval.github.io'
+          user-email: kevinfjiang@yahoo.com
+          target-branch: main
+

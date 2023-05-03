@@ -20,14 +20,6 @@ opendataval.model.bert module
    :undoc-members:
    :show-inheritance:
 
-opendataval.model.grad module
------------------------------
-
-.. automodule:: opendataval.model.grad
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 opendataval.model.lenet module
 ------------------------------
 
@@ -48,6 +40,14 @@ opendataval.model.mlp module
 ----------------------------
 
 .. automodule:: opendataval.model.mlp
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+opendataval.model.resnet module
+-------------------------------
+
+.. automodule:: opendataval.model.resnet
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,5 +1,5 @@
 import os
-from typing import TypeVar
+from typing import TypeVar, Union
 
 import matplotlib as plt
 import numpy as np
@@ -95,7 +95,7 @@ def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224,
     return wrapper
 
 
-def show_image(imgs: list[Image.Image] | Image.Image) -> None:
+def show_image(imgs: Union[list[Image.Image], Image.Image]) -> None:
     """Displays an image or a list of images."""
     if not isinstance(imgs, list):
         imgs = [imgs]

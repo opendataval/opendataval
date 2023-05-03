@@ -2,85 +2,27 @@ table .custom-tooltip {
     position: relative;
     border-bottom: 1px dotted black;
 }
-table .custom-tooltip .tooltiptext {
+.custom-tooltip .tooltiptext {
     visibility: hidden;
-    width: 200px;
-    background-color: rgba(0,0,0,0.7);
-    color: #fffffff9;
+    width: 100px;
+    background-color: rgba(0,0,0,0.6);
+    color: #fff;
     text-align: center;
     border-radius: 6px;
     padding: 5px 5px;
-    z-index: 1;
-
-
     position: absolute;
-    top: 50%;
-    left: -10px;
+    z-index: 1;
+    top: 10%;
+    right: 125%;
+    margin-left: 0px;
     opacity: 0;
     transition: opacity 1s;
 }
 
-table .custom-tooltip:hover .tooltiptext {
+.custom-tooltip .align-right {
+    right: 25%
+}
+.custom-tooltip:hover .tooltiptext {
     visibility: visible;
     opacity: 1
-}
-
-.collapsible {
-    background-color: #49869f;
-    color: white;
-    cursor: pointer;
-    padding: 18px;
-    width: 100%;
-    border: none;
-    text-align: centre;
-    outline: none;
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 2rem;
-}
-
-.active,.collapsible:hover {
-    background-color: #00142d
-}
-
-.collapsible:after {
-    content: '\002B';
-    color: white;
-    font-weight: bold;
-    float: right;
-    margin-left: 5px
-}
-
-.active:after {
-    content: "\2212"
-}
-
-
-.collapsible-content {
-    padding: 0 18px;
-    max-height: 0;
-
-    transition: max-height 0.8s ease-out;
-
-    overflow-y: auto; /* make the table scrollable if height is more than 200 px  */
-    height: 2000px;
-}
-.collapsible-content table {
-    border-collapse: collapse; /* make the table borders collapse to each other */
-    width: 100%;
-}
-
-.collapsible-content table th {
-    text-align: left;
-    position: sticky; /* make the table heads sticky */
-    top: 0px; /* table head will be placed from the top of the table and sticks to it */
-}
-
-.collapsible-content table td {
-    text-align: left;
-    vertical-align: middle;
-}
-
-.sortable {
-    cursor:pointer
 }

@@ -12,14 +12,6 @@ opendataval.dataval.influence.influence module
    :undoc-members:
    :show-inheritance:
 
-opendataval.dataval.influence.infsub module
--------------------------------------------
-
-.. automodule:: opendataval.dataval.influence.infsub
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

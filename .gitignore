@@ -63,6 +63,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/generated/
 
 # PyBuilder
 target/
@@ -86,6 +87,5 @@ celerybeat-schedule
 data_files/
 tmp_*/
 tmp/
-docs/
 csv/
 kaggle.json

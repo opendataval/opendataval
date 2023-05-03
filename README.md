@@ -13,7 +13,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/kevinfjiang/opendataval">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="docs/_static/favicon.ico" alt="Logo" width="200">
   </a>
 
 <h3 align="center">Open Data Valuation</h3>
@@ -21,7 +21,8 @@
   <p align="center">
     Data Valuation Meta-Meta Framework
     <br />
-    <a href="https://github.com/kevinfjiang/opendataval"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/kevinfjiang/opendataval">
+        <strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/kevinfjiang/opendataval">View Demo</a>
