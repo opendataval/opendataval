@@ -21,9 +21,9 @@ MAX_DATASET_SIZE = 10
 def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224, 224)):
     """Convert PIL Images into embeddings with ResNet34 model.
 
-    Given a PIL Images, passes through ResNet18 (as done by prior Data Valuation papers)
+    Given a PIL Images, passes through ResNet34 (as done by prior Data Valuation papers)
     and saves the vector embeddings. The embeddings are extracted from the ``avgpool``
-    layer of ResNet18. The extraction is through the PyTorch forward hook feature.
+    layer of ResNet34. The extraction is through the PyTorch forward hook feature.
 
     References
     ----------
@@ -52,7 +52,7 @@ def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224,
         cache_dir: str, force_download: bool, **kwargs
     ) -> tuple[np.ndarray, np.ndarray]:
         """Methods: `@christiansafka <https://github.com/christiansafka/img2vec>`_."""
-        from torchvision.models.resnet import ResNet18_Weights, resnet18
+        from torchvision.models.resnet import ResNet34_Weights, resnet34
 
         img2vec_transforms = transforms.Compose(
             [
@@ -64,7 +64,7 @@ def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224,
         )
 
         # Gets the avgpool layer, the outputs of this layer are our embeddings
-        embedder = resnet18(weights=ResNet18_Weights.DEFAULT)
+        embedder = resnet34(weights=ResNet34_Weights.DEFAULT)
         embedding_layer = embedder._modules.get("avgpool")
 
         # We will register a hook to extract the ouput of avgpool layers.

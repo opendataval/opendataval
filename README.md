@@ -21,8 +21,8 @@
   <p align="center">
     Data Valuation Meta-Meta Framework
     <br />
-    <a href="https://github.com/kevinfjiang/opendataval">
-        <strong>Explore the docs »</strong></a>
+    <a href="https://opendataval.github.io">
+        <strong>Explore the docs/leaderboards »</strong></a>
     <br />
     <br />
     <a href="https://github.com/kevinfjiang/opendataval">View Demo</a>
@@ -310,7 +310,7 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-## Opendataval Leaderboards
+## opendataval [Leaderboards](https://opendataval.github.io/leaderboards)
 For every `DataEvaluator`, we will provide its performance compared to the other
 `DataEvaluators` for a specific preset specified in `presets`.
 

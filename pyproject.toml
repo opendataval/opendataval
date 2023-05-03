@@ -50,7 +50,7 @@ nlp = ["transformers~=4.27"]
 image = ["torchvision~=0.15"]
 
 [tool.hatch]
-packages = ["opendataval"]  # TODO
+packages = ["opendataval"]
 
 [tool.hatch.version]
 path = "opendataval/__init__.py"
