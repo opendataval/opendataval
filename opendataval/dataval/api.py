@@ -243,6 +243,8 @@ class ModelLessMixin:
     embedding_model : Model
         Embedding model used by model-less DataEvaluator to compute the data values for
         the embeddings and not the raw input.
+    pred_model : Model
+        Unused prediction model, kept for api consistency
     """
 
     @property
@@ -255,9 +257,10 @@ class ModelLessMixin:
         return self.embedding_model if hasattr(self, "embedding_model") else None
 
     @pred_model.setter
-    def pred_model(self, _: Model):
-        """Setter to ignore the injected prediction model."""
-        pass
+    def pred_model(self, pred_model: Model):
+        """Setter to for the injected prediction model."""
+        self._pred_model = pred_model
+
 
     def get_embeddings(
         self, *tensors: tuple[Union[Dataset, torch.Tensor]]
