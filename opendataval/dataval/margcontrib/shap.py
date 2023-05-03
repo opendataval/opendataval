@@ -45,6 +45,7 @@ class ShapEvaluator(DataEvaluator, ABC):
     CACHE = {}
     """Cached marginal contributions."""
     GR_MAX = 100
+    """Default maximum Gelman-Rubin statistic. Used for burn-in."""
 
     def __init__(
         self,
@@ -135,8 +136,8 @@ class ShapEvaluator(DataEvaluator, ABC):
             Marginal increments when one data point is added.
         """
         # Checks cache if model name has been computed prior
-        if ShapEvaluator.CACHE.get(self.cache_name) is not None:
-            self.marginal_contribution = ShapEvaluator.CACHE.get(self.cache_name)
+        if (marg_contrib := ShapEvaluator.CACHE.get(self.cache_name)) is not None:
+            self.marginal_contribution = marg_contrib
             return self
 
         print("Start: marginal contribution computation", flush=True)

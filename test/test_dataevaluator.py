@@ -42,24 +42,22 @@ class DummyDataEvaluator(DataEvaluator):
 class TestDataEvaluator(unittest.TestCase):
     def setUp(self):
         self.random_state = np.random.RandomState(seed=0)
-        self.x_train = torch.randn(100, 10)
-        self.y_train = torch.randn(100, 1)
-        self.x_valid = torch.randn(20, 10)
-        self.y_valid = torch.randn(20, 1)
-        self.x_test = torch.randn(20, 10)
-        self.y_test = torch.randn(20, 1)
+        train = self.random_state.rand(100, 10), self.random_state.rand(100, 1)
+        valid = self.random_state.rand(20, 10), self.random_state.rand(20, 1)
+        test = self.random_state.rand(20, 10), self.random_state.rand(20, 1)
 
         self.model = DummyModel(input_dim=10, output_dim=1)
         self.metric = MagicMock(return_value=1.0)
         self.fetcher = DataFetcher.from_data_splits(
-            self.x_train,
-            self.y_train,
-            self.x_valid,
-            self.y_valid,
-            self.x_test,
-            self.y_test,
+            *train,
+            *valid,
+            *test,
             one_hot=False,
         )
+
+        self.x_train, self.y_train = (torch.tensor(t).float() for t in train)
+        self.x_valid, self.y_valid = (torch.tensor(t).float() for t in valid)
+        self.x_test, self.y_test = (torch.tensor(t).float() for t in test)
 
     def test_init_(self):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
@@ -98,6 +96,8 @@ class TestDataEvaluator(unittest.TestCase):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
         evaluator = evaluator.train(self.fetcher, self.model)
 
+        print(evaluator.x_train)
+        print(self.x_train)
         self.assertTrue(torch.equal(evaluator.x_train, self.x_train))
         self.assertTrue(torch.equal(evaluator.y_train, self.y_train))
         self.assertTrue(torch.equal(evaluator.x_valid, self.x_valid))
@@ -121,10 +121,10 @@ class TestDataEvaluator(unittest.TestCase):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
         evaluator = evaluator.input_fetcher(self.fetcher)
 
-        self.assertTrue((evaluator.x_train == self.x_train).all().item())
-        self.assertTrue((evaluator.y_train == self.y_train).all().item())
-        self.assertTrue((evaluator.x_valid == self.x_valid).all().item())
-        self.assertTrue((evaluator.y_valid == self.y_valid).all().item())
+        self.assertTrue(torch.equal(evaluator.x_train, self.x_train))
+        self.assertTrue(torch.equal(evaluator.y_train, self.y_train))
+        self.assertTrue(torch.equal(evaluator.x_valid, self.x_valid))
+        self.assertTrue(torch.equal(evaluator.y_valid, self.y_valid))
         self.assertFalse(evaluator.trained)
 
     def test_train_evaluate_data_values(self):

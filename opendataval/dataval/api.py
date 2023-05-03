@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import Callable, Union
@@ -244,27 +243,20 @@ class ModelLessMixin:
         Embedding model used by model-less DataEvaluator to compute the data values for
         the embeddings and not the raw input.
     pred_model : Model
-        Unused prediction model, kept for api consistency
+        The pred_model is unused for training, but to compare a series of models on
+        the same algorithim, we compare against a shared prediction algorithim.
     """
 
-    @property
-    def pred_model(self) -> Model:
-        """DataEvaluator only supports an embedding prediction model."""
-        warnings.warn(
-            f"{self.__class__} only supports an embedding model. Calling this property"
-            "may indicate you're running an experiment that requires a model"
-        )
-        return self.embedding_model if hasattr(self, "embedding_model") else None
-
-    @pred_model.setter
-    def pred_model(self, pred_model: Model):
-        """Setter to for the injected prediction model."""
-        self._pred_model = pred_model
-
-
-    def get_embeddings(
-        self, *tensors: tuple[Union[Dataset, torch.Tensor]]
+    def embeddings(
+        self, *tensors: tuple[Union[Dataset, torch.Tensor], ...]
     ) -> tuple[torch.Tensor, ...]:
+        """Returns Embeddings for the input tensors
+
+        Returns
+        -------
+        tuple[torch.Tensor, ...]
+            Returns tupple of tensors equal to the number of tensors input
+        """
         if hasattr(self, "embedding_model") and self.embedding_model is not None:
             return tuple(self.embedding_model.predict(tensor) for tensor in tensors)
 

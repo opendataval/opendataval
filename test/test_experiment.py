@@ -78,7 +78,7 @@ class TestExperimentMediator(unittest.TestCase):
         ).compute_data_values(data_evaluators=[self.dataevaluator])
         self.assertIsInstance(experimentmediator.fetcher, DataFetcher)
         self.assertIsInstance(experimentmediator.data_evaluators[0], DataEvaluator)
-        self.assertEquals(experimentmediator.train_kwargs, {"epochs": 10})
+        self.assertEqual(experimentmediator.train_kwargs, {"epochs": 10})
         self.assertEqual(experimentmediator.metric_name, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 

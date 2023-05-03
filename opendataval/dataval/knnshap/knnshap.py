@@ -63,7 +63,7 @@ class KNNShapley(DataEvaluator, ModelLessMixin):
         """
         n = len(self.x_train)
         m = len(self.x_valid)
-        x_train, x_valid = self.get_embeddings(self.x_train, self.x_valid)
+        x_train, x_valid = self.embeddings(self.x_train, self.x_valid)
 
         # Computes Euclidean distance by computing crosswise per batch
         # Doesn't shuffle to maintain relative order

@@ -176,7 +176,7 @@ class DVRL(DataEvaluator):
             sampler=rs,
             generator=cpu_gen,
             pin_memory=True,
-            num_workers=4,
+            num_workers=2,
             persistent_workers=True,
         )
 
