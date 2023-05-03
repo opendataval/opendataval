@@ -207,7 +207,9 @@ class ExperimentMediator:
             metric_name=metric_name,
         )
 
-    def compute_data_values(self, data_evaluators: list[DataEvaluator]):
+    def compute_data_values(
+        self, data_evaluators: list[DataEvaluator], *args, **kwargs
+    ):
         """Computes the data values for the input data evaluators.
 
         Parameters
@@ -215,12 +217,12 @@ class ExperimentMediator:
         data_evaluators : list[DataEvaluator]
             List of DataEvaluators to be tested by `exper_func`
         """
-
+        kwargs = {**kwargs, **self.train_kwargs}
         for data_val in data_evaluators:
             try:
                 self.data_evaluators.append(
                     data_val.train(
-                        self.fetcher, self.pred_model, self.metric, **self.train_kwargs
+                        self.fetcher, self.pred_model, self.metric, *args, **kwargs
                     )
                 )
 

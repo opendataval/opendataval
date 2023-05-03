@@ -1,5 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
+from functools import cached_property
 from typing import Callable, Union
 
 import numpy as np
@@ -199,6 +200,10 @@ class DataEvaluator(ABC):
         np.ndarray
             Predicted data values/selection for training input data point
         """
+
+    @cached_property
+    def data_values(self):
+        return self.evaluate_data_values()
 
     def input_fetcher(self, fetcher: DataFetcher):
         """Input data from a DataFetcher object. Alternative way of adding data."""

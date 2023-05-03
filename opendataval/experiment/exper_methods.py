@@ -31,7 +31,7 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataFetcher
+    fetcher : DataFetcher
         DataFetcher containing noisy indices
 
     Returns
@@ -42,7 +42,7 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
             of the data points. Classifies the lower data value data points as
             corrupted, and the higher value data points as correct.
     """
-    data_values = evaluator.evaluate_data_values()
+    data_values = evaluator.data_values
     noisy_train_indices = fetcher.noisy_train_indices
 
     num_points = len(data_values)
@@ -83,7 +83,7 @@ def remove_high_low(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataFetcher
+    fetcher : DataFetcher
         DataFetcher containing training and valid data points
     percentile : float, optional
         Percentile of data points to remove per iteration, by default 0.05
@@ -101,13 +101,13 @@ def remove_high_low(
         ``(i * percentile)`` valuable/most valuable data points are removed
 
         - **"axis"** -- Proportion of data values removed currently
-        - **f"remove_mostval_{metric_name}"** -- Performance of model after removing
-            a proportion of the data points with the highest data values
-        - **"f"remove_leastval_{metric_name}""** -- Performance of model after removing
-            a proportion of the data points with the lowest data values
+        - **f"remove_least_influential_first{metric_name}"** -- Performance of model
+            after removing a proportion of the data points with the lowest data values
+        - **"f"remove_most_influential_first{metric_name}""** -- Performance of model
+            after removing a proportion of the data points with the highest data values
     """
     x_train, y_train, *_, x_test, y_test = fetcher.datapoints
-    data_values = evaluator.evaluate_data_values()
+    data_values = evaluator.data_values
     curr_model = evaluator.pred_model.clone()
 
     num_points = len(x_train)
@@ -151,8 +151,8 @@ def remove_high_low(
     x_axis = [i / num_bins for i in range(num_bins)]
 
     eval_results = {
-        f"remove_mostval_{metric_name}": valuable_list,
-        f"remove_leastval_{metric_name}": unvaluable_list,
+        f"remove_least_influential_first{metric_name}": valuable_list,
+        f"remove_most_influential_first{metric_name}": unvaluable_list,
         "axis": x_axis,
     }
 
@@ -186,7 +186,7 @@ def discover_corrupted_sample(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataFetcher
+    fetcher : DataFetcher
         DataFetcher containing noisy indices
     percentile : float, optional
         Percentile of data points to additionally search per iteration, by default .05
@@ -211,7 +211,7 @@ def discover_corrupted_sample(
     """
     x_train, *_ = fetcher.datapoints
     noisy_train_indices = fetcher.noisy_train_indices
-    data_values = evaluator.evaluate_data_values()
+    data_values = evaluator.data_values
 
     num_points = len(x_train)
     num_period = max(round(num_points * percentile), 5)  # Add at least 5 per bin
@@ -260,7 +260,7 @@ def discover_corrupted_sample(
 def save_dataval(evaluator: DataEvaluator, fetcher: DataFetcher):
     """Save the indices and the respective data values of the DataEvaluator."""
     train_indices = fetcher.train_indices
-    data_values = evaluator.evaluate_data_values()
+    data_values = evaluator.data_values
 
     return {"indices": train_indices, "data_values": data_values}
 
@@ -292,7 +292,7 @@ def increasing_bin_removal(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    loader : DataFetcher
+    fetcher : DataFetcher
         DataFetcher containing training and valid data points
     bin_size : float, optional
         We look at bins of equal size and find the data values cutoffs for the x-axis,
@@ -317,7 +317,7 @@ def increasing_bin_removal(
         - **f"{metric_name}_at_datavalues"** -- Performance metric when data values
             above the specified threshold are removed
     """
-    data_values = evaluator.evaluate_data_values()
+    data_values = evaluator.data_values
     curr_model = evaluator.pred_model
     x_train, y_train, *_, x_test, y_test = fetcher.datapoints
 

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import numpy as np
 import torch
@@ -43,7 +42,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         Random initial state, by default None
     """
 
-    marg_contrib_dict = {}
+    CACHE = {}
     """Cached marginal contributions."""
     GR_MAX = 100
 
@@ -81,31 +80,6 @@ class ShapEvaluator(DataEvaluator, ABC):
             Predicted data values/selection for every input data point
         """
         return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)
-
-    @staticmethod
-    def marginal_cache(
-        cache_name: str, marginal_contrib: np.ndarray = None
-    ) -> Optional[np.ndarray]:
-        """Cache marginal contributions based on a unique model name.
-
-        Parameters
-        ----------
-        cache_name : str
-            Unique name of the model, caches marginal contributions
-        marginal_contrib : np.ndarray, optional
-            Sampled marginal contributions by cardinality, by default None
-
-        Returns
-        -------
-        np.ndarray, optional
-            Returns cached marginal contributions of model name is in dict,
-            otherwise returns None.
-        """
-        if cache_name and marginal_contrib is not None:
-            ShapEvaluator.marg_contrib_dict[cache_name] = marginal_contrib
-        elif cache_name:
-            return ShapEvaluator.marg_contrib_dict.get(cache_name)
-        return None
 
     def input_data(
         self,
@@ -145,6 +119,8 @@ class ShapEvaluator(DataEvaluator, ABC):
 
         Computes the marginal contribution by sampling.
         Checks MCMC convergence every 100 iterations using Gelman-Rubin Statistic.
+        NOTE if the marginal contribution has not been calculated, will look it up in
+        a cache of already trained ShapEvaluators, otherwise will train from scratch.
 
         Parameters
         ----------
@@ -159,8 +135,8 @@ class ShapEvaluator(DataEvaluator, ABC):
             Marginal increments when one data point is added.
         """
         # Checks cache if model name has been computed prior
-        if self.marginal_cache(self.cache_name) is not None:
-            self.marginal_contribution = self.marginal_cache(self.cache_name)
+        if ShapEvaluator.CACHE.get(self.cache_name) is not None:
+            self.marginal_contribution = ShapEvaluator.CACHE.get(self.cache_name)
             return self
 
         print("Start: marginal contribution computation", flush=True)
@@ -184,7 +160,7 @@ class ShapEvaluator(DataEvaluator, ABC):
             print(f"{gr_stat=}")
 
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
-        self.marginal_cache(self.cache_name, self.marginal_contribution)
+        ShapEvaluator.CACHE[self.cache_name] = self.marginal_contribution
         print("Done: marginal contribution computation", flush=True)
 
         return self

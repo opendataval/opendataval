@@ -286,10 +286,10 @@ x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 ### `ExperimentMediator`
-`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and facilitate additional experiments. NOTE when training `DataEvaluator`, errors might be raised and caught. A warning will be raised but training will continue because training can often take a long time.
+`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data fetcher, and dataevaluators, it will train the models and facilitate additional experiments. NOTE when training `DataEvaluator`, errors might be raised and caught. A warning will be raised but training will continue because training can often take a long time.
 ```python
 expermed = ExperimentrMediator(
-    loader, model, train_kwargs, metric_name
+    fetcher, model, train_kwargs, metric_name
 ).compute_data_values(data_evaluators)
 ```
 
