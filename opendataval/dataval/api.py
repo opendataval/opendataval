@@ -49,6 +49,8 @@ class DataEvaluator(ABC):
     ----------
     pred_model : Model
         Prediction model to find how much each training datum contributes towards it.
+    data_values: np.array
+        Cached data values, used by :py:mod:`opendataval.experiment.exper_methods`
     """
 
     def __init__(self, random_state: RandomState = None, *args, **kwargs):
@@ -203,6 +205,7 @@ class DataEvaluator(ABC):
 
     @cached_property
     def data_values(self):
+        """Cached data values."""
         return self.evaluate_data_values()
 
     def input_fetcher(self, fetcher: DataFetcher):
@@ -249,12 +252,12 @@ class ModelLessMixin:
             f"{self.__class__} only supports an embedding model. Calling this property"
             "may indicate you're running an experiment that requires a model"
         )
-        return self.embedding_model if hasattr(self, "embedding_model") else None
+        return self._pred_model
 
     @pred_model.setter
-    def pred_model(self, _: Model):
+    def pred_model(self, pred_model: Model):
         """Setter to ignore the injected prediction model."""
-        pass
+        self._pred_model = pred_model
 
     def get_embeddings(
         self, *tensors: tuple[Union[Dataset, torch.Tensor]]
