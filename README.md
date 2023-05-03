@@ -21,8 +21,8 @@
   <p align="center">
     Data Valuation Meta-Meta Framework
     <br />
-    <a href="https://opendataval.github.io">
-        <strong>Explore the docs/leaderboards »</strong></a>
+    <a href="https://github.com/kevinfjiang/opendataval">
+        <strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/kevinfjiang/opendataval">View Demo</a>
