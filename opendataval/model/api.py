@@ -95,6 +95,7 @@ class TorchClassMixin(Model, nn.Module):
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
+        lr: float = 0.001,
     ):
         """Fits the model on the training data.
 
@@ -114,7 +115,7 @@ class TorchClassMixin(Model, nn.Module):
         sample_weights : torch.Tensor, optional
             Weights associated with each data point, by default None
         """
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
         criterion = F.binary_cross_entropy if self.num_classes == 2 else F.cross_entropy
         dataset = CatDataset(x_train, y_train, sample_weight)
