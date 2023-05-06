@@ -95,7 +95,7 @@ class TorchClassMixin(Model, nn.Module):
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
-        lr: float = 0.001,
+        lr: float = 0.01,
     ):
         """Fits the model on the training data.
 
