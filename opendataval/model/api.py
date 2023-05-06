@@ -95,7 +95,7 @@ class TorchClassMixin(Model, nn.Module):
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
-        lr: float = 0.001,
+        lr: float = 0.01,
     ):
         """Fits the model on the training data.
 
@@ -114,6 +114,8 @@ class TorchClassMixin(Model, nn.Module):
             Number of training epochs, by default 1
         sample_weights : torch.Tensor, optional
             Weights associated with each data point, by default None
+        lr : float, optional
+            Learning rate for the Model, by default 0.01
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
@@ -160,6 +162,7 @@ class TorchRegressMixin(Model, nn.Module):
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
+        lr: float = 0.01,
     ):
         """Fits the regression model on the training data.
 
@@ -177,8 +180,10 @@ class TorchRegressMixin(Model, nn.Module):
             Number of training epochs, by default 1
         sample_weight : torch.Tensor, optional
             Weights associated with each data point, by default None
+        lr : float, optional
+            Learning rate for the Model, by default 0.01
         """
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
         criterion = F.mse_loss
         dataset = CatDataset(x_train, y_train, sample_weight)

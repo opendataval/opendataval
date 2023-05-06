@@ -6,8 +6,8 @@ build-backend = "hatchling.build"
 name = "opendataval"
 authors = [
     {name = "Kevin Jiang", email = "kfj2112@columbia.edu"},
+    {name = "Weixin Liang", email = "wxliang@cs.stanford.edu"},
     {name = "Yongchan Kwon", email = "yk3012@columbia.edu"},
-
 ]
 description = "Transparent Data Valuation"
 readme = "README.md"

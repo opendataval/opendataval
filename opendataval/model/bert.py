@@ -154,6 +154,7 @@ class BertClassifier(Model, nn.Module):
         sample_weight: torch.Tensor = None,
         batch_size: int = 32,
         epochs: int = 1,
+        lr: float = 0.001,
     ):
         """Fit the model on the training data.
 
@@ -173,6 +174,8 @@ class BertClassifier(Model, nn.Module):
             Training batch size, by default 2
         epochs : int, optional
             Number of training epochs, by default 1
+        lr : float, optional
+            Learning rate for the Model, by default 0.01
 
         Returns
         -------
@@ -186,7 +189,7 @@ class BertClassifier(Model, nn.Module):
         dataset = CatDataset(bert_inputs, y_train, sample_weight)
 
         # Optimizer and scheduler specified for BERT per Huggingface
-        optimizer = torch.optim.AdamW(self.parameters(), lr=0.001, eps=1e-8)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=lr, eps=1e-8)
         scheduler = torch.optim.lr_scheduler.LinearLR(
             optimizer, start_factor=1, end_factor=0.1, total_iters=epochs * len(dataset)
         )

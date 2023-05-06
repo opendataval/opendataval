@@ -20,9 +20,9 @@ class LogisticRegression(TorchClassMixin, TorchPredictMixin):
         super().__init__()
 
         self.input_dim = input_dim
-        self.num_of_classes = num_classes
+        self.num_classes = num_classes
 
-        self.linear = nn.Linear(self.input_dim, self.num_of_classes)
+        self.linear = nn.Linear(self.input_dim, self.num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass of Logistic Regression.
