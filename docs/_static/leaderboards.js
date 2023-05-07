@@ -1,5 +1,5 @@
 
-const API_URL = "http://localhost"
+const API_URL = "http://34.68.35.200:8080"
 const base = new URL(`${API_URL}/leaderboards`);
 
 async function fetchLeaderboards(uri, target_id){ // path

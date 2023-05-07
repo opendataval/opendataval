@@ -1,4 +1,4 @@
-"""Prediction models to be trained, predict, and evaluated.
+r"""Prediction models to be trained, predict, and evaluated.
 
 Models
 ======
@@ -33,6 +33,55 @@ Sci-kit learn wrappers
     ClassifierSkLearnWrapper
     ClassifierUnweightedSkLearnWrapper
     RegressionSkLearnWrapper
+
+
+Default Hyperparameters
+-----------------------
+
+.. math::
+
+    \newcommand\T{\Rule{0pt}{1em}{.3em}}
+
+    \begin{array}{llll}
+    \hline
+    \textbf{Algorithm} & \textbf{Hyperparameter} & \textbf{Default Value} & \textbf{Key word argument} \\
+    \hline
+    \mbox{Logistic Regression}
+        & \mbox{epochs} & 1 & \mbox{yes} \\
+        & \mbox{batch size} & 32 & \mbox{yes} \\
+        & \mbox{learning rate} & 0.01 & \mbox{yes} \\
+        & \mbox{optimizer} & \mbox{ADAM} & \mbox{no} \\ & \mbox{loss function}
+        & \mbox{Cross Entropy} & \mbox{no} \\
+    \hline
+    \mbox{MLP Classification}
+        & \mbox{epochs} & 1 & \mbox{yes} \\
+        & \mbox{batch size} & 32 & \mbox{yes} \\
+        & \mbox{learning rate} & 0.01 & \mbox{yes} \\
+        & \mbox{optimizer} & \mbox{ADAM} & \mbox{no} \\
+        & \mbox{loss function} & \mbox{Cross Entropy} & \mbox{no} \\
+    \hline
+    \mbox{BERT Classification}
+        & \mbox{epochs} & 1 & \mbox{yes} \\
+        & \mbox{batch size} & 32 & \mbox{yes} \\
+        & \mbox{learning rate} & 0.001 & \mbox{yes} \\
+        & \mbox{optimizer} & \mbox{ADAMW} & \mbox{no} \\
+        & \mbox{loss function} & \mbox{Cross Entropy} & \mbox{no} \\
+    \hline
+    \mbox{LeNet-5 Classification}
+        & \mbox{epochs} & 1 & \mbox{yes} \\
+        & \mbox{batch size} & 32 & \mbox{yes} \\
+        & \mbox{learning rate} & 0.01 & \mbox{yes} \\
+        & \mbox{optimizer} & \mbox{ADAM} & \mbox{no} \\
+        & \mbox{loss function} & \mbox{Cross Entropy} & \mbox{no} \\
+    \hline
+    \mbox{MLP Regression}
+        & \mbox{epochs} & 1 & \mbox{yes} \\
+        & \mbox{batch size} & 32 & \mbox{yes} \\
+        & \mbox{learning rate} & 0.01 & \mbox{yes} \\
+        & \mbox{optimizer} & \mbox{ADAM} & \mbox{no} \\
+        & \mbox{loss function} & \mbox{Mean Square Error} & \mbox{no} \\
+    \hline
+    \end{array}
 """
 # Model Factory imports
 import torch
