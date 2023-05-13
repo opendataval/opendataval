@@ -86,8 +86,15 @@ class TestDataFetcher(unittest.TestCase):
         x_train = self.fetcher.x_train.copy()
         y_train = self.fetcher.y_train.copy()
         self.fetcher.noisify(mix_labels, noise_rate=0.5)
-        self.assertTrue(np.array_equal(self.fetcher.x_train, x_train))
-        self.assertFalse(np.array_equal(self.fetcher.y_train, y_train))
+        x_train_noise = self.fetcher.x_train
+        y_train_noise = self.fetcher.y_train
+        indices = self.fetcher.noisy_train_indices
+        self.assertTrue(np.array_equal(x_train_noise, x_train))
+        self.assertFalse(np.array_equal(y_train_noise, y_train))
+
+        self.assertFalse(
+            np.equal(y_train[indices], y_train_noise[indices]).all(axis=1).any()
+        )
         self.assertTrue(self.fetcher.noisy_train_indices.any())
 
         # Test with gauss noise

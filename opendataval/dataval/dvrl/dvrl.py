@@ -145,7 +145,7 @@ class DVRL(DataEvaluator):
 
         self.y_pred_diff = torch.abs(self.y_train - y_pred)
 
-    def train_data_values(self, *args, **kwargs):
+    def train_data_values(self, *args, num_workers: int = 0, **kwargs):
         """Trains model to predict data values.
 
         Trains the VE to assign probabilities of each data point being selected
@@ -155,6 +155,8 @@ class DVRL(DataEvaluator):
         ----------
         args : tuple[Any], optional
             Training positional args
+        num_workers : int, optional
+            Number of workers used to load data, by default 0, loaded in main process
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
@@ -176,8 +178,8 @@ class DVRL(DataEvaluator):
             sampler=rs,
             generator=cpu_gen,
             pin_memory=True,
-            num_workers=2,
-            persistent_workers=True,
+            num_workers=num_workers,
+            persistent_workers=num_workers > 0,
         )
 
         for x_batch, y_batch, y_hat_batch in tqdm.tqdm(dataloader):
