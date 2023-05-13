@@ -13,6 +13,7 @@ from opendataval.dataval.margcontrib.betashap import BetaShapley
 from opendataval.dataval.margcontrib.datashap import DataShapley
 from opendataval.dataval.margcontrib.loo import LeaveOneOut
 from opendataval.dataval.oob.oob import DataOob
+from opendataval.dataval.random.random import RandomEvaluator
 from opendataval.util import set_random_state
 
 RANDOM_STATE = set_random_state(10)  # Constant random state for testing
@@ -32,4 +33,5 @@ dummy_evaluators = [
     BetaShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
     DataShapley(cache_name="cache_preset", random_state=RANDOM_STATE),
     DataShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset_other", random_state=RANDOM_STATE),
+    RandomEvaluator(random_state=RANDOM_STATE)
 ]

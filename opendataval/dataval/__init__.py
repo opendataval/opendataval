@@ -29,6 +29,7 @@ Catalog
     DataShapley
     LeaveOneOut
     ShapEvaluator
+    RandomEvaluator
 """
 from opendataval.dataval.ame import AME
 from opendataval.dataval.api import DataEvaluator
@@ -43,3 +44,4 @@ from opendataval.dataval.margcontrib import (
     ShapEvaluator,
 )
 from opendataval.dataval.oob import DataOob
+from opendataval.dataval.random import RandomEvaluator

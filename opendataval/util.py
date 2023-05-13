@@ -12,6 +12,6 @@ def load_mediator_output(file_path: str):
 def set_random_state(random_state: RandomState = None) -> RandomState:
     """Set the random state of opendataval, useful for recreation of results."""
     print(f"Initial random seed is: {random_state}.")
+    torch.manual_seed(check_random_state(random_state).tomaxint())
     random_state = check_random_state(random_state)
-    torch.manual_seed(random_state.tomaxint())
     return random_state

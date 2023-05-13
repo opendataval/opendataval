@@ -1,9 +1,11 @@
 import unittest
 import warnings
 
+import numpy as np
 import torch
 
 from opendataval.dataloader import DataFetcher, mix_labels
+from opendataval.dataval.random import RandomEvaluator
 from opendataval.experiment import ExperimentMediator, discover_corrupted_sample
 from opendataval.model import Model
 from opendataval.presets import dummy_evaluators
@@ -43,3 +45,23 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
                 ).compute_data_values(data_evaluators=dummy_evaluators)
 
             exper_med.evaluate(discover_corrupted_sample)
+
+    def test_random(self):
+        fetcher = (
+            DataFetcher("iris", random_state=25)
+            .split_dataset_by_count(3, 2, 2)
+            .noisify(mix_labels, noise_rate=0.2)
+        )
+
+        data_val = (
+            RandomEvaluator(10)
+            .input_model_metric(DummyModel(), lambda *_: 1.0)  # Dummy metric as well
+            .input_fetcher(fetcher)
+        )
+
+        self.assertTrue(
+            np.array_equal(
+                set_random_state(10).uniform(size=(len(fetcher.x_train),)),
+                data_val.evaluate_data_values(),
+            )
+        )
