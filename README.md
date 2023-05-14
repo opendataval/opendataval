@@ -12,12 +12,16 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
+
+<div width=300>
 <a href="https://github.com/kevinfjiang/opendataval">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo-dark-mode.png">
-      <img alt="Text changing depending on mode." src="docs/_static/logo-light-mode.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/_static/logo-dark-mode.png">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo-light-mode.png">
+    <img alt="Text changing depending on mode." src="docs/_static/logo-light-mode.png">
    </picture>
 </a>
+</div>
 
 
 <h3 align="center">Open Data Valuation</h3>
