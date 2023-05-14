@@ -1,3 +1,10 @@
+"""Vision data sets.
+
+Run ``make install-extra`` as
+`torchvision <https://github.com/pytorch/vision>`_. is an optional
+dependency.
+"""
+
 import os
 from typing import TypeVar, Union
 
@@ -7,19 +14,21 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision.datasets import CIFAR10, CIFAR100, MNIST, FashionMNIST, VisionDataset
 
 from opendataval.dataloader.register import Register
 
 Self = TypeVar("Self")
 
-MAX_DATASET_SIZE = 10
+MAX_DATASET_SIZE = 10000
 """Data Valuation algorithms can take a long time for large data sets, thus cap size."""
 
 
-def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224, 224)):
-    """Convert PIL Images into embeddings with ResNet34 model.
+def ResnetEmbeding(
+    dataset_class: type[VisionDataset], size: tuple[int, int] = (224, 224)
+):
+    """Convert PIL color Images into embeddings with ResNet34 model.
 
     Given a PIL Images, passes through ResNet34 (as done by prior Data Valuation papers)
     and saves the vector embeddings. The embeddings are extracted from the ``avgpool``
@@ -50,7 +59,7 @@ def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224,
 
     def wrapper(
         cache_dir: str, force_download: bool, **kwargs
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[torch.Tensor, np.ndarray]:
         """Methods: `@christiansafka <https://github.com/christiansafka/img2vec>`_."""
         from torchvision.models.resnet import ResNet34_Weights, resnet34
 
@@ -63,23 +72,45 @@ def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224,
             ]
         )
 
+        embed_file_name = f"{dataset_class.__name__}_{MAX_DATASET_SIZE}_embed.pt"
+        embed_path = os.path.join(cache_dir, embed_file_name)
+
+        # Resnet inputs expect `img2vec_transforms`ed images as input
+        dataset = dataset_class(
+            root=cache_dir,
+            download=force_download or not os.path.exists(cache_dir),
+            transform=img2vec_transforms,
+            **kwargs,
+        )
+        subset = np.random.RandomState(10).permutation(len(dataset))
+
+        if os.path.isfile(embed_path):
+            image_embeddings = torch.load(embed_path)
+            return (
+                image_embeddings,
+                np.fromiter(
+                    (dataset.targets[i] for i in subset),
+                    count=len(image_embeddings),
+                    dtype=int,
+                ),
+            )
+
+        dataset = Subset(dataset, subset[:MAX_DATASET_SIZE])
+
         # Gets the avgpool layer, the outputs of this layer are our embeddings
         embedder = resnet34(weights=ResNet34_Weights.DEFAULT)
         embedding_layer = embedder._modules.get("avgpool")
 
         # We will register a hook to extract the ouput of avgpool layers.
-        image_embeddings = torch.zeros(0, 512, 1, 1)
+        image_embeddings = torch.zeros(0, 512)
 
         def extract(_model, _inputs, output: torch.Tensor):
-            nonlocal image_embeddings  # Allows us to reassign to image_embeddings
-            image_embeddings = torch.cat((image_embeddings, output.detach()))
+            """Allows us to reassign to image_embeddings."""
+            nonlocal image_embeddings
+            image_embeddings = torch.cat((image_embeddings, output.squeeze().detach()))
 
         hook = embedding_layer.register_forward_hook(extract)
         labels_list = []
-
-        # Resnet inputs expect `img2vec_transforms`ed images as input
-        dataset = image_set(root=cache_dir, download=force_download, **kwargs)
-        dataset.transform = img2vec_transforms
 
         with torch.no_grad():  # Passes through model, and our hook extracts outputs
             for img, labels in DataLoader(dataset, 64):
@@ -88,9 +119,11 @@ def ResnetEmbeding(image_set: type[VisionDataset], size: tuple[int, int] = (224,
                 if len(image_embeddings) > MAX_DATASET_SIZE:  # Caps data set size
                     break
 
+        image_embeddings = image_embeddings.squeeze()
         hook.remove()  # Cleans up the hook
 
-        return image_embeddings.numpy(force=True), np.array(labels)
+        torch.save(image_embeddings.detach(), embed_path)
+        return image_embeddings.numpy(force=True), np.array(labels_list)
 
     return wrapper
 
@@ -164,7 +197,7 @@ class VisionAdapter(Dataset):
         Parameters
         ----------
         index : int
-            Index to get cobariate from the dataset
+            Index to get covariate from the dataset
 
         Returns
         -------
@@ -190,4 +223,7 @@ cifar100 = Register("cifar100", True, True)(VisionAdapter(CIFAR100))
 """Vision Classification data set registered as ``"cifar100"``, from TorchVision."""
 
 cifar10 = Register("cifar10", True, True)(VisionAdapter(CIFAR10))
-"""Vision Classification data set registered as ``"cifar10"``, from TorchVision."""
+"""Vision Classification registered as ``"cifar10"``, from TorchVision."""
+
+cifar10_embed = Register("cifar10-embeddings", True, True)(ResnetEmbeding(CIFAR10))
+"""Vision Classification registered as ``"cifar10-embeddings"`` ResNet34 embeddings"""

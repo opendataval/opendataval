@@ -4,6 +4,7 @@ Run ``make install-extra`` as
 `transformers <https://huggingface.co/docs/transformers/index>`_. is an optional
 dependency.
 """
+import os
 from typing import Callable
 
 import numpy as np
@@ -13,11 +14,11 @@ import torch
 from opendataval.dataloader.register import Register, cache
 from opendataval.dataloader.util import ListDataset
 
-MAX_DATASET_SIZE = 1000
+MAX_DATASET_SIZE = 10000
 """Data Valuation algorithms can take a long time for large data sets, thus cap size."""
 
 
-def bert_embeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
+def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
     """Convert text data into pooled embeddings with DistilBERT model.
 
     Given a data set with a list of string, such as NLP data set function (see below),
@@ -38,23 +39,36 @@ def bert_embeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]])
 
     def wrapper(
         cache_dir: str, force_download: bool, **kwargs
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[torch.Tensor, np.ndarray]:
         from transformers import DistilBertModel, DistilBertTokenizerFast
 
         BERT_PRETRAINED_NAME = "distilbert-base-uncased"  # TODO update this
 
+        embed_file_name = f"{func.__name__}_{MAX_DATASET_SIZE}_embed.pt"
+        embed_path = os.path.join(cache_dir, embed_file_name)
+
+        dataset, labels = func(cache_dir, force_download, **kwargs)
+        subset = np.random.RandomState(10).permutation(len(dataset))
+
+        if os.path.isfile(embed_path):
+            nlp_embeddings = torch.load(embed_path)
+            return nlp_embeddings, labels[subset[: len(nlp_embeddings)]]
+
+        labels = labels[subset[:MAX_DATASET_SIZE]]
+        entries = [entry for entry in dataset[subset[:MAX_DATASET_SIZE]]]
+
         tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_PRETRAINED_NAME)
         bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME)
 
-        dataset, labels = func(cache_dir, force_download, **kwargs)
-        entries = [entry for entry in dataset[:MAX_DATASET_SIZE]]
         res = tokenizer.__call__(
-            entries, max_length=250, padding=True, truncation=True, return_tensors="pt"
+            entries, max_length=200, padding=True, truncation=True, return_tensors="pt"
         )
 
         with torch.no_grad():
             pooled_embeddings = bert_model(res.input_ids, res.attention_mask)[0][:, 0]
-        return pooled_embeddings.numpy(force=True), np.array(labels)
+
+        torch.save(pooled_embeddings.detach(), embed_path)
+        return pooled_embeddings, np.array(labels)
 
     return wrapper
 
@@ -116,8 +130,8 @@ def download_imdb(cache_dir: str, force_download: bool):
     return ListDataset(df["review"].values), labels
 
 
-bbc_embedding = Register("bbc-embeddings", True, True)(bert_embeddings(download_bbc))
+bbc_embedding = Register("bbc-embeddings", True, True)(BertEmbeddings(download_bbc))
 """Classification data set registered as ``"bbc-embeddings"``, BERT text embeddings."""
 
-imdb_embedding = Register("imdb-embeddings", True, True)(bert_embeddings(download_imdb))
+imdb_embedding = Register("imdb-embeddings", True, True)(BertEmbeddings(download_imdb))
 """Classification data set registered as ``"imdb-embeddings"``, BERT text embeddings."""
