@@ -26,3 +26,56 @@ table .custom-tooltip {
     visibility: visible;
     opacity: 1
 }
+
+.collapsible {
+    background-color: #49869f;
+    color: white;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: centre;
+    outline: none;
+    font-size: 20px;
+    margin-bottom: 2rem;
+}
+
+.active,.collapsible:hover {
+    background-color: #00142d
+}
+
+.collapsible:after {
+    content: '\002B';
+    color: white;
+    font-weight: bold;
+    float: right;
+    margin-left: 5px
+}
+
+.active:after {
+    content: "\2212"
+}
+
+
+.collapsible-content {
+    padding: 0 18px;
+    max-height: 0;
+
+    transition: max-height 0.2s ease-out;
+
+    overflow-y: auto; /* make the table scrollable if height is more than 200 px  */
+    height: 400px;
+}
+.collapsible-content table {
+    border-collapse: collapse; /* make the table borders collapse to each other */
+    width: 100%;
+}
+
+.collapsible-content table th {
+    position: sticky; /* make the table heads sticky */
+    top: 0px; /* table head will be placed from the top of the table and sticks to it */
+}
+
+.sortable {
+    cursor:pointer
+}

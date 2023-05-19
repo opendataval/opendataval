@@ -12,7 +12,6 @@ Open Data Valuation documentation
    :hidden:
 
    license <license>
-   opendataval <opendataval>
    modules <modules>
    leaderboards <leaderboards>
    upload <form>
