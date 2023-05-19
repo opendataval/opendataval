@@ -231,9 +231,9 @@ class ExperimentMediator:
                     f"""
                     An error occured during training, however training all evaluators
                     takes a long time, so we will be ignoring the evaluator:
-                    {str(data_val)} and proceeding.
+                    {data_val!s} and proceeding.
 
-                    The error is as follows: {str(ex)}
+                    The error is as follows: {ex!s}
                     """,
                     stacklevel=10,
                 )

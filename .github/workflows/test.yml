@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
 
+  workflow_dispatch:
+
 jobs:
   test:
     name: Runs Tests
@@ -52,6 +54,9 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    outputs:
+      coverage: ${{ steps.commentCoverage.outputs.coverage }}
+      color: ${{ steps.commentCoverage.outputs.color }}
     steps:
     - name: Download Code Coverage
       uses: actions/download-artifact@v3
@@ -69,20 +74,23 @@ jobs:
   commit_coverage:
     name: Commit code coverage report
     needs: [write_coverage]
-    if: github.event.pull_request.merged
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.merged && github.base_ref || github.head_ref }}
     - name: Update badge in Readme
       run: |
         # Really long command, adds badge with color and coverage between markers in README.md
-        sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n![Coverage](https://img.shields.io/badge/Coverage-${{needs.write_coverage.steps.commentCoverage.outputs.coverage}}25-${{needs.write_coverage.steps.commentCoverage.outputs.color}}.svg?style=for-the-badge)\n<!-- Pytest Coverage Comment:End -->' ./README.md
+        sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n![Coverage](https://img.shields.io/badge/Coverage-${{needs.write_coverage.outputs.coverage}}25-${{needs.write_coverage.outputs.color}}.svg?style=for-the-badge)\n<!-- Pytest Coverage Comment:End -->' ./README.md
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: Update coverage badge on Readme
+        branch: ${{ github.event.pull_request.merged && github.base_ref || github.head_ref }}
         add_options: '-u'
         commit_options: '--no-verify'
 

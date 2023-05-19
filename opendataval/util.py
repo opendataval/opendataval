@@ -31,12 +31,12 @@ class MeanStdTime:
     def __repr__(self):
         return (
             f"mean={self.mean} | std={self.std} | "
-            f"average_time={self.avg_time} | 1e5 in min {1e5*self.avg_time/60}"
+            f"average_time={self.avg_time} | 1e6 in min {1e6*self.avg_time/60}"
         )
 
 
 class ParamSweep:
-    def __init__(self, pred_model, evaluator, fetcher, samples=10):
+    def __init__(self, pred_model, evaluator, fetcher, samples: int = 10):
         self.model = pred_model
         self.x_train, self.y_train, self.x_valid, self.y_valid, *_ = fetcher.datapoints
         self.evaluator = evaluator
@@ -47,12 +47,14 @@ class ParamSweep:
         for kwargs in self._param_product(**kwargs_list):
             perf_list = []
             start_time = time.perf_counter()
+
             for _ in tqdm.trange(self.samples):
                 curr_model = self.model.clone()
                 curr_model.fit(self.x_train, self.y_train, **kwargs)
                 yhat = curr_model.predict(self.x_valid)
                 perf = self.evaluator(yhat, self.y_valid)
                 perf_list.append(perf)
+
             self.result[str(kwargs)] = MeanStdTime(
                 perf_list, time.perf_counter() - start_time
             )
