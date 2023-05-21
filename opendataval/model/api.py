@@ -243,7 +243,7 @@ class TorchPredictMixin(Model, nn.Module):
 
         self.eval()
         with torch.no_grad():
-            y_hat = self.forward(x)
+            y_hat = self.__call__(x)
 
         return y_hat
 

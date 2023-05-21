@@ -51,8 +51,6 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
             mlp_layers[f"{i+1}_acti"] = act_fn
 
         mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, num_classes)
-        mlp_layers[f"{i+1}_out_acti"] = act_fn
-
         mlp_layers["output"] = nn.Softmax(-1)
 
         self.mlp = nn.Sequential(mlp_layers)
@@ -113,7 +111,6 @@ class RegressionMLP(TorchRegressMixin, TorchPredictMixin):
             mlp_layers[f"{i+1}_acti"] = act_fn
 
         mlp_layers["output"] = nn.Linear(hidden_dim, num_classes)
-
         self.mlp = nn.Sequential(mlp_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
