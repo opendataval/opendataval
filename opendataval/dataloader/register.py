@@ -13,7 +13,9 @@ DatasetFunc = Callable[..., Union[Dataset, np.ndarray, tuple[np.ndarray, np.ndar
 Self = TypeVar("Self")
 
 
-def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str:
+def cache(
+    url: str, cache_dir: str, file_name: str = None, force_download: bool = False
+) -> str:
     """Download a file if it it is not present and returns the file_path.
 
     Parameters
@@ -23,7 +25,7 @@ def cache(url: str, cache_dir: str, file_name: str, force_download: bool) -> str
     cache_dir : str
         Directory to cache downloaded files
     file_name : str, optional
-        File name within the cache directory of the downloaded file, by default ""
+        File name within the cache directory of the downloaded file, by default None
     force_download : bool, optional
         Forces a download regardless if file is present, by default False
 

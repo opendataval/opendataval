@@ -51,7 +51,7 @@ class ParamSweep:
             for _ in tqdm.trange(self.samples):
                 curr_model = self.model.clone()
                 curr_model.fit(self.x_train, self.y_train, **kwargs)
-                yhat = curr_model.predict(self.x_valid)
+                yhat = curr_model.predict(self.x_valid).cpu()
                 perf = self.evaluator(yhat, self.y_valid)
                 perf_list.append(perf)
 
