@@ -109,6 +109,8 @@ def ModelFactory(
     model_name: str,
     fetcher: DataFetcher = None,
     device: torch.device = torch.device("cpu"),
+    *args,
+    **kwargs,
 ) -> Model:
     """Factory to create prediction models from specified presets
 
@@ -127,6 +129,10 @@ def ModelFactory(
     device : torch.device, optional
         Tensor device for acceleration, some models do not use this argument,
         by default torch.device("cpu")
+    args : tuple[Any]
+        Additional positional arguments passed to the Model constructor
+    kwargs : tuple[Any]
+        Additional key word arguments passed to the Model constructor
 
     Returns
     -------
@@ -142,29 +148,34 @@ def ModelFactory(
     covar_dim, label_dim = fetcher.covar_dim, fetcher.label_dim
 
     if model_name == "logreg":
-        return LogisticRegression(*covar_dim, *label_dim).to(device=device)
+        return LogisticRegression(*covar_dim, *label_dim, *args, **kwargs).to(device)
     elif model_name == "mlpclass":
-        return ClassifierMLP(*covar_dim, *label_dim).to(device=device)
+        return ClassifierMLP(*covar_dim, *label_dim, *args, **kwargs).to(device)
     elif model_name == "mlpregress":
-        return RegressionMLP(*covar_dim, *label_dim).to(device=device)
+        return RegressionMLP(*covar_dim, *label_dim, *args, **kwargs).to(device)
     elif model_name == "bert":
         # Temporary fix while I figure out a better way for model factory
         from opendataval.model.bert import BertClassifier
 
-        return BertClassifier(num_classes=label_dim[0]).to(device=device)
+        return BertClassifier(num_classes=label_dim[0], *args, **kwargs).to(device)
     elif model_name == "lenet":
         return LeNet(
-            num_classes=label_dim[0], gray_scale=covar_dim[0] == 1  # 1 means grey
-        ).to(device=device)
+            num_classes=label_dim[0],
+            gray_scale=covar_dim[0] == 1,  # 1 means grey
+            *args,
+            **kwargs,
+        ).to(device)
     elif model_name == "sklogreg":
-        return ClassifierSkLearnWrapper(SkLogReg(), label_dim[0])
+        return ClassifierSkLearnWrapper(SkLogReg(*args, **kwargs), label_dim[0])
     elif model_name == "skmlp":
-        return ClassifierSkLearnWrapper(MLPClassifier(), label_dim[0])
+        return ClassifierUnweightedSkLearnWrapper(
+            MLPClassifier(*args, **kwargs).fit, label_dim[0]
+        )
     elif model_name == "skknn":
         return ClassifierUnweightedSkLearnWrapper(
-            KNeighborsClassifier(label_dim[0]), label_dim[0]
+            KNeighborsClassifier(label_dim[0], *args, **kwargs), label_dim[0]
         )
     elif model_name == "sklinreg":
-        return RegressionSkLearnWrapper(LinearRegression(), label_dim[0])
+        return RegressionSkLearnWrapper(LinearRegression(*args, **kwargs), label_dim[0])
     else:
         raise ValueError(f"{model_name} is not a valid predefined model")

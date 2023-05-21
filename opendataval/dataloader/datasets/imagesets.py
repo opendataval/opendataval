@@ -98,8 +98,16 @@ def ResnetEmbeding(
 
         dataset = Subset(dataset, subset[:MAX_DATASET_SIZE])
 
+        # Slow down on gpu vs cpu is quite substantial, uses gpu accel if available
+        device = torch.device(
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+
         # Gets the avgpool layer, the outputs of this layer are our embeddings
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         embedder = resnet50(weights=ResNet50_Weights.DEFAULT).to(device)
         embedder.fc = nn.Identity()
 

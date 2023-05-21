@@ -58,6 +58,9 @@ class DataEvaluator(ABC):
     def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor):
         """Evaluate performance of the specified metric between label and predictions.
 
+        Moves input tensors to cpu because of certain bugs/errors that arise when the
+        tensors are not on the same device
+
         Parameters
         ----------
         y : torch.Tensor
@@ -70,10 +73,7 @@ class DataEvaluator(ABC):
         float
             Performance metric
         """
-        if y.device != y_hat.device:
-            y = y.to(device=y_hat.device)
-
-        return self.metric(y, y_hat)
+        return self.metric(y.cpu(), y_hat.cpu())
 
     def input_model_metric(
         self, pred_model: Model, metric: Callable[[torch.Tensor, torch.Tensor], float]

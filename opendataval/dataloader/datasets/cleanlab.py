@@ -9,19 +9,17 @@ References
 .. [1] C. G. Northcutt, A. Athalye, and J. Mueller,
     Pervasive Label Errors in Test Sets Destabilize Machine Learning Benchmarks
     arXiv.org, 2021. [Online]. Available: https://arxiv.org/abs/2103.14749.
-
-UNDER CONSTRUCTION
 """
 import glob
 import tarfile
 
-from torchvision.datasets import CIFAR10, CIFAR100, ImageNet
+from torchvision.datasets import ImageNet
 
 from opendataval.dataloader.datasets.imagesets import ResnetEmbeding, VisionAdapter
 from opendataval.dataloader.register import Register, cache
 
 
-def CleanLabImagenet(root: str, download: bool, *args, **kwargs) -> ImageNet:
+def CleanLabImagenet(root: str, download: bool, **kwargs) -> ImageNet:
     """ImageNet constructor that downloads the CleanLab cleaned validation set.
 
      Parameters
@@ -57,25 +55,11 @@ def CleanLabImagenet(root: str, download: bool, *args, **kwargs) -> ImageNet:
         tf.extractall(root)  # specify which folder to extract to
         tf.close()
 
-    return ImageNet(root=root, split="val", *args, **kwargs)
+    return ImageNet(root=root, split="val", **kwargs)
 
 
-# fmt: off
-# ruff: noqa: E501 D103
-imagenet = Register("imagenet-val", True, True)(VisionAdapter(CleanLabImagenet))
-"""Vision Classification registered as ``"imagenet-val"``, from TorchVision."""
+imagenet = Register("imagenet", True, True)(VisionAdapter(CleanLabImagenet))
+"""Vision Classification registered as ``"imagenet"``, from TorchVision."""
 
-imagenet_embed = Register("imagenet-val-embeddings", True, True)(ResnetEmbeding(CleanLabImagenet))
-"""Vision Classification registered as ``"imagenet-val-embeddings"`` ResNet50 embeddings"""
-
-cifar10 = Register("cifar10-val", True, True)(VisionAdapter(CIFAR10), train=False)
-"""Vision Classification registered as ``"cifar10-val"``, from TorchVision."""
-
-cifar10_embed = Register("cifar10-val-embeddings", True, True)(ResnetEmbeding(CIFAR10), train=False)
-"""Vision Classification registered as ``"cifar10-val-embeddings"`` ResNet50 embeddings"""
-
-cifar100 = Register("cifar100-val", True, True)(VisionAdapter(CIFAR100), train=False)
-"""Vision Classification registered as ``"cifar100-val"``, from TorchVision."""
-
-cifar100_embed = Register("cifar100-val-embeddings", True, True)(ResnetEmbeding(CIFAR100), train=False)
-"""Vision Classification registered as ``"cifar100-val-embeddings"`` ResNet50 embeddings"""
+im_embed = Register("imagenet-embeddings", True, True)(ResnetEmbeding(CleanLabImagenet))
+"""Vision Classification registered as ``"imagenet-embeddings"`` ResNet50 embeddings"""
