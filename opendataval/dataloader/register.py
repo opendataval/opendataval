@@ -158,7 +158,8 @@ class Register:
         # Overrides default one_hot if specified
         if one_hot is not None:
             self.one_hot = one_hot
-            self.label_transform = one_hot_encode if one_hot else None
+            self.cacheable = False
+            self.label_transform = one_hot_encode if one_hot else self.label_transform
 
         return self
 
