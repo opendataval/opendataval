@@ -38,7 +38,7 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
     """
 
     def wrapper(
-        cache_dir: str, force_download: bool, **kwargs
+        cache_dir: str, force_download: bool, *args, **kwargs
     ) -> tuple[torch.Tensor, np.ndarray]:
         from transformers import DistilBertModel, DistilBertTokenizerFast
 
@@ -47,7 +47,7 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
         embed_file_name = f"{func.__name__}_{MAX_DATASET_SIZE}_embed.pt"
         embed_path = os.path.join(cache_dir, embed_file_name)
 
-        dataset, labels = func(cache_dir, force_download, **kwargs)
+        dataset, labels = func(cache_dir, force_download, *args, **kwargs)
         subset = np.random.RandomState(10).permutation(len(dataset))
 
         if os.path.isfile(embed_path):

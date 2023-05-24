@@ -59,7 +59,7 @@ def ResnetEmbeding(
     """
 
     def wrapper(
-        cache_dir: str, force_download: bool, **kwargs
+        cache_dir: str, force_download: bool, *args, **kwargs
     ) -> tuple[torch.Tensor, np.ndarray]:
         """Methods: `@christiansafka <https://github.com/christiansafka/img2vec>`_."""
         from torchvision.models.resnet import ResNet50_Weights, resnet50
@@ -81,6 +81,7 @@ def ResnetEmbeding(
             root=cache_dir.replace("-embeddings", ""),  # Uses original embedding cache
             download=force_download or not os.path.exists(cache_dir),
             transform=img2vec_transforms,
+            *args,
             **kwargs,
         )
         subset = np.random.RandomState(10).permutation(len(dataset))
