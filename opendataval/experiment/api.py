@@ -1,6 +1,8 @@
 import math
 import os
+import time
 import warnings
+from datetime import timedelta
 from typing import Any, Callable, Union
 
 import pandas as pd
@@ -33,6 +35,11 @@ metrics_dict = {  # TODO add metrics and change this implementation
 class ExperimentMediator:
     """Set up an experiment to compare a group of DataEvaluators.
 
+    Attributes
+    ----------
+    timings : dict[str, timedelta]
+
+
     Parameters
     ----------
     fetcher : DataFetcher
@@ -61,6 +68,8 @@ class ExperimentMediator:
         self.metric_name = metric_name
         self.metric = metrics_dict[self.metric_name]
         self.data_evaluators = []
+
+        self.timings = {}
 
     @classmethod
     def setup(
@@ -220,12 +229,20 @@ class ExperimentMediator:
         kwargs = {**kwargs, **self.train_kwargs}
         for data_val in data_evaluators:
             try:
+                start_time = time.perf_counter()
+
                 self.data_evaluators.append(
                     data_val.train(
                         self.fetcher, self.pred_model, self.metric, *args, **kwargs
                     )
                 )
 
+                end_time = time.perf_counter()
+                delta = timedelta(seconds=end_time - start_time)
+
+                self.timings[data_val] = delta
+
+                print(f"Elapsed time {data_val!s}: {delta}")
             except Exception as ex:
                 warnings.warn(
                     f"""

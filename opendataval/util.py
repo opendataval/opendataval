@@ -1,5 +1,6 @@
 import itertools
 import time
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
@@ -23,15 +24,16 @@ def set_random_state(random_state: RandomState = None) -> RandomState:
 
 
 class MeanStdTime:
-    def __init__(self, input_data: list[float], elapsed_time: float):
+    def __init__(self, input_data: list[float], elapsed_time: float = 0.0):
         self.mean = np.mean(input_data)
         self.std = np.std(input_data, ddof=1)
         self.avg_time = elapsed_time / len(input_data)
 
     def __repr__(self):
         return (
-            f"mean={self.mean} | std={self.std} | "
-            f"average_time={self.avg_time} | 1e6 in min {1e6*self.avg_time/60}"
+            f"mean: {self.mean} | std: {self.std} | "
+            f"average_time: {timedelta(seconds=self.avg_time)} | "
+            f"1e5 time: {timedelta(seconds=1e5*self.avg_time)}"
         )
 
 
@@ -55,9 +57,8 @@ class ParamSweep:
                 perf = self.evaluator(yhat, self.y_valid)
                 perf_list.append(perf)
 
-            self.result[str(kwargs)] = MeanStdTime(
-                perf_list, time.perf_counter() - start_time
-            )
+            end_time = time.perf_counter()
+            self.result[str(kwargs)] = MeanStdTime(perf_list, end_time - start_time)
         return self.result
 
     @staticmethod
