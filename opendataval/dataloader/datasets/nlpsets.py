@@ -1,8 +1,7 @@
 """NLP data sets.
 
-Run ``make install-extra`` as
-`transformers <https://huggingface.co/docs/transformers/index>`_. is an optional
-dependency.
+Uses HuggingFace
+`transformers <https://huggingface.co/docs/transformers/index>`_. as dependency.
 """
 import os
 from typing import Callable

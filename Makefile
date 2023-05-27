@@ -13,10 +13,6 @@ install-dev:
 	python -m pip install -e ".[dev, test]"
 	pre-commit install
 
-install-extra: install
-	@echo ">> Installing extra dependencies"
-	python -m pip install -e ".[nlp, image]"
-
 ## Delete all temporary files
 clean:
 	rm -rf .ipynb_checkpoints

@@ -1,8 +1,6 @@
-"""Vision data sets.
+"""TorchVision data sets.
 
-Run ``make install-extra`` as
-`torchvision <https://github.com/pytorch/vision>`_. is an optional
-dependency.
+Uses `torchvision <https://github.com/pytorch/vision>`_. as a dependency.
 """
 
 import os

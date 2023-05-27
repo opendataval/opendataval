@@ -29,7 +29,10 @@ dependencies = [
     "torch~=2.0.0",
     "tqdm~=4.64",
     "jupyterlab~=3.6.1",
-    "notebook~=6.5.2"
+    "notebook~=6.5.2",
+    "opendatasets~=0.1.22",
+    "transformers~=4.27",
+    "torchvision~=0.15"
 ]
 dynamic = ["version"]
 
@@ -39,15 +42,12 @@ dev = [
     "black~=22.10",
     "sphinx~=6.1",
     "pre-commit~=3.2",
-    "pip-tools~=6.13.0",
-    "opendatasets~=0.1.22"
+    "pip-tools~=6.13.0"
 ]
 test = [
     "pytest~=7.2.2",
     "pytest-cov~=4.0.0"
 ]
-nlp = ["transformers~=4.27"]
-image = ["torchvision~=0.15"]
 
 [tool.hatch]
 packages = ["opendataval"]

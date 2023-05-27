@@ -26,7 +26,7 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('requirements-extra.txt') }}
       - name: Build
         run: |
-          make install-extra
+          make install-dev
           pip install -U sphinx furo
           cd docs
           make html
