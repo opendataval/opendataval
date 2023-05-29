@@ -18,6 +18,13 @@ Self = TypeVar("Self")
 class Model(ABC):
     """Abstract class of Models. Provides a template for models."""
 
+    Models: dict[str, Self] = {}
+
+    def __init_subclass__(cls, *args, **kwargs):
+        """Registers Model types, used as part of the CLI."""
+        super().__init_subclass__(*args, **kwargs)
+        cls.Models[cls.__name__] = cls
+
     @abstractmethod
     def fit(
         self,
@@ -268,8 +275,8 @@ class ClassifierSkLearnWrapper(Model):
         Label dimensionality
     """
 
-    def __init__(self, base_model, num_classes: int):
-        self.model = base_model
+    def __init__(self, base_model, num_classes: int, *args, **kwargs):
+        self.model = base_model(*args, **kwargs)
         self.num_classes = num_classes
 
     def fit(
@@ -452,8 +459,8 @@ class RegressionSkLearnWrapper(Model):
         Label dimensionality
     """
 
-    def __init__(self, base_model, num_classes: int = 1):
-        self.model = base_model
+    def __init__(self, base_model, num_classes: int = 1, *args, **kwargs):
+        self.model = base_model(*args, **kwargs)
         self.num_classes = num_classes  # Multi label regression, used for empty trains
 
     def fit(

@@ -168,7 +168,14 @@ Install Python 3.9 | 3.10 | 3.11.
 
 
 <!-- USAGE EXAMPLES -->
-## Usage
+## CLI
+
+`opendataval` comes with a quick CLI tool, The tool is under development and the template for a csv input is found at `cli.csv`
+
+To use run the following command:
+```sh
+opendataval --file cli.csv -n [job_id] -o [path/to/file/]
+```
 
 ### Quick Start
 To set up an experiment on DataEvaluators
@@ -181,7 +188,7 @@ exper_med = ExperimentMediator.model_factory_setup(
     train_count=100,
     valid_count=50,
     test_count=50,
-    model_name='mlpclass',
+    model_name='ClassifierMLP',
     train_kwargs={'epochs': 5, 'batch_size': 20},
 )
 list_of_data_evaluators = [ChildEvaluator(), ...]  # Define evaluators here
@@ -213,7 +220,7 @@ exper_med = ExperimentMediator.model_factory_setup(
     valid_count=.2,
     test_count=.1,
     fetcher=fetcher,
-    model_name='mlpclass',
+    model_name='ClassifierMLP',
     metric_name='accuracy'
 ).compute_data_values(data_evaluators=[evaluator])
 
@@ -243,7 +250,7 @@ from opendataval.dataloader import DataFetcher
 from opendataval.model import ModelFactory
 
 fetcher = DataFetcher('datset_name')  # Fetcher has covar/label dim information
-mlp_classifier = ModelFactory('mlpclass', fetcher, torch.device(...))
+mlp_classifier = ModelFactory('ClassifierMLP', fetcher, torch.device(...))
 ```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>

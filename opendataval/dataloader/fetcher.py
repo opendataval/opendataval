@@ -116,9 +116,9 @@ class DataFetcher:
         self.random_state = check_random_state(random_state)
 
     @staticmethod
-    def datasets_available() -> list[str]:
-        """Get list of available data set names."""
-        return list(Register.Datasets.keys())
+    def datasets_available() -> set[str]:
+        """Get set of available data set names."""
+        return set(Register.Datasets.keys())
 
     @classmethod
     def setup(

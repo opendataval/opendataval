@@ -25,7 +25,7 @@ class TestDataFetcher(unittest.TestCase):
 
     def test_datasets(self):
         datasets = DataFetcher.datasets_available()
-        self.assertIsInstance(datasets, list)
+        self.assertIsInstance(datasets, set)
         self.assertTrue(len(datasets) > 0)
         n = len(datasets)
         Register("dummy2", one_hot=True)

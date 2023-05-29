@@ -37,7 +37,6 @@ test:
 build:
 	pip-compile --resolver=backtracking --output-file=requirements.txt pyproject.toml
 	pip-compile --resolver=backtracking --extra=dev --extra=test --output-file=requirements-dev.txt pyproject.toml
-	pip-compile --resolver=backtracking --extra=nlp --extra=image --output-file=requirements-extra.txt pyproject.toml
 
 
 

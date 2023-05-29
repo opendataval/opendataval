@@ -1,5 +1,5 @@
 import math
-import os
+import pathlib
 import time
 import warnings
 from datetime import timedelta
@@ -59,13 +59,16 @@ class ExperimentMediator:
         fetcher: DataFetcher,
         pred_model: Model,
         train_kwargs: dict[str, Any] = None,
-        metric_name: str = "accuracy",
+        metric_name: str = None,
     ):
         self.fetcher = fetcher
         self.pred_model = pred_model
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
 
-        self.metric_name = metric_name
+        if metric_name is not None:
+            self.metric_name = metric_name
+        else:
+            self.metric_name = "accuracy" if self.fetcher.one_hot else "mse"
         self.metric = metrics_dict[self.metric_name]
         self.data_evaluators = []
 
@@ -85,7 +88,7 @@ class ExperimentMediator:
         random_state: RandomState = None,
         pred_model: Model = None,
         train_kwargs: dict[str, Any] = None,
-        metric_name: str = "accuracy",
+        metric_name: str = None,
     ):
         """Create a DataFetcher from args and passes it into the init."""
         random_state = check_random_state(random_state)
@@ -125,7 +128,7 @@ class ExperimentMediator:
         model_name: "str" = None,
         device: torch.device = torch.device("cpu"),
         train_kwargs: dict[str, Any] = None,
-        metric_name: str = "accuracy",
+        metric_name: str = None,
     ):
         """Set up ExperimentMediator from ModelFactory using an input string.
 
@@ -385,11 +388,12 @@ class ExperimentMediator:
             self.save_output(f"{exper_func.__name__}.csv", df_resp)
         return df_resp, figure
 
-    def set_output_directory(self, output_directory: str):
+    def set_output_directory(self, output_directory: Union[str, pathlib.Path]):
         """Set directory to save output of experiment."""
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
+        if isinstance(output_directory, str):
+            output_directory = pathlib.Path(output_directory)
         self.output_directory = output_directory
+        self.output_directory.mkdir(parents=True, exist_ok=True)
         return self
 
     def save_output(self, file_name: str, df: pd.DataFrame):
@@ -406,5 +410,4 @@ class ExperimentMediator:
             warnings.warn("Output directory not set, output has not been saved")
             return
 
-        file_path = os.path.join(self.output_directory, file_name)
-        df.to_csv(file_path)
+        df.to_csv(self.output_directory / file_name)

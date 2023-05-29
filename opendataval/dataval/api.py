@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Callable, Union
+from typing import Callable, TypeVar, Union
 
 import numpy as np
 import torch
@@ -20,6 +20,9 @@ def _acc(pred: torch.Tensor, target: torch.Tensor) -> float:
 
 def _negmse(pred: torch.Tensor, target: torch.Tensor) -> float:
     return -F.mse_loss(pred, target).item()
+
+
+Self = TypeVar("Self")
 
 
 class DataEvaluator(ABC):
@@ -52,8 +55,15 @@ class DataEvaluator(ABC):
         Cached data values, used by :py:mod:`opendataval.experiment.exper_methods`
     """
 
+    Evaluators: dict[str, Self] = {}
+
     def __init__(self, random_state: RandomState = None, *args, **kwargs):
         self.random_state = check_random_state(random_state)
+
+    def __init_subclass__(cls, *args, **kwargs):
+        """Registers DataEvaluator types, used as part of the CLI."""
+        super().__init_subclass__(*args, **kwargs)
+        cls.Evaluators[cls.__name__] = cls
 
     def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor):
         """Evaluate performance of the specified metric between label and predictions.
@@ -203,7 +213,7 @@ class DataEvaluator(ABC):
         """
 
     @cached_property
-    def data_values(self):
+    def data_values(self) -> np.ndarray:
         """Cached data values."""
         return self.evaluate_data_values()
 
@@ -213,14 +223,14 @@ class DataEvaluator(ABC):
         return self.input_data(x_train, y_train, x_valid, y_valid)
 
     def __new__(cls, *args, **kwargs):
-        """Record the input arguments for unique identifier of DataEvaluator."""
+        """Record the first 5 arguments for unique identifier of DataEvaluator."""
         obj = object.__new__(cls)
-        obj.__inputs = [str(arg) for arg in args]
+        obj.__inputs = [str(arg) for arg in args[:5]]
         obj.__inputs.extend(f"{arg_name}={value}" for arg_name, value in kwargs.items())
 
         return obj
 
-    def __str__(self) -> str:  # For publication keep it simple
+    def __repr__(self) -> str:
         """Get unique string representation for a DataEvaluator."""
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
 

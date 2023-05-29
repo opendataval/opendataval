@@ -58,6 +58,7 @@ click==8.1.3
     #   black
     #   opendatasets
     #   pip-tools
+    #   typer
 comm==0.1.3
     # via ipykernel
 contourpy==1.0.7
@@ -80,12 +81,18 @@ fastjsonschema==2.16.3
     # via nbformat
 filelock==3.11.0
     # via
+    #   huggingface-hub
     #   torch
+    #   transformers
     #   virtualenv
 fonttools==4.39.3
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
+fsspec==2023.5.0
+    # via huggingface-hub
+huggingface-hub==0.14.1
+    # via transformers
 identify==2.5.22
     # via pre-commit
 idna==3.4
@@ -238,11 +245,14 @@ numpy==1.24.2
     #   pandas
     #   scikit-learn
     #   scipy
+    #   torchvision
+    #   transformers
 opendatasets==0.1.22
     # via opendataval (pyproject.toml)
 packaging==23.0
     # via
     #   build
+    #   huggingface-hub
     #   ipykernel
     #   jupyter-server
     #   jupyterlab
@@ -250,6 +260,7 @@ packaging==23.0
     #   matplotlib
     #   nbconvert
     #   sphinx
+    #   transformers
 pandas==2.0.0
     # via opendataval (pyproject.toml)
 pandocfilters==1.5.0
@@ -263,7 +274,9 @@ pexpect==4.8.0
 pickleshare==0.7.5
     # via ipython
 pillow==9.5.0
-    # via matplotlib
+    # via
+    #   matplotlib
+    #   torchvision
 pip-tools==6.13.0
     # via opendataval (pyproject.toml)
 platformdirs==3.2.0
@@ -322,8 +335,10 @@ pytz==2023.3
     # via pandas
 pyyaml==6.0
     # via
+    #   huggingface-hub
     #   jupyter-events
     #   pre-commit
+    #   transformers
 pyzmq==25.0.2
     # via
     #   ipykernel
@@ -331,11 +346,16 @@ pyzmq==25.0.2
     #   jupyter-server
     #   nbclassic
     #   notebook
+regex==2023.5.5
+    # via transformers
 requests==2.28.2
     # via
+    #   huggingface-hub
     #   jupyterlab-server
     #   kaggle
     #   sphinx
+    #   torchvision
+    #   transformers
 rfc3339-validator==0.1.4
     # via
     #   jsonschema
@@ -400,7 +420,13 @@ threadpoolctl==3.1.0
     # via scikit-learn
 tinycss2==1.2.1
     # via nbconvert
+tokenizers==0.13.3
+    # via transformers
 torch==2.0.0
+    # via
+    #   opendataval (pyproject.toml)
+    #   torchvision
+torchvision==0.15.1
     # via opendataval (pyproject.toml)
 tornado==6.2
     # via
@@ -413,9 +439,11 @@ tornado==6.2
     #   terminado
 tqdm==4.65.0
     # via
+    #   huggingface-hub
     #   kaggle
     #   opendatasets
     #   opendataval (pyproject.toml)
+    #   transformers
 traitlets==5.9.0
     # via
     #   comm
@@ -431,8 +459,15 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
+transformers==4.29.2
+    # via opendataval (pyproject.toml)
+typer==0.9.0
+    # via opendataval (pyproject.toml)
 typing-extensions==4.5.0
-    # via torch
+    # via
+    #   huggingface-hub
+    #   torch
+    #   typer
 tzdata==2023.3
     # via pandas
 uri-template==1.2.0

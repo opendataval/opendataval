@@ -97,7 +97,7 @@ class TestExperimentMediator(unittest.TestCase):
         experimentmediator = ExperimentMediator(
             self.fetcher, DummyModel()
         ).compute_data_values([self.dataevaluator])
-        self.assertEqual(experimentmediator.metric_name, "accuracy")
+        self.assertEqual(experimentmediator.metric_name, "mse")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_create_fetcher(self):
@@ -175,7 +175,7 @@ class TestExperimentMediator(unittest.TestCase):
             test_count=0.1,
             add_noise_func=mix_labels,
             noise_kwargs={"noise_rate": 0.2},
-            model_name="mlpclass",
+            model_name="ClassifierMLP",
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
         )

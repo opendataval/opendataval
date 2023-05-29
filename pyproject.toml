@@ -32,9 +32,13 @@ dependencies = [
     "notebook~=6.5.2",
     "opendatasets~=0.1.22",
     "transformers~=4.27",
-    "torchvision~=0.15"
+    "torchvision~=0.15",
+    "typer~=0.9"
 ]
 dynamic = ["version"]
+
+[project.scripts]
+opendataval = "opendataval.__main__:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -92,7 +96,8 @@ known-third-party = [
     "tqdm",
     "opendatasets",
     "transformers",
-    "torchvision"
+    "torchvision",
+    "typer"
 ]
 
 [tool.coverage.run]
