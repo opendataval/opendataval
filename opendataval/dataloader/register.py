@@ -1,6 +1,7 @@
 import os
 import warnings
 from functools import partial
+from pathlib import Path
 from typing import Callable, Sequence, TypeVar, Union
 
 import numpy as np
@@ -217,8 +218,7 @@ class Register:
 
         if self.cacheable:
             cache_dir = cache_dir if cache_dir is not None else Register.CACHE_DIR
-            if not os.path.isdir(cache_dir):
-                os.mkdir(cache_dir)
+            Path(cache_dir).mkdir(parents=True, exist_ok=True)
 
             full_path = os.path.join(os.getcwd(), cache_dir, self.dataset_name)
             dataset_kwargs["cache_dir"] = full_path

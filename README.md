@@ -170,7 +170,7 @@ Install Python 3.9 | 3.10 | 3.11.
 <!-- USAGE EXAMPLES -->
 ## CLI
 
-`opendataval` comes with a quick CLI tool, The tool is under development and the template for a csv input is found at `cli.csv`
+`opendataval` comes with a quick CLI tool, The tool is under development and the template for a csv input is found at `cli.csv`. Note that for kwarg arguments, the input must be valid json.
 
 To use run the following command:
 ```sh

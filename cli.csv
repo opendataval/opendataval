@@ -1,3 +1,3 @@
-Id,Dataset,Data Evaluator,Model,Noise Rate,Metric,Random State,Cache Directory,Train,Valid,Test,device
-2,iris,DataOob,ClassifierMLP,.2,accuracy,10,outputs,100,10,10,cpu
-3,iris,DataOob,ClassifierMLP,.2,accuracy,1,outputs,100,10,10,cpu
+Id,Dataset,Data Evaluator,Model,Noise Rate,Metric,Random State,Cache Directory,Train,Valid,Test,device,Training Arguments,Noise Arguments,Data Valuation Arguments
+2,iris,DataOob,ClassifierMLP,.2,accuracy,10,outputs,100,10,10,cpu,{"epochs": 100},{"noise_rate": 0.1},{"num_models": 10}
+3,iris,DataOob,ClassifierMLP,.2,accuracy,1,outputs,100,10,10,cpu,{},{},{"num_models": 10}

@@ -1,6 +1,9 @@
+import json
+import warnings
 from pathlib import Path
 from typing import Annotated, Any, Optional
 
+import numpy as np
 import pandas as pd
 import pandera as pa
 import torch
@@ -22,24 +25,33 @@ class JobModel(pa.DataFrameModel):  # TODO errors with the nullable
 
     dataset: Series[str] = pa.Field(alias="Dataset", check_name=True, isin=set(Register.Datasets))
     cache_dir: Optional[Series[str]] = pa.Field(alias="Cache Directory", check_name=True, coerce=True, nullable=True)
-    dataval: Series[str] = pa.Field(alias="Data Evaluator", check_name=True, isin=set(DataEvaluator.Evaluators))
-    # dataval_kwargs: json
-    model: Series[str] = pa.Field(alias="Model", check_name=True, isin=set(Model.Models))
-    device: Optional[Series[str]] = pa.Field(alias="Device", check_name=True)  # TODO ensure valid type/device, probs with lambda
-    # train_kwargs: Series[dict[str, object]]  = pa.Field()# TODO having some trouble with json
 
     train_count: Optional[Series[int]] = pa.Field(alias="Train", check_name=True, ge=0, coerce=True, default=0)
     valid_count: Optional[Series[int]] = pa.Field(alias="Valid", check_name=True, ge=0, coerce=True, default=0)
     test_count: Optional[Series[int]] = pa.Field(alias="Count", check_name=True, ge=0, coerce=True, default=0)
 
     noise_rate: Optional[Series[float]] = pa.Field(alias="Noise Rate", check_name=True, ge=0.0, le=1.0, coerce=True, default=0.0)
-    # noise_kwargs: json
+    noise_kwargs: Series[dict[str, Any]] = pa.Field(alias="Noise Arguments", check_name=True, nullable=True)
+
+    dataval: Series[str] = pa.Field(alias="Data Evaluator", check_name=True, isin=set(DataEvaluator.Evaluators))
+    dataval_kwargs: Series[dict[str, Any]] = pa.Field(alias="Data Valuation Arguments", check_name=True, nullable=True)
+
+    model: Series[str] = pa.Field(alias="Model", check_name=True, isin=set(Model.Models))
+    device: Optional[Series[str]] = pa.Field(alias="Device", check_name=True)  # TODO ensure valid type/device, probs with lambda
+    train_kwargs: Series[dict[str, Any]] = pa.Field(alias="Training Arguments", check_name=True, nullable=True)
 
     metric: Series[str] = pa.Field(alias="Metric", check_name=True, isin=set(metrics_dict), nullable=True)
 
 cli = typer.Typer()
 
-@cli.command("csv", no_args_is_help=True)
+def json_loads(x):
+    try:
+        return json.loads(x)
+    except (ValueError, KeyError):
+        warnings.warn("Invalid json, using empty dict")
+        return {}
+
+@cli.command("run", no_args_is_help=True)
 def setup(
     file_: Annotated[typer.FileText, typer.Option("--file", "-f", help="CSV file containing jobs")],
     id_: Annotated[list[int], typer.Option("--id", "-n", help="Id of the job")],
@@ -68,16 +80,22 @@ def setup(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     jobs = pd.read_csv(file_)
+    vectorized_load = np.vectorize(json_loads)
+
+    for _, val in filter(lambda col: '_kwargs' in col[0], JobModel._get_model_attrs().items()):
+        if val.alias in jobs.columns:
+            jobs[val.alias] = vectorized_load(jobs[val.alias])
+
     validated_jobs = JobModel.validate(jobs)
 
     for job_id in id_:
         row = validated_jobs[validated_jobs[JobModel.experiment_id] == job_id].iloc[0]
-        run(row.to_dict(), output_dir)
+        run(row.to_dict(), job_id, output_dir)
 
+def run(row: dict[str, Any], run_id: int, output_dir: Path):
+    dataval = DataEvaluator.Evaluators[row[JobModel.dataval]](**row.get(JobModel.dataval_kwargs, {}))  # **dataval_kwargs
 
-def run(row: dict[str, Any], output_dir: Path):
-    dataval = DataEvaluator.Evaluators[row[JobModel.dataval]]()  # **dataval_kwargs
-
+    typer.echo(f"Starting computation of data values for id={run_id}")
     exper_med = ExperimentMediator.model_factory_setup(
         dataset_name=row[JobModel.dataset],
         cache_dir=row.get(JobModel.cache_dir),
@@ -86,21 +104,24 @@ def run(row: dict[str, Any], output_dir: Path):
         valid_count=row.get(JobModel.valid_count, 5),
         test_count=row.get(JobModel.test_count, 5),
         add_noise_func=mix_labels,  # TODO only supports mix_labels currently
-        noise_kwargs={'noise_rate': row.get(JobModel.noise_rate, 0)},
+        noise_kwargs=row.get(JobModel.noise_kwargs, None),
         random_state=row.get(JobModel.random_state, None),
 
         model_name=row[JobModel.model],
-        train_kwargs={'epochs': 5, 'batch_size': 50},  # TODO allow customizable kwargs
+        train_kwargs=row.get(JobModel.train_kwargs, None),
         device=row.get(JobModel.device, "cuda" if torch.cuda.is_available() else "cpu"),
         metric_name=row.get(JobModel.metric, None),
-    ).set_output_directory(output_dir).compute_data_values([dataval])
+    ).set_output_directory(output_dir / f"id={run_id}/").compute_data_values([dataval])
+    typer.echo(f"Completed computation of data values for id={run_id}")
 
     # Runs all experiments available
+    typer.echo(f"Starting experiment for id={run_id}")
     exper_med.evaluate(em.noisy_detection, save_output=True)
     exper_med.evaluate(em.save_dataval, save_output=True)
     exper_med.evaluate(em.discover_corrupted_sample, save_output=True)
     exper_med.evaluate(em.remove_high_low, include_train=True, save_output=True)
     exper_med.evaluate(em.increasing_bin_removal, include_train=True, save_output=True)
+    typer.echo(f"Completed experiment for id={run_id}")
 
 
 if __name__ == "__main__":
