@@ -15,25 +15,27 @@ requires-python = ">=3.9.0"
 keywords = ["Data Valuation", "Data Centric", "Machine Learning"]
 license = {text = "MIT"}
 classifiers = [
+    "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
-    "Intended Audience :: Science/Research",
+
 ]
 dependencies = [
     "matplotlib~=3.7",
-    "pandas~=2.0",
     "numpy~=1.24",
+    "opendatasets~=0.1.22",
+    "pandas~=2.0",
+    "pandera~=0.15.1",
+    "requests~=2.31.0",
     "scipy~=1.10",
     "scikit-learn~=1.2",
     "torch~=2.0.0",
-    "tqdm~=4.64",
-    "jupyterlab~=3.6.1",
-    "notebook~=6.5.2",
-    "opendatasets~=0.1.22",
-    "transformers~=4.27",
     "torchvision~=0.15",
-    "typer~=0.9"
+    "tqdm~=4.64",
+    "transformers~=4.27",
+    "typer~=0.9",
+
 ]
 dynamic = ["version"]
 
@@ -42,11 +44,11 @@ opendataval = "opendataval.__main__:cli"
 
 [project.optional-dependencies]
 dev = [
-    "ruff~=0.0.2",
     "black~=22.10",
-    "sphinx~=6.1",
+    "pip-tools~=6.13.0",
     "pre-commit~=3.2",
-    "pip-tools~=6.13.0"
+    "ruff~=0.0.2",
+    "sphinx~=6.1"
 ]
 test = [
     "pytest~=7.2.2",
@@ -87,17 +89,19 @@ convention = "numpy"
 [tool.ruff.isort]
 known-first-party = ["opendataval"]
 known-third-party = [
-    "torch",
     "numpy",
-    "scipy",
+    "opendatasets",
     "pandas",
+    "pandera",
+    "requests",
+    "scipy",
     "sklearn",
     "matplotlib",
-    "tqdm",
-    "opendatasets",
-    "transformers",
+    "torch",
     "torchvision",
-    "typer"
+    "tqdm",
+    "transformers",
+    "typer",
 ]
 
 [tool.coverage.run]
