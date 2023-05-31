@@ -43,8 +43,10 @@ class JobModel(pa.DataFrameModel):  # TODO errors with the nullable
     metric: Series[str] = pa.Field(alias="Metric", check_name=True, isin=set(metrics_dict), nullable=True)
 
 cli = typer.Typer()
+"""Typer CLI entry point."""
 
-def json_loads(x):
+def _json_loads(x: str) -> dict[str, Any]:
+    """Loads json, returns empty on failure."""
     try:
         return json.loads(x)
     except (ValueError, KeyError):
@@ -77,10 +79,8 @@ def setup(
         Directory of outputs of the experiment. Must be a possible directory, by default
         Path(".") or current working directory.
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     jobs = pd.read_csv(file_)
-    vectorized_load = np.vectorize(json_loads)
+    vectorized_load = np.vectorize(_json_loads)
 
     for _, val in filter(lambda col: '_kwargs' in col[0], JobModel._get_model_attrs().items()):
         if val.alias in jobs.columns:

@@ -36,6 +36,7 @@ dataval = (
     .train_data_values()
 )
 
+data_values = dataval.data_values  # Cached
 data_values = dataval.evaluate_data_values()
 ```
 
@@ -48,4 +49,4 @@ data_values = ChildEvaluator.train(fetcher, model, *train_args, **train_kwargs).
 
 
 ## `ShapEvaluator`
-A number of DataEvaluators are actually semivalues, which means we can reuse the marginal computations of across several evaluators. To do so: #TODO
+A number of DataEvaluators are actually semivalues, which means we can reuse the marginal computations of across several evaluators. To do so specify a `cache_name: str`.

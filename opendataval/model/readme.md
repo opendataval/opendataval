@@ -26,3 +26,13 @@ wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression(), label_dim, device=to
 wrapped_lr.fit(x, y)  # Accepts only tensor inputs and converts them to numpy
 wrapped_lr.predict(x)  # Equivalent of predict_proba(x) on classification, .predict() for regression. Returns tensor
 ```
+
+There is also a `ModelFactory` to create models from a name. A fetcher
+will specify the input and output dimensions.
+```python
+from opendataval.dataloader import DataFetcher
+from opendataval.model import ModelFactory
+
+fetcher = DataFetcher('datset_name')  # Fetcher has covar/label dim information
+mlp_classifier = ModelFactory('ClassifierMLP', fetcher, torch.device(...), *args, **kwargs)
+```

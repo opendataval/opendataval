@@ -1,19 +1,10 @@
-<!-- Improved compatibility of Back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
-<a name="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
+<!-- Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `kevinfjiang`, `opendataval` `kevinfjiang` -->
 
+<a name="readme-top"></a>
 
 <!-- PROJECT LOGO -->
-<br />
-<div align="center">
 
-<div width="200">
+<div width="175" align="right">
 <a href="https://github.com/kevinfjiang/opendataval">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo-dark-mode.png">
@@ -23,131 +14,71 @@
 </a>
 </div>
 
+# OpenDataVal
 
-<h3 align="center">Open Data Valuation</h3>
+> A unified library for  transparent data valuation benchmarks
 
-  <p align="center">
-    Data Valuation Meta-Meta Framework
-    <br />
-    <a href="https://opendataval.github.io">
-        <strong>Explore the docs/leaderboards »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/kevinfjiang/opendataval">View Demo</a>
-    ·
-    <a href="https://github.com/kevinfjiang/opendataval/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/kevinfjiang/opendataval/issues">Request Feature</a>
-  </p>
-</div>
-
-# OpenDataVal : Towards a Transparent Data Valuations
-
+## About the project
 ----
 
-[**Website**](TODO) | [**arXiv Paper**](TODO)
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-[![Contributors][contributors-shield]][contributors-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![Build][test-shield]][test-url]
-[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)
-<!-- Pytest Coverage Comment:Begin -->
-![Coverage](https://img.shields.io/badge/Coverage-85%25-green.svg?style=for-the-badge)
-<!-- Pytest Coverage Comment:End -->
+[**Website**](opendataval.github.io) | [**arXiv Paper**](TODO)
+
+Assessing the quality of individual data points is critical for improving model performance and mitigating biases. However, there is no way to systematically benchmark different algorithims.
+
+**opendataval** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation taks using just a few lines of code.
 
 
-**opendataval** is the first general-purpose lightweight library that provides a comprehensive list of functions to systematically evaluate the data valuations of several data valuation meta-frameworks. opendataval supports the development of new datasets (both synthetic and real-world) and explanation methods, with a strong bent towards promoting systematic, reproducible, and transparent evaluation of data values. TODO most of this is filler from OpenXAI, to change
-
-**opendataval** is an open-source initiative that comprises of a collection of curated datasets, models, and data value estimators, and provides a simple and easy-to-use API that enables researchers and practitioners to benchmark explanation methods using just a few lines of code.
-
-
+| Overview | |
+|----------|-|
+|**CI/CD**|[![Build][test-shield]][test-url]![Coverage][coverage_badge] |
+|**Python**|[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)|
+|**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black) |
+|**Documentation**| [Documentation](opendataval.github.io) |
+|**Issues**| [![Issues][issues-shield]][issues-url] |
+|**Releases**|[![MIT License]][TODO]|
+|**License**|[![MIT License][license-shield]][license-url]|
+|**Contributors**|[![Contributors][contributors-shield]][contributors-url]|
+|**Citation**| TODO |
 
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>👇Table of Contents</summary>
   <hr>
   <ol>
+    <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#sparkles-features">Features</a></li>
     <li>
-      <a href="#about-the-project">About The Project</a>
+      <a href="#zap-quick-start">Quick Start</a>
       <ul>
-        <li><a href="#built-with">Built With</a></li>
+        <li><a href="#computer-cli">CLI</a></li>
+        <li><a href="#control_knobs-api">API</a></li>
       </ul>
     </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-        <li><a href="#usage">Usage</a></li>
-      </ul>
-    </li>
-    <li><a href="#architecture">Architecture</a></li><li>
-    <a href="#opendataval-leaderboards">Leaderboards</a></li>
-    <li><a href="#contributing">Contributing</a></li><ul>
-            <li><a href="#roadmap">Roadmap</a></li>
-    </ul></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#cite-us">Cite Us</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#medal_sports-opendataval-leaderboards">Leaderboards</a></li>
+    <li><a href="#wave-contributing">Contributing</a></li>
+    <li><a href="#bulb-vision">Vision</a></li>
+    <li><a href="#classical_building-license">License</a></li>
+    <li><a href="#books-cite-us">Cite Us</a></li>
   </ol>
 </details>
 
 
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+## :sparkles: Features
+----
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
-
-<!-- Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `kevinfjiang`, `opendataval`, `twitter_handle`, `yahoo`, `kevinfjiang`, `Open Data Val`, `Data Valuation Meta-Meta Framework` -->
+| Feature | Status | Links | Notes |
+|---------|--------|-------|-------|
+| **[Datasets](opendataval/dataloader/readme.md)** | Stable | [Docs](TODO) | Embeddings available for image/NLP datasets |
+| **[Models](opendataval/model/readme.md)** | Stable | [Docs]() | Support available for sk-learn models |
+| **[Data Evaluators](opendataval/dataval/readme.md)** | Stable | [Docs]() | |
+| **[Experiments](opendataval/experiment/readme.md)** | Stable | [Docs]() | |
+| **[CLI](opendataval/__main__.py)** | Experimental | [Docs]() | No support for null values |
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### Built with
-
-* [![Pytorch][PyTorch-shield]][PyTorch-url]
-* [![scikit-learn][scikit-learn-shield]][scikit-learn-url]
-* [![numpy][numpy-shield]][numpy-url]
-* [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black)
-
-
-
-<!-- GETTING STARTED -->
-## Getting Started
-
-To get a local copy up and running follow these simple example steps.
-
-### Prerequisites
-
-Install Python 3.9 | 3.10 | 3.11.
-* Brew
-  ```sh
-  brew install python@3.11
-  python3.11 --version
-  ```
-* Linux
-  ```sh
-  sudo apt-get install python3.11
-  python3.11 --version
-  ```
-* Anaconda (reccomended as creates an env)
-  ```sh
-  conda create --name [env_name] -c conda-forge python=3.10
-  conda activate [env_name]
-  python --version
-  ```
-
-### Installation
-
+## Installation
+----
 1. Clone the repo
    ```sh
    git clone https://github.com/kevinfjiang/opendataval.git
@@ -161,24 +92,14 @@ Install Python 3.9 | 3.10 | 3.11.
     make install-dev
     ```
     b. If you want to pull in kaggle datasets, I'd reccomend looking how to add a kaggle folder to the current directory. Tutorial [here](https://www.analyticsvidhya.com/blog/2021/04/how-to-download-kaggle-datasets-using-jupyter-notebook/)
-3. Open demo.ipynb to see presets and the training workflow
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-
-
 <!-- USAGE EXAMPLES -->
-## CLI
+## :zap: Quick Start
+----
+To set up an experiment on DataEvaluators. Feel free to change the source code as needed for a project.
 
-`opendataval` comes with a quick CLI tool, The tool is under development and the template for a csv input is found at `cli.csv`. Note that for kwarg arguments, the input must be valid json.
-
-To use run the following command:
-```sh
-opendataval --file cli.csv -n [job_id] -o [path/to/file/]
-```
-
-### Quick Start
-To set up an experiment on DataEvaluators
 ```python
 from opendataval.experiment import ExperimentMediator
 
@@ -192,162 +113,121 @@ exper_med = ExperimentMediator.model_factory_setup(
     train_kwargs={'epochs': 5, 'batch_size': 20},
 )
 list_of_data_evaluators = [ChildEvaluator(), ...]  # Define evaluators here
-eval_med = exper_med.compute_data_values(data_evaluators=list_of_data_evaluators)
+eval_med = exper_med.compute_data_values(list_of_data_evaluators)
 
-# Runs a discover the noisy data experiment for each DataEvaluator
-# Plots the results in figure (if has plot arg), and returns the results as a DataFrame
+# Runs a discover the noisy data experiment for each DataEvaluator and plots
 data, fig = eval_med.plot(discover_corrupted_sample)
 
-# If not plot: Axes argument, we can still evaluate the function with the following
-# Any function with arguments (DataEvaluator, DataFetcher, ...) -> dict is valid.
+# Runs non-plottable experiment
 data = eval_method.evaluate(noisy_detection)
 ```
 
+### :computer: CLI
+`opendataval` comes with a quick [CLI](TODO) tool, The tool is under development and the template for a csv input is found at [`cli.csv`](cli.csv). Note that for kwarg arguments, the input must be valid json.
+
+To use run the following command if installed with make-install:
+```sh
+opendataval --file cli.csv -n [job_id] -o [path/to/file/]
+```
+To run without installing the script:
+```
+python opendataval --file cli.csv -n [job_id] -o [path/to/file/]
+```
+
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-### Overview
+### :control_knobs: API
 Here are the 4 interacting parts of opendataval
-1. `DataEvaluator`, Measures the data values of input data point for a specified model.
-2. `DataFetcher`, Loads data and holds meta data regarding splits
-3. `Model`, trainable prediction model.
+1. `DataFetcher`, Loads data and holds meta data regarding splits
+2. `Model`, trainable prediction model.
+3. `DataEvaluator`, Measures the data values of input data point for a specified model.
 4. `ExperimentMediator`, facilitates experiments regarding data values across several `DataEvaluator`s
-```python
-evaluator = ChildEvaluator()  # DataEvaluator is abstract
-
-exper_med = ExperimentMediator.model_factory_setup(
-    dataset_name='name',
-    train_count=.7,
-    valid_count=.2,
-    test_count=.1,
-    fetcher=fetcher,
-    model_name='ClassifierMLP',
-    metric_name='accuracy'
-).compute_data_values(data_evaluators=[evaluator])
-
-exper_med.evaluate(exper_func)
-```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-### `Model`
-`Model` is an abstract base class that requires the implementation of three methods: `.train(x, y)`, `.predict(x)`, `.clone()`.
-
-`Model` was primarily designed with PyTorch models in mind, which is why there are additional mixins to inherit for PyTorch models. However, there is support for sk-learn models through a wrapper:
-```python
-from opendataval.model import ClassifierSkLearnWrapper
-from sklearn.linear_model import LogisticRegression
-
-wrapped_lr = ClassifierSkLearnWrapper(LogisticRegression(), label_dim)
-
-wrapped_lr.fit(x, y)
-wrapped_lr.predict(x)  # equiv of `.predict_proba()`
-```
-
-There is also a `ModelFactory` function to create the default specifications of certain models. It
-is recommended to import, instantiate, then inject the models and not use the ModelFactory.
-```python
-from opendataval.dataloader import DataFetcher
-from opendataval.model import ModelFactory
-
-fetcher = DataFetcher('datset_name')  # Fetcher has covar/label dim information
-mlp_classifier = ModelFactory('ClassifierMLP', fetcher, torch.device(...))
-```
-
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
-### `DataEvaluator`
-We have a catalog of `DataEvaluator` with many default arguments. Many DataEvaluators will do well with default arguments for data points `n`<100. To pull one in do the following
-```python
-from opendataval.dataval.ame import AME
-
-dataval = AME()
-```
-To inject model, metrics, and data points for training
-```python
-dataval = (
-    dataval
-    .input_model_metric(model, metric)
-    .input_data(x_train, y_train, x_valid, y_valid)
-    .train_data_values()
-)
-
-data_values = dataval.evaluate_data_values()
-```
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
-### `DataFetcher`
-The DataFetcher accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
-```python
-DataFetcher.datasets_available()  # ['name1', 'name2']
-```
-
-A fetcher first takes a data set name to be fetched.
+#### [`DataFetcher`](opendataval/dataloader/readme.md)
+The DataFetcher takes the name of a [`Register`](opendataval/dataloader/readme.md#register-datasets) dataset and loads, transforms, splits, and adds noise to the data set.
 ```python
 from opendataval.dataloader import DataFetcher
 
-fetcher = DataFetcher(dataset_name='name1')
-```
+DataFetcher.datasets_available()  # ['dataset_name1', 'dataset_name2']
+fetcher = DataFetcher(dataset_name='dataset_name1')
 
-From there we must define how we will split the data set into train/valid/test splits
-```python
-fetcher = fetcher.split_dataset_by_count(70, 20, 10)  # Data set counts
-fetcher = fetcher.split_dataset_by_prop(.7, .2, .1)  # Splits on proportions
-```
+fetcher = fetcher.split_dataset_by_count(70, 20, 10)
+fetcher = fetcher.noisify(mix_labels, noise_rate=.1)
 
-To get data points
-```python
 x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 ```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-### `ExperimentMediator`
-`ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data fetcher, and dataevaluators, it will train the models and facilitate additional experiments. NOTE when training `DataEvaluator`, errors might be raised and caught. A warning will be raised but training will continue because training can often take a long time.
+#### [`Model`](opendataval/model/readme.md)
+`Model` is the predictive model for Data Evaluators.
+
 ```python
-expermed = ExperimentrMediator(
-    fetcher, model, train_kwargs, metric_name
-).compute_data_values(data_evaluators)
+from opendataval.model import LogisticRegression
+
+model = LogisticRegression(input_dim, output_dim)
+
+model.fit(x, y)
+model.predict(x)
+>>> torch.Tensor(...)
 ```
 
-From here we can run experiments by passing in an experiment function `(DataEvaluator, DataFetcher) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable. All returns include a pandas `DataFrame`.
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
+#### [`DataEvaluator`](opendataval/dataval/readme.md)
+We have a catalog of `DataEvaluator` to run experiments. To do so, input the `Model`, `DataFetcher`, and an evaluation metric (such as accuracy).
+
+```python
+from opendataval.dataval.ame import AME
+
+dataval = (
+    AME(num_models=8000)
+    .train(fetcher=fetcher, pred_model=model, metric=metric)
+)
+
+data_values = dataval.data_values  # Cached values
+data_values = dataval.evaluate_data_values()  # Recomputed values
+>>> np.ndarray([.888, .132, ...])
+```
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
+#### [`ExperimentMediator`](opendataval/experiment/readme.md)
+`ExperimentMediator` is helps make a cohesive and controlled experiment. NOTE Warnings are raised if errors occur in a specific `DataEvaluator`.
+```python
+expermed = ExperimentrMediator(fetcher, model, train_kwargs, metric_name).compute_data_values(data_evaluators)
+```
+
+Run experiments by passing in an experiment function: `(DataEvaluator, DataFetcher, ...) - > dict[str, Any]`. There are 5 found `exper_methods.py` with three being plotable.
 ```python
 df = expermed.evaluate(noisy_detection)
 df, figure = expermed.plot(discover_corrupted_sample)
 ```
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+For more examples, please refer to the [Documentation](opendataval.github.io)
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-<!-- UML Map -->
-## Architecture
-[![](https://mermaid.ink/img/pako:eNqdVclu2zAQ_RWCvcip7EqVVyEI0GY5NZc07aEwINDS2CEgkwJFpVYD-9vLRZFoxU6B-iCTwzfDN29Goxec8gxwjNOclOUNJRtBtkj_lkw_H2BDSwkCDYcX6IZIcgcyfVL7GF3zbcFLKilnn-5ISjKwLiZS6_hijeaAPxNBiYSys-VkBbmzP-ScZEmmLvIG1rpfMrsgWZYwTktI1hVL0eVweOUyitGPItPBkfZGv6l8QgbusjqO4XC7vNQGncvVFerMnpvy2v4PVO4ZTeWrRC1B-3Q9ljhcYiUd16vR6EJt9PHtM8krIrlW8ctmI2BD9M3W_17VI_8vT5uie7-TYFtIrU4JsjthGRGC1EasOqFM5eZW6GNZ5FQmjZsnBaEsSXnFpI8UG5rZzcDx0JHouvZ6FVv3K9oRbvNyGFshCgFZstXL7uSxKnI4PAIruTiYhApOmXRJG5qnquc3cU1IlzRYCmAyTfQGSm-AjDYneZs4Dt-Payo9SwrtfNSsavcOnYzqnBY1aFC9-GdbSK1udwUIugUm71UsLVnn03VH2zT_duz321m4bnA3_7cIR4wTyneH31QnHo4I2yom8Lov32uDE0XzQJN5bTN7uxpk4Gqfc3ke1qvAiezNvOn8Y_RQsdIaDBBxdlwEV6vO78zM6Y2crpKtJL6rqd8fRi1_hLCPtyC2hGZqrJvrllg-gcoSx2q5Uq_xEvuO_aeeyqtcvfQK0PBb4kKlRUR9zXOVivH8kK0gglXj7GAeYSddXBREkyh9i_vKRQbiXaSRS8c7Bygh5XpiHRELgmkYBA5KDTpJe6BJOh-vToY6z0tDlah7pSmpJP9esxTHa5KX4OPKfG6aT2ZrVe2iinXffFT1n48Lwn5xrjBSVGC2OH7BOxwvFqNJOJ9No9ksXMynkY9rHA9nwSgKxuE0ChaT8Xg-3fv4j3EPRov55zCYTBfhZDpbqKz3fwF5E3EZ?type=png)](https://mermaid.live/edit#pako:eNqdVclu2zAQ_RWCvcip7EqVVyEI0GY5NZc07aEwINDS2CEgkwJFpVYD-9vLRZFoxU6B-iCTwzfDN29Goxec8gxwjNOclOUNJRtBtkj_lkw_H2BDSwkCDYcX6IZIcgcyfVL7GF3zbcFLKilnn-5ISjKwLiZS6_hijeaAPxNBiYSys-VkBbmzP-ScZEmmLvIG1rpfMrsgWZYwTktI1hVL0eVweOUyitGPItPBkfZGv6l8QgbusjqO4XC7vNQGncvVFerMnpvy2v4PVO4ZTeWrRC1B-3Q9ljhcYiUd16vR6EJt9PHtM8krIrlW8ctmI2BD9M3W_17VI_8vT5uie7-TYFtIrU4JsjthGRGC1EasOqFM5eZW6GNZ5FQmjZsnBaEsSXnFpI8UG5rZzcDx0JHouvZ6FVv3K9oRbvNyGFshCgFZstXL7uSxKnI4PAIruTiYhApOmXRJG5qnquc3cU1IlzRYCmAyTfQGSm-AjDYneZs4Dt-Payo9SwrtfNSsavcOnYzqnBY1aFC9-GdbSK1udwUIugUm71UsLVnn03VH2zT_duz321m4bnA3_7cIR4wTyneH31QnHo4I2yom8Lov32uDE0XzQJN5bTN7uxpk4Gqfc3ke1qvAiezNvOn8Y_RQsdIaDBBxdlwEV6vO78zM6Y2crpKtJL6rqd8fRi1_hLCPtyC2hGZqrJvrllg-gcoSx2q5Uq_xEvuO_aeeyqtcvfQK0PBb4kKlRUR9zXOVivH8kK0gglXj7GAeYSddXBREkyh9i_vKRQbiXaSRS8c7Bygh5XpiHRELgmkYBA5KDTpJe6BJOh-vToY6z0tDlah7pSmpJP9esxTHa5KX4OPKfG6aT2ZrVe2iinXffFT1n48Lwn5xrjBSVGC2OH7BOxwvFqNJOJ9No9ksXMynkY9rHA9nwSgKxuE0ChaT8Xg-3fv4j3EPRov55zCYTBfhZDpbqKz3fwF5E3EZ)
+## :medal_sports: opendataval Leaderboards
+For datasets that start with the prefix challenge, we provide [leaderboards](https://opendataval.github.io/leaderboards). Compute the data values with an `ExperimentMediator` and use the `save_dataval` function to save a csv. Upload it to [here](https://opendataval.github.io/upload)!
 
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
-## opendataval [Leaderboards](https://opendataval.github.io/leaderboards)
-For every `DataEvaluator`, we will provide its performance compared to the other
-`DataEvaluators` for a specific preset specified in `presets`.
-
-Submitting a new `DataEvaluator` and a list of `presets` and `experiments` to test it on
-will be trained and tested several times. We will always use the same seeds, with one
-seed used public: `42`.
-
-Submitting a new `Register` data set is very helpful as that will increases the number of different presets.
-
-Submitting a new `exper_func` increases the number of metrics for evaluation.
+```python
+exper_med = ExperimentMediator.model_factory_setup(
+    dataset_name='challenge-...', model_name=model_name, train_kwargs={...}, metric_name=metric_name
+)
+exper_med.compute_data_values([custom_data_evaluator]).evaluate(save_dataval, save_output=True)
+```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 
 
 <!-- CONTRIBUTING -->
-## Contributing
+## :wave: Contributing
 
-If you have a quick suggestion, reccomendation, bug-fixes please open an [issue](https://github.com/kevinfjiang/opendataval/issues).
+If you have a quick suggestion, reccomendation, bug-fixes please open an [issue]([issues-url]).
 If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](CONTRIBUTING.md).
-If you have created a new `DataEvaluator`, and would like to get it implemented and
-evaluated, please see our [Contribution page](CONTRIBUTING.md). TODO i haven't figured out how to evaluate but we'll leave it like this for now.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -357,37 +237,27 @@ evaluated, please see our [Contribution page](CONTRIBUTING.md). TODO i haven't f
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-<!-- ROADMAP -->
-## Roadmap
+## :bulb: Vision
+* **clean, descriptive specification syntax** -- based on modern object-oriented design principles for data science.
+* **fair model assessment and benchmarking** -- Easily build and evaluate your Data Evaluators
+* **easily extensible** -- Easily add your own data sets,
 
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-See the [open issues](https://github.com/kevinfjiang/opendataval/issues) for a full list of proposed features (and known issues).
-## Cite us
+## :books: Cite us
 TODO
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 <!-- LICENSE -->
-## License
+## :classical_building: License
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
 
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+[![MIT License][license-shield]][license-url]
 
-
-
-<!-- CONTACT -->
-## Contact
-
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - kevinfjiang@yahoo.com
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
-
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
@@ -395,16 +265,6 @@ Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - kevinfjiang@
 * []()
 * []()
 * []()
-
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
-## Sharing TODO delete me
-To share this repository with non-contributers prior to making this public, run the following command.
-Expiration date:
-![Token expiration](https://img.shields.io/date/1685141566?style=for-the-badge)
-```sh
-git clone https://oauth2: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@github.com/kevinfjiang/opendataval.git
-```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -446,3 +306,6 @@ git clone https://oauth2:github_pat_11AR53SOI0HNEGUaVHmamv_rs9aMMdTrQOki5zJz9WJf
 [scikit-learn-url]: https://scikit-learn.org/stable/
 [numpy-url]: https://numpy.org/
 [numpy-shield]: https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white
+<!-- Pytest Coverage Comment:Start -->
+[coverage_badge]: https://img.shields.io/badge/Coverage-85%25-green.svg?style=for-the-badge
+<!-- Pytest Coverage Comment:End -->

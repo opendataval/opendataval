@@ -1,6 +1,16 @@
+## Adding your own data
+
+Adding your own data to a DataFetcher is easy and retains the same API as loading from a fetcher.
+```python
+from opendataval.dataloader import DataFetcher
+fetcher = DataFetcher.from_data(covariates, labels).split_dataset_by_count(...)
+fetcher = DataFetcher.from_data_splits(x_train, y_train, x_valid, y_valid, x_test, y_test)
+```
+
 ## `DataFetcher`
 The DataFetcher is a class that will load exactly one data set per instance. It accepts the name of a `Register` data set and handles the preprocessing involved. For our purposes, we can find the registered datasets with:
 ```python
+from opendataval.dataloader import DataFetcher
 DataFetcher.datasets_available()  # ['name1', 'name2']
 ```
 
@@ -8,7 +18,7 @@ A fetcher first takes a data set name to be loaded.
 ```python
 from opendataval.dataloader import DataFetcher
 
-fetcher = DataFetcher(dataset_name='dataset')
+fetcher = DataFetcher(dataset_name='name1')
 ```
 
 
@@ -129,7 +139,5 @@ pd_dataset = Register("pd").from_pandas(df, label_columns=['label1', 'label2'])
 covar, labels = pd_dataset.load_data()
 ```
 
-To wrap back around, this is the api to get the data from any of the Registered data sets.
-```python
-datapoints = DataFetcher("pd").split_dataset_by_prop(.7, .2, .1).datapoints
-```
+## Embeddings
+For NLP and Image datasets, there are embeddings available from `ResNet50` and `distill-bert-uncased`. Embeddings available have suffix `-embeddings` and cache the embeddings.

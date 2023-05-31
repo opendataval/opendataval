@@ -1,6 +1,7 @@
 
 ## `ExperimentMediator`
 `ExperimentMediator` is helps make a cohesive and controlled experiment. By injecting a model, data loader, and dataevaluators, it will train the models and facilitate additional experiments.
+NOTE Warnings are raised if errors occur in a specific `DataEvaluator`.
 ```python
 expermed = ExperimentrMediator(loader, model, train_kwargs, metric_name).compute_data_values(data_evaluators)
 ```

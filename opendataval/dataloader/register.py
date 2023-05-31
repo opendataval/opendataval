@@ -217,11 +217,11 @@ class Register:
         dataset_kwargs = {}
 
         if self.cacheable:
-            cache_dir = cache_dir if cache_dir is not None else Register.CACHE_DIR
-            Path(cache_dir).mkdir(parents=True, exist_ok=True)
+            cache_dir = Path(cache_dir if cache_dir is not None else Register.CACHE_DIR)
+            cache_dir.mkdir(parents=True, exist_ok=True)
 
-            full_path = os.path.join(os.getcwd(), cache_dir, self.dataset_name)
-            dataset_kwargs["cache_dir"] = full_path
+            full_path = cache_dir / self.dataset_name
+            dataset_kwargs["cache_dir"] = str(full_path)
             dataset_kwargs["force_download"] = force_download
 
         if hasattr(self, "covar_label_func"):
