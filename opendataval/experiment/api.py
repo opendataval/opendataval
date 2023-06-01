@@ -293,11 +293,7 @@ class ExperimentMediator:
         -------
         pd.DataFrame
             DataFrame containing the results for each DataEvaluator experiment.
-            DataFrame is indexed: [result_title, DataEvaluator]
-            Any 1-D experiment result is expanded into columns: list(range(len(result)))
-
-            To get the results by result_title, df.loc[result_title]
-            To get the results by DataEvaluator, use df.ax(DataEvaluator, level=1)
+            DataFrame is indexed: [DataEvaluator.DataEvaluator]
         """
         data_eval_perf = {}
         if include_train:
@@ -309,8 +305,10 @@ class ExperimentMediator:
             eval_resp = exper_func(data_val, self.fetcher, **exper_kwargs)
             data_eval_perf[str(data_val)] = eval_resp
 
-        # index=[result_title, DataEvaluator] columns=[range(len(axis))]
-        df_resp = pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series)
+        # index=[DataEvaluator.DataEvaluator]
+        df_resp = pd.DataFrame.from_dict(data_eval_perf, "index")
+        df_resp = df_resp.explode(list(df_resp.columns))
+
         if save_output:
             self.save_output(f"{exper_func.__name__}.csv", df_resp)
         return df_resp
@@ -355,11 +353,7 @@ class ExperimentMediator:
         -------
         tuple[pd.DataFrame, Figure]
             DataFrame containing the results for each DataEvaluator experiment.
-            DataFrame is indexed: [result_title, DataEvaluator.DataEvaluator]
-            Any 1-D experiment result is expanded into columns: list(range(len(result)))
-
-            To get the results by result_title, df.loc[result_title]
-            To get the results by DataEvaluator, use df.ax(DataEvaluator, level=1)
+            DataFrame is indexed: [DataEvaluator.DataEvaluator]
 
             Figure is a plotted version of the results dict.
         """
@@ -381,8 +375,9 @@ class ExperimentMediator:
 
             data_eval_perf[str(data_val)] = eval_resp
 
-        # index=[result_title, DataEvaluator] columns=[range(len(axis))]
-        df_resp = pd.DataFrame.from_dict(data_eval_perf).stack().apply(pd.Series)
+        # index=[DataEvaluator.DataEvaluator]
+        df_resp = pd.DataFrame.from_dict(data_eval_perf, "index")
+        df_resp = df_resp.explode(list(df_resp.columns))
 
         if save_output:
             self.save_output(f"{exper_func.__name__}.csv", df_resp)

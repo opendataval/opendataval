@@ -147,7 +147,9 @@ class TestExperimentMediator(unittest.TestCase):
         self.assertFalse(self.dataevaluator.trained)
 
     def test_evaluate_mediator(self):
-        mock_func = Mock(side_effect=[{"a": [1, 2], "b": [3]}, {"a": [4, 5], "b": [6]}])
+        mock_func = Mock(
+            side_effect=[{"a": [1, 2], "b": [3, 4]}, {"a": [5, 6], "b": [7, 8]}]
+        )
         kwargs = {"c": 1, "d": "2"}
         dummies = [DummyEvaluator(1), DummyEvaluator(2)]
         experimentmediator = ExperimentMediator(
@@ -160,11 +162,11 @@ class TestExperimentMediator(unittest.TestCase):
                 call(dummies[1], self.fetcher, **kwargs),
             ]
         )
-
-        self.assertTrue(res.loc["a", str(dummies[0])].eq([1, 2]).all())
-        self.assertTrue(res.loc["b", str(dummies[0])][0] == 3)
-        self.assertTrue(res.loc["a", str(dummies[1])].eq([4, 5]).all())
-        self.assertTrue(res.loc["b", str(dummies[1])][0] == 6)
+        print(res)
+        self.assertTrue(res.loc[str(dummies[0])]["a"].eq([1, 2]).all())
+        self.assertTrue(res.loc[str(dummies[0])]["b"].eq([3, 4]).all())
+        self.assertTrue(res.loc[str(dummies[1])]["a"].eq([5, 6]).all())
+        self.assertTrue(res.loc[str(dummies[1])]["b"].eq([7, 8]).all())
 
     def test_experiment_mediator_model_factory_setup(self):
         exper_med = ExperimentMediator.model_factory_setup(

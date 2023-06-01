@@ -232,14 +232,14 @@ def discover_corrupted_sample(
             / len(noisy_train_indices)
         )
 
-    x_axis = [i / num_bins for i in range(num_bins)]
+    x_axis = [i / num_bins for i in range(len(found_rates))]
     eval_results = {"corrupt_found": found_rates, "axis": x_axis}
 
     # Plot corrupted label discovery graphs
     if plot is not None:
         # Corrupted label discovery results (dvrl, optimal, random)
         y_dv = found_rates[:num_bins]
-        y_opt = [min((i / num_bins / noise_rate, 1.0)) for i in range(num_bins)]
+        y_opt = [min((i / num_bins / noise_rate, 1.0)) for i in range(len(found_rates))]
         y_random = x_axis
 
         eval_results["optimal"] = y_opt
@@ -267,8 +267,8 @@ def save_dataval(evaluator: DataEvaluator, fetcher: DataFetcher, output_path: st
 
     if output_path:
         df_data = {str(evaluator): data}
-        df = pd.DataFrame.from_dict(df_data).stack().apply(pd.Series)
-        df.to_csv(output_path)
+        df = pd.DataFrame.from_dict(df_data, "index")
+        df.explode(list(df.columns)).to_csv(output_path)
 
     return data
 
