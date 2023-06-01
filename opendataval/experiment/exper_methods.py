@@ -7,6 +7,7 @@ of one :py:class:`~opendataval.dataval.api.DataEvaluator` at a time.
 from typing import Any
 
 import numpy as np
+import pandas as pd
 from matplotlib.axes import Axes
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from sklearn.cluster import KMeans
@@ -257,12 +258,19 @@ def discover_corrupted_sample(
     return eval_results
 
 
-def save_dataval(evaluator: DataEvaluator, fetcher: DataFetcher):
+def save_dataval(evaluator: DataEvaluator, fetcher: DataFetcher, output_path: str = ""):
     """Save the indices and the respective data values of the DataEvaluator."""
     train_indices = fetcher.train_indices
     data_values = evaluator.data_values
 
-    return {"indices": train_indices, "data_values": data_values}
+    data = {"indices": train_indices, "data_values": data_values}
+
+    if output_path:
+        df_data = {str(evaluator): data}
+        df = pd.DataFrame.from_dict(df_data).stack().apply(pd.Series)
+        df.to_csv(output_path)
+
+    return data
 
 
 def increasing_bin_removal(

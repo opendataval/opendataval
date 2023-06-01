@@ -42,13 +42,9 @@ class DataFetcher:
         Number of data points in the total data set
     one_hot : bool
         If True, the data set has categorical labels as one hot encodings
-    train_indices : np.ndarray[int]
+    [train/valid/test]_indices : np.ndarray[int]
         The indices of the original data set used to make the training data set.
-    valid_indices : np.ndarray[[int]
-        The indices of the original data set used to make the validation data set.
-    test_indices : np.ndarray[[int]
-        The indices of the original data set used to make the test data set.
-    noisy_train_indices : np.ndarray[[int]
+    noisy_train_indices : np.ndarray[int]
         The indices of training data points with noise added to them.
     [x/y]_[train/valid/test] : np.ndarray
         Access to the raw split of the [covariate/label] [train/valid/test] data set
@@ -88,32 +84,37 @@ class DataFetcher:
         self.one_hot = dataset.one_hot
 
         if dataset.presplit:
-            x_train, x_valid, x_test, y_train, y_valid, y_test = dataset.load_data(
-                cache_dir, force_download
-            )
-
-            if not (
-                len(x_train) == len(y_train)
-                and len(x_valid) == len(y_valid)
-                and len(x_test) == len(y_test)
-            ):
-                raise ValueError("Covariates and Labels must be of same length.")
-
-            if not (
-                x_train[0].shape == x_valid[0].shape == x_test[0].shape
-                and y_train[0].shape == y_valid[0].shape == y_test[0].shape
-            ):
-                raise ValueError("Covariates and Labels inputs must be of same shape.")
-
-            self.x_train, self.x_valid, self.x_test = x_train, x_valid, x_test
-            self.y_train, self.y_valid, self.y_test = y_train, y_valid, y_test
-
+            self._presplit_data(*dataset.load_data(cache_dir, force_download))
         else:
-            self.covar, self.labels = dataset.load_data(cache_dir, force_download)
-            if not len(self.covar) == len(self.labels):
-                raise ValueError("Covariates and Labels must be of same length.")
+            self._add_data(*dataset.load_data(cache_dir, force_download))
 
         self.random_state = check_random_state(random_state)
+
+    def _presplit_data(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
+        if not len(x_train) == len(y_train):
+            raise ValueError("Training Covariates and Labels must be of same length.")
+        if not len(x_valid) == len(y_valid):
+            raise ValueError("Validation Covariates and Labels must be of same length.")
+        if not len(x_test) == len(y_test):
+            raise ValueError("Testing Covariates and Labels must be of same length.")
+
+        if not (x_train[0].shape == x_valid[0].shape == x_test[0].shape):
+            raise ValueError("Covariates must be of same shape.")
+        if not (y_train[0].shape == y_valid[0].shape == y_test[0].shape):
+            raise ValueError("Labels must be of same shape.")
+
+        self.x_train, self.x_valid, self.x_test = x_train, x_valid, x_test
+        self.y_train, self.y_valid, self.y_test = y_train, y_valid, y_test
+
+        tr, val, test = len(self.x_train), len(self.x_valid), len(self.x_test)
+        self.train_indices = np.fromiter(range(tr), dtype=int)
+        self.valid_indices = np.fromiter(range(tr, tr + val), dtype=int)
+        self.test_indices = np.fromiter(range(tr + val, tr + val + test), dtype=int)
+
+    def _add_data(self, covar, labels):
+        if not len(covar) == len(labels):
+            raise ValueError("Covariates and Labels must be of same length.")
+        self.covar, self.labels = covar, labels
 
     @staticmethod
     def datasets_available() -> set[str]:
@@ -184,9 +185,7 @@ class DataFetcher:
             Input covariates and labels are of different length, no 1-to-1 mapping.
         """
         fetcher = cls.__new__(cls)
-        fetcher.covar, fetcher.labels = covar, labels
-        if not len(fetcher.covar) == len(fetcher.labels):
-            raise ValueError("Covariates and Labels must be of same length.")
+        fetcher._add_data(covar, labels)
 
         fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)
@@ -235,23 +234,8 @@ class DataFetcher:
             All covariates must be of same dimension.
             All labels must be of same dimension.
         """
-        if not (
-            len(x_train) == len(y_train)
-            and len(x_valid) == len(y_valid)
-            and len(x_test) == len(y_test)
-        ):
-            raise ValueError("Covariates and Labels must be of same length.")
-
-        if not (
-            x_train[0].shape == x_valid[0].shape == x_test[0].shape
-            and y_train[0].shape == y_valid[0].shape == y_test[0].shape
-        ):
-            raise ValueError("Covariates and Labels inputs must be of same shape.")
-
         fetcher = cls.__new__(cls)
-        fetcher.x_train, fetcher.y_train = x_train, y_train
-        fetcher.x_valid, fetcher.y_valid = x_valid, y_valid
-        fetcher.x_test, fetcher.y_test = x_test, y_test
+        fetcher._presplit_data(x_train, y_train, x_valid, y_valid, x_test, y_test)
 
         fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)

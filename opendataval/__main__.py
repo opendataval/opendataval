@@ -16,9 +16,17 @@ from opendataval.experiment import exper_methods as em
 from opendataval.experiment.api import ExperimentMediator, metrics_dict
 from opendataval.model import Model
 
-
 # fmt: off
 # ruff: noqa: E501 D103
+
+def _json_loads(x: str) -> dict[str, Any]:
+    """Loads json, returns empty on failure."""
+    try:
+        return json.loads(x)
+    except (ValueError, KeyError):
+        warnings.warn("Invalid json, using empty dict")
+        return {}
+
 class JobModel(pa.DataFrameModel):  # TODO errors with the nullable
     experiment_id: Series[int] = pa.Field(alias="Id", check_name=True, coerce=True, ge=0, unique=True)
     random_state: Optional[Series[int]] = pa.Field(alias="Random State", check_name=True, coerce=True, nullable=True, ignore_na=True)
@@ -31,27 +39,29 @@ class JobModel(pa.DataFrameModel):  # TODO errors with the nullable
     test_count: Optional[Series[int]] = pa.Field(alias="Count", check_name=True, ge=0, coerce=True, default=0)
 
     noise_rate: Optional[Series[float]] = pa.Field(alias="Noise Rate", check_name=True, ge=0.0, le=1.0, coerce=True, default=0.0)
-    noise_kwargs: Series[dict[str, Any]] = pa.Field(alias="Noise Arguments", check_name=True, nullable=True)
+    noise_kwargs: Series[object] = pa.Field(alias="Noise Arguments", check_name=True, nullable=True)
 
     dataval: Series[str] = pa.Field(alias="Data Evaluator", check_name=True, isin=set(DataEvaluator.Evaluators))
-    dataval_kwargs: Series[dict[str, Any]] = pa.Field(alias="Data Valuation Arguments", check_name=True, nullable=True)
+    dataval_kwargs: Series[object] = pa.Field(alias="Data Valuation Arguments", check_name=True, nullable=True)
 
     model: Series[str] = pa.Field(alias="Model", check_name=True, isin=set(Model.Models))
     device: Optional[Series[str]] = pa.Field(alias="Device", check_name=True)  # TODO ensure valid type/device, probs with lambda
-    train_kwargs: Series[dict[str, Any]] = pa.Field(alias="Training Arguments", check_name=True, nullable=True)
+    train_kwargs: Series[object] = pa.Field(alias="Training Arguments", check_name=True, nullable=True)
 
     metric: Series[str] = pa.Field(alias="Metric", check_name=True, isin=set(metrics_dict), nullable=True)
 
+    @classmethod
+    def validate(cls, check_obj: pd.DataFrame, *args, **kwargs):
+        """Validates _kwargs inputs can be casted to a dict."""
+        vectorized_load = np.vectorize(_json_loads)
+        for _, field in filter(lambda item: '_kwargs' in item[0], cls._get_model_attrs().items()):
+            if field.alias in check_obj.columns:
+                check_obj[field.alias] = vectorized_load(check_obj[field.alias])
+
+        return super().validate(check_obj, *args, **kwargs)
+
 cli = typer.Typer()
 """Typer CLI entry point."""
-
-def _json_loads(x: str) -> dict[str, Any]:
-    """Loads json, returns empty on failure."""
-    try:
-        return json.loads(x)
-    except (ValueError, KeyError):
-        warnings.warn("Invalid json, using empty dict")
-        return {}
 
 @cli.command("run", no_args_is_help=True)
 def setup(
@@ -80,12 +90,6 @@ def setup(
         Path(".") or current working directory.
     """
     jobs = pd.read_csv(file_)
-    vectorized_load = np.vectorize(_json_loads)
-
-    for _, val in filter(lambda col: '_kwargs' in col[0], JobModel._get_model_attrs().items()):
-        if val.alias in jobs.columns:
-            jobs[val.alias] = vectorized_load(jobs[val.alias])
-
     validated_jobs = JobModel.validate(jobs)
 
     for job_id in id_:
