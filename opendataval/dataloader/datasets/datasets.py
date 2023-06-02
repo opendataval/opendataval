@@ -4,9 +4,30 @@ import os
 import numpy as np
 import pandas as pd
 import sklearn.datasets as ds
+from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import StandardScaler, minmax_scale
 
 from opendataval.dataloader.register import Register, cache
+
+
+def load_openml(data_id: int):
+    """load openml datasets.
+
+    A help function to load openml datasets with OpenML ID.
+    """
+    dataset = fetch_openml(data_id=data_id, as_frame=False)
+    category_list = list(dataset["categories"].keys())
+    if len(category_list) > 0:
+        category_indices = [dataset["feature_names"].index(x) for x in category_list]
+        noncategory_indices = [
+            i for i in range(len(dataset["feature_names"])) if i not in category_indices
+        ]
+        X, y = dataset["data"][:, noncategory_indices], dataset["target"]
+    else:
+        X, y = dataset["data"], dataset["target"]
+    list_of_classes, y = np.unique(y, return_inverse=True)
+    X = (X - np.mean(X, axis=0)) / (np.std(X, axis=0) + 1e-8)  # standardization
+    return X, y
 
 
 @Register("gaussian_classifier", one_hot=True)
@@ -183,3 +204,47 @@ def download_diabetes():
 def download_linnerud():
     """Regression data set registered as ``"linnerud"``."""
     return ds.load_linnerud(return_X_y=True)
+
+
+# OpenML Datasets
+@Register("2dplanes", one_hot=True)
+def download_2dplanes():
+    """Categorical data set registered as ``"2dplanes"``."""
+    return load_openml(data_id=727)
+
+
+@Register("electricity", one_hot=True)
+def download_electricity():
+    """Categorical data set registered as ``"electricity"``."""
+    return load_openml(data_id=44080)
+
+
+@Register("MiniBooNE", one_hot=True)
+def download_MiniBooNE():
+    """Categorical data set registered as ``"MiniBooNE"``."""
+    return load_openml(data_id=43974)
+
+
+@Register("pol", one_hot=True)
+def download_pol():
+    """Categorical data set registered as ``"pol"``."""
+    return load_openml(data_id=722)
+
+
+@Register("fried", one_hot=True)
+def download_fried():
+    """Categorical data set registered as ``"fried"``."""
+    return load_openml(data_id=901)
+
+
+@Register("nomao", one_hot=True)
+def download_nomao():
+    """Categorical data set registered as ``"nomao"``."""
+    return load_openml(data_id=1486)
+
+
+@Register("creditcard", one_hot=True)
+def download_creditcard():
+    """Categorical data set registered as ``"creditcard"``."""
+    return load_openml(data_id=42477)
+
