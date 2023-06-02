@@ -6,20 +6,17 @@
 
 <div width="175" align="right">
 <a href="https://github.com/kevinfjiang/opendataval">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo-dark-mode.png">
-    <source media="(prefers-color-scheme: light)" srcset="docs/_static/logo-light-mode.png">
-    <img alt="Text changing depending on mode." src="docs/_static/logo-light-mode.png">
-   </picture>
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo-dark-mode.png">
+      <source media="(prefers-color-scheme: light)" srcset="docs/_static/logo-light-mode.png">
+      <img alt="Logo toggles light and dark mode" src="docs/_static/logo-light-mode.png"  width="300" align="right">
+    </picture>
 </a>
 </div>
 
 # OpenDataVal
 
 > A unified library for  transparent data valuation benchmarks
-
-## About the project
-----
 
 [**Website**](opendataval.github.io) | [**arXiv Paper**](TODO)
 
@@ -30,7 +27,7 @@ Assessing the quality of individual data points is critical for improving model 
 
 | Overview | |
 |----------|-|
-|**CI/CD**|[![Build][test-shield]][test-url]![Coverage][coverage_badge] |
+|**CI/CD**|[![Build][test-shield]][test-url] ![Coverage][coverage_badge] |
 |**Python**|[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)|
 |**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black) |
 |**Documentation**| [Documentation](opendataval.github.io) |
@@ -252,19 +249,7 @@ TODO
 <!-- LICENSE -->
 ## :classical_building: License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
-
-[![MIT License][license-shield]][license-url]
-
-
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* []()
-* []()
-* []()
+Distributed under the MIT License. See [`LICENSE.txt`][license-url] for more information.
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -283,23 +268,6 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [test-url]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test?style=for-the-badge
 [test-shield]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test?style=for-the-badge
-[product-screenshot]: images/screenshot.png
-[Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
-[Next-url]: https://nextjs.org/
-[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
-[React-url]: https://reactjs.org/
-[Vue.js]: https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D
-[Vue-url]: https://vuejs.org/
-[Angular.io]: https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
-[Angular-url]: https://angular.io/
-[Svelte.dev]: https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00
-[Svelte-url]: https://svelte.dev/
-[Laravel.com]: https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white
-[Laravel-url]: https://laravel.com
-[Bootstrap.com]: https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white
-[Bootstrap-url]: https://getbootstrap.com
-[JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
-[JQuery-url]: https://jquery.com
 [PyTorch-shield]: https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white
 [PyTorch-url]: https://pytorch.org/
 [scikit-learn-shield]: https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white
