@@ -1,5 +1,5 @@
 
-BASE = "https://35.208.129.173"
+BASE = "https://opendataval.yongchanstat.com/"
 
 async function fetchLeaderboards(table, target_id){ // path
     console.log(table);

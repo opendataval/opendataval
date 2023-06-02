@@ -14,10 +14,20 @@ Open Data Valuation documentation
    license <license>
    modules <modules>
    leaderboards <leaderboards>
+   paper <paper>
 
 **Version**: |version|
 
-**opendataval** is a package that does things.
+**Useful links**:
+`Installation <https://github.com/kevinfjiang/opendataval/#hourglass_flowing_sand-installation>`_ |
+`Source Repository <https://github.com/kevinfjiang/opendataval/>`_ |
+`Issue Tracker <https://github.com/kevinfjiang/opendataval/issues>`_ |
+`Releases <https://github.com/kevinfjiang/opendataval/issues>`_
+
+
+**opendataval** is an open-source initiative that with a diverse array of datasets/models
+(image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a
+few lines of code.
 
 Indices and tables
 ==================

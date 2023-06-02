@@ -22,7 +22,7 @@
 
 Assessing the quality of individual data points is critical for improving model performance and mitigating biases. However, there is no way to systematically benchmark different algorithims.
 
-**opendataval** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation taks using just a few lines of code.
+**opendataval** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a few lines of code.
 
 
 | Overview | |

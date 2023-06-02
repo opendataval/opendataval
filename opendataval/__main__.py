@@ -36,7 +36,7 @@ class JobModel(pa.DataFrameModel):  # TODO errors with the nullable
 
     train_count: Optional[Series[int]] = pa.Field(alias="Train", check_name=True, ge=0, coerce=True, default=0)
     valid_count: Optional[Series[int]] = pa.Field(alias="Valid", check_name=True, ge=0, coerce=True, default=0)
-    test_count: Optional[Series[int]] = pa.Field(alias="Count", check_name=True, ge=0, coerce=True, default=0)
+    test_count: Optional[Series[int]] = pa.Field(alias="Test", check_name=True, ge=0, coerce=True, default=0)
 
     noise_rate: Optional[Series[float]] = pa.Field(alias="Noise Rate", check_name=True, ge=0.0, le=1.0, coerce=True, default=0.0)
     noise_kwargs: Series[object] = pa.Field(alias="Noise Arguments", check_name=True, nullable=True)
@@ -104,9 +104,9 @@ def run(row: dict[str, Any], run_id: int, output_dir: Path):
         dataset_name=row[JobModel.dataset],
         cache_dir=row.get(JobModel.cache_dir),
         force_download=False,
-        train_count=row.get(JobModel.train_count, 5),  #TODO set to 0
-        valid_count=row.get(JobModel.valid_count, 5),
-        test_count=row.get(JobModel.test_count, 5),
+        train_count=row.get(JobModel.train_count, 25),  #TODO set to 0
+        valid_count=row.get(JobModel.valid_count, 25),
+        test_count=row.get(JobModel.test_count, 25),
         add_noise_func=mix_labels,  # TODO only supports mix_labels currently
         noise_kwargs=row.get(JobModel.noise_kwargs, None),
         random_state=row.get(JobModel.random_state, None),

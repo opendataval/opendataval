@@ -21,6 +21,7 @@ Save and upload the results of your DataEvaluator `here <https://docs.google.com
 
     <button class="collapsible"> PlaceHolder </button>
     <div class="collapsible-content">
+        <h4> Place Holder 1 </h4>
         <table id="excelDataTable" class="table-wrapper docutils container">
             <tr>
                 <th id="col1" class='sortable'>
@@ -35,6 +36,7 @@ Save and upload the results of your DataEvaluator `here <https://docs.google.com
             </tr>
         </table>
 
+        <h4> Place Holder 1 </h4>
         <table id="excelDataTable3" class="table-wrapper docutils container">
             <tr>
                 <th id="col1" class='sortable'>
@@ -52,6 +54,7 @@ Save and upload the results of your DataEvaluator `here <https://docs.google.com
 
     <button class="collapsible"> Iris Challenge </button>
     <div class="collapsible-content">
+        <h4> Noisy Indices Detection F1 Score </h4>
         <table id="iristable" class="table-wrapper docutils container">
             <tr>
                 <th id="dataval_name" class='sortable'>
