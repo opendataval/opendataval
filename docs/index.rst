@@ -14,7 +14,6 @@ Open Data Valuation documentation
    license <license>
    modules <modules>
    leaderboards <leaderboards>
-   upload <form>
 
 **Version**: |version|
 

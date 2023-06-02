@@ -35,7 +35,7 @@ Assessing the quality of individual data points is critical for improving model 
 |**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black) |
 |**Documentation**| [Documentation](opendataval.github.io) |
 |**Issues**| [![Issues][issues-shield]][issues-url] |
-|**Releases**|[![MIT License]][TODO]|
+|**PyPi**|[![Releases][release-shield]][release-url]|
 |**License**|[![MIT License][license-shield]][license-url]|
 |**Contributors**|[![Contributors][contributors-shield]][contributors-url]|
 |**Citation**| TODO |
@@ -69,11 +69,11 @@ Assessing the quality of individual data points is critical for improving model 
 
 | Feature | Status | Links | Notes |
 |---------|--------|-------|-------|
-| **[Datasets](opendataval/dataloader/readme.md)** | Stable | [Docs](TODO) | Embeddings available for image/NLP datasets |
-| **[Models](opendataval/model/readme.md)** | Stable | [Docs]() | Support available for sk-learn models |
-| **[Data Evaluators](opendataval/dataval/readme.md)** | Stable | [Docs]() | |
-| **[Experiments](opendataval/experiment/readme.md)** | Stable | [Docs]() | |
-| **[CLI](opendataval/__main__.py)** | Experimental | [Docs]() | No support for null values |
+| **[Datasets](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataloader/readme.md)** | Stable | [Docs](https://github.com/kevinfjiang/opendataval/releases) | Embeddings available for image/NLP datasets |
+| **[Models](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/model/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.model.html#module-opendataval.model) | Support available for sk-learn models |
+| **[Data Evaluators](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataval/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataval.html#module-opendataval.dataval) | |
+| **[Experiments](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/experiment/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.experiment.html#module-opendataval.experiment) | |
+| **[CLI](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/__main__.py)** | Experimental | `opendataval --help` | No support for null values |
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -123,7 +123,7 @@ data = eval_method.evaluate(noisy_detection)
 ```
 
 ### :computer: CLI
-`opendataval` comes with a quick [CLI](TODO) tool, The tool is under development and the template for a csv input is found at [`cli.csv`](cli.csv). Note that for kwarg arguments, the input must be valid json.
+`opendataval` comes with a quick [CLI](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/__main__.py) tool, The tool is under development and the template for a csv input is found at [`cli.csv`](https://github.com/kevinfjiang/opendataval/tree/main/cli.csv). Note that for kwarg arguments, the input must be valid json.
 
 To use run the following command if installed with make-install:
 ```sh
@@ -145,8 +145,8 @@ Here are the 4 interacting parts of opendataval
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`DataFetcher`](opendataval/dataloader/readme.md)
-The DataFetcher takes the name of a [`Register`](opendataval/dataloader/readme.md#register-datasets) dataset and loads, transforms, splits, and adds noise to the data set.
+#### [`DataFetcher`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataloader/readme.md)
+The DataFetcher takes the name of a [`Register`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataloader/readme.md#register-datasets) dataset and loads, transforms, splits, and adds noise to the data set.
 ```python
 from opendataval.dataloader import DataFetcher
 
@@ -161,7 +161,7 @@ x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`Model`](opendataval/model/readme.md)
+#### [`Model`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/model/readme.md)
 `Model` is the predictive model for Data Evaluators.
 
 ```python
@@ -176,7 +176,7 @@ model.predict(x)
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`DataEvaluator`](opendataval/dataval/readme.md)
+#### [`DataEvaluator`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataval/readme.md)
 We have a catalog of `DataEvaluator` to run experiments. To do so, input the `Model`, `DataFetcher`, and an evaluation metric (such as accuracy).
 
 ```python
@@ -193,7 +193,7 @@ data_values = dataval.evaluate_data_values()  # Recomputed values
 ```
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`ExperimentMediator`](opendataval/experiment/readme.md)
+#### [`ExperimentMediator`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/experiment/readme.md)
 `ExperimentMediator` is helps make a cohesive and controlled experiment. NOTE Warnings are raised if errors occur in a specific `DataEvaluator`.
 ```python
 expermed = ExperimentrMediator(fetcher, model, train_kwargs, metric_name).compute_data_values(data_evaluators)
@@ -305,7 +305,9 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 [scikit-learn-shield]: https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white
 [scikit-learn-url]: https://scikit-learn.org/stable/
 [numpy-url]: https://numpy.org/
-[numpy-shield]: https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white
+[numpy-shield]: https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white\
+[release-shield]: https://img.shields.io/github/v/release/kevinfjiang/opendataval?style=for-the-badge
+[release-url]: https://github.com/kevinfjiang/opendataval/releases
 <!-- Pytest Coverage Comment:Start -->
 [coverage_badge]: https://img.shields.io/badge/Coverage-85%25-green.svg?style=for-the-badge
 <!-- Pytest Coverage Comment:End -->

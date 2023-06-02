@@ -13,6 +13,7 @@ Subpackages
    opendataval.dataval.knnshap
    opendataval.dataval.margcontrib
    opendataval.dataval.oob
+   opendataval.dataval.random
 
 Submodules
 ----------

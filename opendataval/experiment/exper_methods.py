@@ -21,7 +21,7 @@ from opendataval.dataval import DataEvaluator
 def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str, float]:
     """Evaluate ability to identify noisy indices.
 
-    Compute recall and F1 score (of 2NN classifier) of the data evaluator
+    Compute F1 score (of 2NN classifier) of the data evaluator
     on the noisy indices. Noisy indices will be labeled 1 for the positives,
     while non-Noisy are labeled zero. KMeans labels are random, but because
     of the convexity the highest data point and lowest data point have different

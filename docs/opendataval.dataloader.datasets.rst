@@ -4,6 +4,14 @@ opendataval.dataloader.datasets package
 Submodules
 ----------
 
+opendataval.dataloader.datasets.cleanlab module
+-----------------------------------------------
+
+.. automodule:: opendataval.dataloader.datasets.cleanlab
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 opendataval.dataloader.datasets.contest module
 ----------------------------------------------
 

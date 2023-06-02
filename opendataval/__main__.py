@@ -45,7 +45,7 @@ class JobModel(pa.DataFrameModel):  # TODO errors with the nullable
     dataval_kwargs: Series[object] = pa.Field(alias="Data Valuation Arguments", check_name=True, nullable=True)
 
     model: Series[str] = pa.Field(alias="Model", check_name=True, isin=set(Model.Models))
-    device: Optional[Series[str]] = pa.Field(alias="Device", check_name=True)  # TODO ensure valid type/device, probs with lambda
+    device: Optional[Series[str]] = pa.Field(alias="Device", check_name=True)
     train_kwargs: Series[object] = pa.Field(alias="Training Arguments", check_name=True, nullable=True)
 
     metric: Series[str] = pa.Field(alias="Metric", check_name=True, isin=set(metrics_dict), nullable=True)
