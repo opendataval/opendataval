@@ -15,7 +15,6 @@ Ensure the following tasks have been completed
 - [ ] ```pip-sync requirements-extra.txt```
 - [ ] ```make build```
 - [ ] ```make format```
-- [ ] ```pip install -e .```
 - [ ] ```make test```
 - [ ] Confirmed auto merge is valid or will solve all merge conflicts
 - [ ] Wrote Documentation, Docstrings, comments and tests.

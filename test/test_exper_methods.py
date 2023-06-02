@@ -120,8 +120,8 @@ class TestExperiment(unittest.TestCase):
             train_kwargs=self.train_kwargs,
         )
         keys = [
-            f"remove_least_influential_first{metric}",
-            f"remove_most_influential_first{metric}",
+            f"remove_least_influential_first_{metric}",
+            f"remove_most_influential_first_{metric}",
         ]
         self.assertIn("axis", result)
         axis_len = len(result["axis"])

@@ -32,7 +32,7 @@ class BetaShapley(ShapEvaluator):
     random_state : RandomState, optional
         Random initial state, by default None
     alpha : int, optional
-        Alpha parameter for beta distribution used in the weight function, by default 16
+        Alpha parameter for beta distribution used in the weight function, by default 4
     beta : int, optional
         Beta parameter for beta distribution used in the weight function, by default 1
     random_state : RandomState, optional
@@ -46,7 +46,7 @@ class BetaShapley(ShapEvaluator):
         models_per_iteration: int = 100,
         mc_epochs: int = 1000,
         cache_name: str = None,
-        alpha: int = 16,
+        alpha: int = 4,
         beta: int = 1,
         random_state: RandomState = None,
     ):

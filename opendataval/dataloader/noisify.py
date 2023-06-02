@@ -87,7 +87,8 @@ def add_gauss_noise(
     """
     rs = check_random_state(fetcher.random_state)
 
-    x_train, x_valid = fetcher.x_train, fetcher.x_valid
+    x_train = np.array(fetcher.x_train, dtype=np.float64)
+    x_valid = np.array(fetcher.x_valid, dtype=np.float64)
     num_train, num_valid = len(x_train), len(x_valid)
     feature_dim = fetcher.covar_dim
 

@@ -102,9 +102,9 @@ def remove_high_low(
         ``(i * percentile)`` valuable/most valuable data points are removed
 
         - **"axis"** -- Proportion of data values removed currently
-        - **f"remove_least_influential_first{metric_name}"** -- Performance of model
+        - **f"remove_least_influential_first_{metric_name}"** -- Performance of model
             after removing a proportion of the data points with the lowest data values
-        - **"f"remove_most_influential_first{metric_name}""** -- Performance of model
+        - **"f"remove_most_influential_first_{metric_name}""** -- Performance of model
             after removing a proportion of the data points with the highest data values
     """
     x_train, y_train, *_, x_test, y_test = fetcher.datapoints
@@ -152,8 +152,8 @@ def remove_high_low(
     x_axis = [i / num_bins for i in range(num_bins)]
 
     eval_results = {
-        f"remove_least_influential_first{metric_name}": valuable_list,
-        f"remove_most_influential_first{metric_name}": unvaluable_list,
+        f"remove_least_influential_first_{metric_name}": valuable_list,
+        f"remove_most_influential_first_{metric_name}": unvaluable_list,
         "axis": x_axis,
     }
 

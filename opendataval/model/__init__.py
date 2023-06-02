@@ -147,7 +147,7 @@ def ModelFactory(
     """
     covar_dim, label_dim = fetcher.covar_dim, fetcher.label_dim
 
-    if model_name == LogisticRegression:  # TODO names
+    if model_name == "LogisticRegression":
         return LogisticRegression(*covar_dim, *label_dim, *args, **kwargs).to(device)
     elif model_name == "ClassifierMLP":
         return ClassifierMLP(*covar_dim, *label_dim, *args, **kwargs).to(device)

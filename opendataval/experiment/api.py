@@ -125,7 +125,7 @@ class ExperimentMediator:
         add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels,
         noise_kwargs: dict[str, Any] = None,
         random_state: RandomState = None,
-        model_name: "str" = None,
+        model_name: str = None,
         device: torch.device = torch.device("cpu"),
         train_kwargs: dict[str, Any] = None,
         metric_name: str = None,
