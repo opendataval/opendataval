@@ -33,7 +33,7 @@ dependencies = [
     "torch~=2.0.0",
     "torchvision~=0.15",
     "tqdm~=4.64",
-    "transformers~=4.27",
+    "transformers~=4.29.2",
     "typer~=0.9",
 
 ]

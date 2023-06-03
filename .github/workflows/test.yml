@@ -3,7 +3,10 @@ name: Build and Test
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
-
+    paths:
+        - 'opendataval/**'
+        - 'test/**'
+        - 'requirements-**.txt'
   workflow_dispatch:
 
 jobs:
@@ -13,10 +16,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
       max-parallel: 5
 
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -46,9 +50,42 @@ jobs:
         path: coverage.xml
         retention-days: 1
 
+  single_test:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+    - uses: actions/cache@v3
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements-dev.txt') }}
+    - name: Install dependencies
+      run: |
+        make install-dev
+    - name: Linting/formatting check
+      run: |
+        make format
+    - name: Test with pytest
+      run: |
+        make test
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage-report
+        path: coverage.xml
+        retention-days: 1
+
   write_coverage:
     name: Write Code Coverage
-    needs: [test]
+    needs: [ test, single_test ]
+    if: |
+      always()
+      && contains(needs.*.result, 'success')
+      && !contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -75,7 +112,11 @@ jobs:
     name: Commit code coverage report
     needs: [write_coverage]
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
+    if: |
+      always()
+      && contains(needs.*.result, 'success')
+      && !contains(needs.*.result, 'failure')
+      && github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     steps:
@@ -85,7 +126,7 @@ jobs:
     - name: Update badge in Readme
       run: |
         # Really long command, adds badge with color and coverage between markers in README.md
-        sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n[coverage_badge]: (https://img.shields.io/badge/Coverage-${{needs.write_coverage.outputs.coverage}}25-${{needs.write_coverage.outputs.color}}.svg?style=for-the-badge)\n<!-- Pytest Coverage Comment:End -->' ./README.md
+        sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n[coverage_badge]: https://img.shields.io/badge/Coverage-${{needs.write_coverage.outputs.coverage}}25-${{needs.write_coverage.outputs.color}}.svg?style=for-the-badge\n<!-- Pytest Coverage Comment:End -->' ./README.md
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:

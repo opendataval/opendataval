@@ -15,6 +15,7 @@ from opendataval.dataval import DataEvaluator
 from opendataval.experiment import exper_methods as em
 from opendataval.experiment.api import ExperimentMediator, metrics_dict
 from opendataval.model import Model
+from opendataval.util import StrEnum
 
 # fmt: off
 # ruff: noqa: E501 D103
@@ -62,6 +63,12 @@ class JobModel(pa.DataFrameModel):  # TODO errors with the nullable
 
 cli = typer.Typer()
 """Typer CLI entry point."""
+
+# Enums for better types, used with typer for better CLI
+DatasetsEnum = StrEnum("Datasets", list(Register.Datasets))
+DataEvaluatorsEnum = StrEnum("DataEvaluators", list(DataEvaluator.Evaluators))
+ModelsEnum = StrEnum("Models", list(Model.Models))
+MetricEnum = StrEnum("Metrics", list(metrics_dict))
 
 @cli.command("run", no_args_is_help=True)
 def setup(
