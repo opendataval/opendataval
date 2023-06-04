@@ -292,7 +292,7 @@ class ClassifierSkLearnWrapper(Model):
         Fits a sk-learn wrapped classifier Model. If there are less classes in the
         sample than num_classes, uses dummy model.
         ::
-            wrapped = ClassifierSkLearnWrapper(MLPClassifier(), 2)
+            wrapped = ClassifierSkLearnWrapper(MLPClassifier, 2)
 
         Parameters
         ----------
@@ -370,7 +370,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
 
     Example:
     ::
-        wrapped = ClassifierSkLearnWrapper(KNeighborsClassifier(), 2)
+        wrapped = ClassifierSkLearnWrapper(KNeighborsClassifier, 2)
 
     Parameters
     ----------
@@ -449,19 +449,16 @@ class RegressionSkLearnWrapper(Model):
 
     Example:
     ::
-        wrapped = RegressionSkLearnWrapper(LinearRegression())
+        wrapped = RegressionSkLearnWrapper(LinearRegression)
 
     Parameters
     ----------
     base_model : BaseModel
         Any sk-learn model that supports ``sample_weights``
-    num_classes : int
-        Label dimensionality
     """
 
-    def __init__(self, base_model, num_classes: int = 1, *args, **kwargs):
+    def __init__(self, base_model, *args, **kwargs):
         self.model = base_model(*args, **kwargs)
-        self.num_classes = num_classes  # Multi label regression, used for empty trains
 
     def fit(
         self,

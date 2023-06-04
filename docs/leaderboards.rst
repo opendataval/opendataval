@@ -3,6 +3,7 @@ OpenDataVal Leaderboards
 ************************
 
 Save and upload the results of your DataEvaluator `here <https://docs.google.com/forms/d/e/1FAIpQLSfDzkI-gRKRCvNEmY-VdRh2mZJ5ls8w1baLd-autGbQ7A61bA/viewform?usp=sf_link>`_.
+The results of your experiment will be updated after approximately a day.
 
 ::
 
