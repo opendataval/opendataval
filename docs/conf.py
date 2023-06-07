@@ -14,8 +14,8 @@ import opendataval  # noqa: E402
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Open Data Val"
-copyright = "2023, Kevin"
-author = "Kevin"
+copyright = "2023, OpenDataVal"
+author = "OpenDataVal"
 
 
 version = opendataval.__version__

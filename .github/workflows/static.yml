@@ -39,6 +39,6 @@ jobs:
           source-directory: 'docs/_build/html'
           destination-github-username: 'opendataval'
           destination-repository-name: ${{ secrets.TARGET_REPO }}
-          user-email: kevinfjiang@yahoo.com
+          user-email: opendataval@gmail.com
           target-branch: main
 

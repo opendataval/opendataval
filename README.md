@@ -1,5 +1,3 @@
-<!-- Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `kevinfjiang`, `opendataval` `kevinfjiang` -->
-
 <a name="readme-top"></a>
 
 <!-- PROJECT LOGO -->
@@ -266,8 +264,8 @@ Distributed under the MIT License. See [`LICENSE.txt`][license-url] for more inf
 [license-shield]: https://img.shields.io/github/license/kevinfjiang/opendataval.svg?style=for-the-badge
 [license-url]: https://github.com/kevinfjiang/opendataval/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[test-url]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test?style=for-the-badge
-[test-shield]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test?style=for-the-badge
+[test-url]: https://github.com/kevinfjiang/opendataval/actions/workflows/test.yml
+[test-shield]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test.yml?style=for-the-badge
 [PyTorch-shield]: https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white
 [PyTorch-url]: https://pytorch.org/
 [scikit-learn-shield]: https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white
