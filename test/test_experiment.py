@@ -79,7 +79,7 @@ class TestExperimentMediator(unittest.TestCase):
         self.assertIsInstance(experimentmediator.fetcher, DataFetcher)
         self.assertIsInstance(experimentmediator.data_evaluators[0], DataEvaluator)
         self.assertEqual(experimentmediator.train_kwargs, {"epochs": 10})
-        self.assertEqual(experimentmediator.metric_name, "accuracy")
+        self.assertEqual(experimentmediator.metric, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_pass_args(self):
@@ -90,14 +90,14 @@ class TestExperimentMediator(unittest.TestCase):
         ).compute_data_values(data_evaluators=[self.dataevaluator], epochs=10)
         self.assertIsInstance(experimentmediator.fetcher, DataFetcher)
         self.assertIsInstance(experimentmediator.data_evaluators[0], DataEvaluator)
-        self.assertEqual(experimentmediator.metric_name, "accuracy")
+        self.assertEqual(experimentmediator.metric, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_default(self):
         experimentmediator = ExperimentMediator(
             self.fetcher, DummyModel()
         ).compute_data_values([self.dataevaluator])
-        self.assertEqual(experimentmediator.metric_name, "mse")
+        self.assertEqual(experimentmediator.metric, "neg_mse")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_create_fetcher(self):
@@ -107,13 +107,13 @@ class TestExperimentMediator(unittest.TestCase):
             train_count=0.7,
             valid_count=0.2,
             test_count=0.1,
-            add_noise_func=mix_labels,
+            add_noise=mix_labels,
             noise_kwargs={"noise_rate": 0.2},
             pred_model=DummyModel(),
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
         ).compute_data_values(data_evaluators=[self.dataevaluator])
-        self.assertEqual(experimentmediator.metric_name, "accuracy")
+        self.assertEqual(experimentmediator.metric, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
 
     def test_experiment_mediator_exceptions(self):
@@ -124,7 +124,7 @@ class TestExperimentMediator(unittest.TestCase):
                 train_count=0.8,
                 valid_count=3.1,
                 test_count=0.0,
-                add_noise_func=mix_labels,
+                add_noise=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
                 pred_model=DummyModel(),
                 train_kwargs={"epochs": 5},
@@ -138,7 +138,7 @@ class TestExperimentMediator(unittest.TestCase):
                 train_count=0.8,
                 valid_count=0.1,
                 test_count=0,
-                add_noise_func=mix_labels,
+                add_noise=mix_labels,
                 noise_kwargs={"noise_rate": 0.2},
                 pred_model=DummyModel(),
                 train_kwargs={"epochs": 5},
@@ -175,14 +175,14 @@ class TestExperimentMediator(unittest.TestCase):
             train_count=0.7,
             valid_count=0.2,
             test_count=0.1,
-            add_noise_func=mix_labels,
+            add_noise=mix_labels,
             noise_kwargs={"noise_rate": 0.2},
             model_name="ClassifierMLP",
             train_kwargs={"epochs": 5},
             metric_name="accuracy",
         )
         exper_med = exper_med.compute_data_values(data_evaluators=[self.dataevaluator])
-        self.assertEqual(exper_med.metric_name, "accuracy")
+        self.assertEqual(exper_med.metric, "accuracy")
         self.assertTrue(self.dataevaluator.trained)
         self.assertIsInstance(exper_med.data_evaluators[0].pred_model, ClassifierMLP)
 

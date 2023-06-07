@@ -70,7 +70,7 @@ DataEvaluatorsEnum = StrEnum("DataEvaluators", list(DataEvaluator.Evaluators))
 ModelsEnum = StrEnum("Models", list(Model.Models))
 MetricEnum = StrEnum("Metrics", list(metrics_dict))
 
-@cli.command("run", no_args_is_help=True)
+@cli.command("filerun", no_args_is_help=True)
 def setup(
     file_: Annotated[typer.FileText, typer.Option("--file", "-f", help="CSV file containing jobs")],
     id_: Annotated[list[int], typer.Option("--id", "-n", help="Id of the job")],
@@ -114,15 +114,15 @@ def run(row: dict[str, Any], run_id: int, output_dir: Path):
         train_count=row.get(JobModel.train_count, 25),  #TODO set to 0
         valid_count=row.get(JobModel.valid_count, 25),
         test_count=row.get(JobModel.test_count, 25),
-        add_noise_func=mix_labels,  # TODO only supports mix_labels currently
+        add_noise=mix_labels,  # TODO only supports mix_labels currently
         noise_kwargs=row.get(JobModel.noise_kwargs, None),
         random_state=row.get(JobModel.random_state, None),
-
         model_name=row[JobModel.model],
         train_kwargs=row.get(JobModel.train_kwargs, None),
         device=row.get(JobModel.device, "cuda" if torch.cuda.is_available() else "cpu"),
         metric_name=row.get(JobModel.metric, None),
-    ).set_output_directory(output_dir / f"id={run_id}/").compute_data_values([dataval])
+        output_dir=output_dir / f"id={run_id}/",
+    ).compute_data_values([dataval])
     typer.echo(f"Completed computation of data values for id={run_id}")
 
     # Runs all experiments available

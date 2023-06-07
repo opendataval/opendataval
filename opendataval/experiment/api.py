@@ -7,7 +7,6 @@ from typing import Any, Callable, Union
 
 import pandas as pd
 import torch
-import torch.nn.functional as F
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -16,20 +15,8 @@ from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher, mix_labels
 from opendataval.dataval import DataEvaluator
+from opendataval.metrics import Metrics
 from opendataval.model import Model, ModelFactory
-
-
-def accuracy_metric(a: torch.Tensor, b: torch.Tensor) -> float:
-    """Compute accuracy of two one-hot encoding tensors."""
-    return (a.argmax(dim=1) == b.argmax(dim=1)).float().mean().item()
-
-
-metrics_dict = {  # TODO add metrics and change this implementation
-    "accuracy": accuracy_metric,
-    # Metrics should be the higher the better
-    "l2": lambda a, b: -torch.square(a - b).sum().sqrt().item(),
-    "mse": lambda a, b: -F.mse_loss(a, b).item(),
-}
 
 
 class ExperimentMediator:
@@ -47,11 +34,13 @@ class ExperimentMediator:
         DataFetcher as an argument to have access to all data points and noisy indices.
     pred_model : Model
         Prediction model for the DataEvaluators
+    train_kwargs : dict[str, Any], optional
+        Training key word arguments for the prediction model, by default None
     metric_name : str, optional
         Name of the performance metric used to evaluate the performance of the
         prediction model, must be string for better labeling, by default "accuracy"
-    train_kwargs : dict[str, Any], optional
-        Training key word arguments for the prediction model, by default None
+    output_dir: Union[str, pathlib.Path], optional
+        Output directory of experiments
     """
 
     def __init__(
@@ -60,35 +49,38 @@ class ExperimentMediator:
         pred_model: Model,
         train_kwargs: dict[str, Any] = None,
         metric_name: str = None,
+        output_dir: Union[str, pathlib.Path] = None,
     ):
         self.fetcher = fetcher
         self.pred_model = pred_model
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
 
         if metric_name is not None:
-            self.metric_name = metric_name
+            self.metric = Metrics(metric_name)
         else:
-            self.metric_name = "accuracy" if self.fetcher.one_hot else "mse"
-        self.metric = metrics_dict[self.metric_name]
+            self.metric = Metrics.ACCURACY if self.fetcher.one_hot else Metrics.NEG_MSE
         self.data_evaluators = []
 
+        if output_dir is not None:
+            self.set_output_directory(output_dir)
         self.timings = {}
 
     @classmethod
     def setup(
         cls,
         dataset_name: str,
-        cache_dir: str = None,
+        cache_dir: Union[str, pathlib.Path] = None,
         force_download: bool = False,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
         test_count: Union[int, float] = 0,
-        add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels,
+        add_noise: Union[Callable[[DataFetcher], dict[str, Any]], str] = mix_labels,
         noise_kwargs: dict[str, Any] = None,
         random_state: RandomState = None,
         pred_model: Model = None,
         train_kwargs: dict[str, Any] = None,
         metric_name: str = None,
+        output_dir: Union[str, pathlib.Path] = None,
     ):
         """Create a DataFetcher from args and passes it into the init."""
         random_state = check_random_state(random_state)
@@ -102,7 +94,7 @@ class ExperimentMediator:
             train_count=train_count,
             valid_count=valid_count,
             test_count=test_count,
-            add_noise_func=add_noise_func,
+            add_noise=add_noise,
             noise_kwargs=noise_kwargs,
         )
 
@@ -111,24 +103,26 @@ class ExperimentMediator:
             pred_model=pred_model,
             train_kwargs=train_kwargs,
             metric_name=metric_name,
+            output_dir=output_dir,
         )
 
     @classmethod
     def model_factory_setup(
         cls,
         dataset_name: str,
-        cache_dir: str = None,
+        cache_dir: Union[str, pathlib.Path] = None,
         force_download: bool = False,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
         test_count: Union[int, float] = 0,
-        add_noise_func: Callable[[DataFetcher, Any, ...], dict[str, Any]] = mix_labels,
+        add_noise: Union[Callable[[DataFetcher], dict[str, Any]], str] = mix_labels,
         noise_kwargs: dict[str, Any] = None,
         random_state: RandomState = None,
         model_name: str = None,
         device: torch.device = torch.device("cpu"),
         train_kwargs: dict[str, Any] = None,
         metric_name: str = None,
+        output_dir: Union[str, pathlib.Path] = None,
     ):
         """Set up ExperimentMediator from ModelFactory using an input string.
 
@@ -140,7 +134,7 @@ class ExperimentMediator:
         dataset_name : str
             Name of the data set, must be registered with
             :py:class:`~opendataval.dataloader.Register`
-        cache_dir : str, optional
+        cache_dir : Union[str, pathlib.Path], optional
             Directory of where to cache the loaded data, by default None which uses
             :py:attr:`Register.CACHE_DIR`
         force_download : bool, optional
@@ -151,7 +145,7 @@ class ExperimentMediator:
             Number/proportion validation points
         test_count : Union[int, float]
             Number/proportion test points
-        add_noise_func : Callable
+        add_noise : Callable
             If None, no changes are made. Takes as argument required arguments
             DataFetcher and adds noise to those the data points of DataFetcher as
             needed. Returns dict[str, np.ndarray] that has the updated np.ndarray in a
@@ -165,7 +159,7 @@ class ExperimentMediator:
             - **"y_test"** -- Updated testing labels with noise, optional
             - **"noisy_train_indices"** -- Indices of training data set with noise
         noise_kwargs : dict[str, Any], optional
-            Key word arguments passed to ``add_noise_func``, by default None
+            Key word arguments passed to ``add_noise``, by default None
         random_state : RandomState, optional
             Random initial state, by default None
         model_name : str, optional
@@ -178,6 +172,8 @@ class ExperimentMediator:
             prediction model, must be string for better labeling, by default "accuracy"
         train_kwargs : dict[str, Any], optional
             Training key word arguments for the prediction model, by default None
+        output_dir: Union[str, pathlib.Path]
+            Output directory of experiments
 
         Returns
         -------
@@ -194,7 +190,7 @@ class ExperimentMediator:
             train_count=train_count,
             valid_count=valid_count,
             test_count=test_count,
-            add_noise_func=add_noise_func,
+            add_noise=add_noise,
             noise_kwargs=noise_kwargs,
         )
 
@@ -207,9 +203,10 @@ class ExperimentMediator:
         # Prints base line performance
         model = pred_model.clone()
         x_train, y_train, *_, x_test, y_test = fetcher.datapoints
+        train_kwargs = {} if train_kwargs is None else train_kwargs
 
         model.fit(x_train, y_train, **train_kwargs)
-        perf = metrics_dict[metric_name](y_test, model.predict(x_test).cpu())
+        perf = Metrics(metric_name)(y_test, model.predict(x_test).cpu())
         print(f"Base line model {metric_name=}: {perf=}")
 
         return cls(
@@ -217,6 +214,7 @@ class ExperimentMediator:
             pred_model=pred_model,
             train_kwargs=train_kwargs,
             metric_name=metric_name,
+            output_dir=output_dir,
         )
 
     def compute_data_values(
@@ -299,7 +297,7 @@ class ExperimentMediator:
         if include_train:
             # All methods that train the underlying model track the model performance
             exper_kwargs["train_kwargs"] = self.train_kwargs
-            exper_kwargs["metric_name"] = self.metric_name
+            exper_kwargs["metric_name"] = self.metric
 
         for data_val in self.data_evaluators:
             eval_resp = exper_func(data_val, self.fetcher, **exper_kwargs)
@@ -367,7 +365,7 @@ class ExperimentMediator:
         if include_train:
             # All methods that train the underlying model track the model performance
             exper_kwargs["train_kwargs"] = self.train_kwargs
-            exper_kwargs["metric_name"] = self.metric_name
+            exper_kwargs["metric_name"] = self.metric
 
         for i, data_val in enumerate(self.data_evaluators, start=1):
             plot = figure.add_subplot(row, col, i)

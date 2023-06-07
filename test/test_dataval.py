@@ -59,7 +59,8 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
 
         data_val = (
             RandomEvaluator(10)
-            .input_model_metric(DummyModel(3, 10), lambda *_: 1.0)  # Dummy metric
+            .input_model(DummyModel(3, 10))
+            .input_metric(lambda *_: 1.0)  # Dummy metric
             .input_fetcher(fetcher)
         )
 

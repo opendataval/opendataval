@@ -61,7 +61,7 @@ table .custom-tooltip {
     padding: 0 18px;
     max-height: 0;
 
-    transition: max-height 0.2s ease-out;
+    transition: max-height 0.8s ease-out;
 
     overflow-y: auto; /* make the table scrollable if height is more than 200 px  */
     height: 400px;

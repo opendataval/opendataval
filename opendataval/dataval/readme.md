@@ -31,7 +31,8 @@ To inject model, metrics, and data points for training
 ```python
 dataval = (
     dataval
-    .input_model_metric(model, metric)
+    .input_model(model)
+    .input_metric(metric)
     .input_data(x_train, y_train, x_valid, y_valid)
     .train_data_values()
 )

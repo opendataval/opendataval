@@ -33,7 +33,8 @@ exper_med = ExperimentMediator.model_factory_setup(
     model_name=model_name,
     device=device,
     train_kwargs=train_kwargs,
-    metric_name=metric_name
+    metric_name=metric_name,
+    output_dir=output_dir,
 )
 exper_med = exper_med.compute_data_values(data_evaluators=[ChildEvaluator()])
 ```

@@ -32,7 +32,8 @@ class DataEvaluator(ABC):
     ::
         dataval = (
             DataEvaluator(*args, **kwargs)
-            .input_model_metric(model, metric)
+            .input_model(model)
+            .input_metric(metric)
             .input_data(x_train, y_train, x_valid, y_valid)
             .train_data_values(batch_size, epochs)
             .evaluate_data_values()
@@ -85,6 +86,28 @@ class DataEvaluator(ABC):
         """
         return self.metric(y.cpu(), y_hat.cpu())
 
+    def input_model(self, pred_model: Model):
+        """Input the prediction model and the evaluation metric.
+
+        Parameters
+        ----------
+        pred_model : Model
+            Prediction model
+        """
+        self.pred_model = pred_model.clone()
+        return self
+
+    def input_metric(self, metric: Callable[[torch.Tensor, torch.Tensor], float]):
+        """Input the evaluation metric.
+
+        Parameters
+        ----------
+        metric : Callable[[torch.Tensor, torch.Tensor], float]
+            Evaluation function to determine prediction model performance
+        """
+        self.metric = metric
+        return self
+
     def input_model_metric(
         self, pred_model: Model, metric: Callable[[torch.Tensor, torch.Tensor], float]
     ):
@@ -102,10 +125,7 @@ class DataEvaluator(ABC):
         self : object
             Returns a Data Evaluator.
         """
-        self.pred_model = pred_model.clone()
-        self.metric = metric
-
-        return self
+        return self.input_model(pred_model).input_metric(metric)
 
     def input_data(
         self,
@@ -137,6 +157,44 @@ class DataEvaluator(ABC):
         self.x_valid = x_valid
         self.y_valid = y_valid
 
+        return self
+
+    def setup(
+        self,
+        fetcher: DataFetcher,
+        pred_model: Model,
+        metric: Callable[[torch.Tensor, torch.Tensor], float] = None,
+    ):
+        """Iputs model, metric and data into Data Evaluator.
+
+        Parameters
+        ----------
+        fetcher : DataFetcher
+            DataFetcher containing the training and validation data set.
+        pred_model : Model
+            Prediction model
+        metric : Callable[[torch.Tensor, torch.Tensor], float]
+            Evaluation function to determine prediction model performance,
+            by default None and assigns either -MSE or ACC depending if categorical
+        args : tuple[Any], optional
+            Training positional args
+        kwargs : dict[str, Any], optional
+            Training key word arguments
+
+        Returns
+        -------
+        self : object
+            Returns a Data Evaluator.
+        """
+        self.input_fetcher(fetcher)
+
+        if metric is None:
+            if fetcher.one_hot:
+                metric = _acc
+            else:
+                metric = _negmse
+
+        self.input_model(pred_model).input_metric(metric)
         return self
 
     def train(
@@ -171,15 +229,7 @@ class DataEvaluator(ABC):
         self : object
             Returns a Data Evaluator.
         """
-        self.input_fetcher(fetcher)
-
-        if metric is None:
-            if fetcher.one_hot:
-                metric = _acc
-            else:
-                metric = _negmse
-
-        self.input_model_metric(pred_model, metric)
+        self.setup(fetcher, pred_model, metric)
         self.train_data_values(*args, **kwargs)
 
         return self

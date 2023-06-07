@@ -131,7 +131,7 @@ class DataFetcher:
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
         test_count: Union[int, float] = 0,
-        add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
+        add_noise: Callable[[Self, Any, ...], dict[str, Any]] = None,
         noise_kwargs: dict[str, Any] = None,
     ):
         """Create, split, and add noise to DataFetcher from input arguments."""
@@ -142,13 +142,13 @@ class DataFetcher:
             return (
                 cls(dataset_name, cache_dir, force_download, random_state)
                 .split_dataset_by_count(train_count, valid_count, test_count)
-                .noisify(add_noise_func, **noise_kwargs)
+                .noisify(add_noise, **noise_kwargs)
             )
         elif split_types == (float, float, float):
             return (
                 cls(dataset_name, cache_dir, force_download, random_state)
                 .split_dataset_by_prop(train_count, valid_count, test_count)
-                .noisify(add_noise_func, **noise_kwargs)
+                .noisify(add_noise, **noise_kwargs)
             )
         else:
             raise ValueError(
@@ -421,20 +421,20 @@ class DataFetcher:
 
     def noisify(
         self,
-        add_noise_func: Callable[[Self, Any, ...], dict[str, Any]] = None,
+        add_noise: Union[Callable[[Self, Any, ...], dict[str, Any]], str] = None,
         *noise_args,
         **noise_kwargs,
     ):
         """Add noise to the data points.
 
         Adds noise to the data set and saves the indices of the noisy data.
-        Return object of `add_noise_func` is a dict with keys to signify how the
+        Return object of `add_noise` is a dict with keys to signify how the
         data are updated:
         {'x_train','y_train','x_valid','y_valid','x_test','y_test','noisy_train_indices'}
 
         Parameters
         ----------
-        add_noise_func : Callable
+        add_noise : Callable
             If None, no changes are made. Takes as argument required arguments
             DataFetcher and adds noise to those the data points of DataFetcher as
             needed. Returns dict[str, np.ndarray] that has the updated np.ndarray in a
@@ -448,20 +448,24 @@ class DataFetcher:
             - **"y_test"** -- Updated testing labels with noise, optional
             - **"noisy_train_indices"** -- Indices of training data set with noise.
         args : tuple[Any]
-            Additional positional arguments passed to ``add_noise_func``
+            Additional positional arguments passed to ``add_noise``
         kwargs: dict[str, Any]
-            Additional key word arguments passed to ``add_noise_func``
+            Additional key word arguments passed to ``add_noise``
 
         Returns
         -------
         self : object
             Returns a DataFetcher with noise added to the data set.
         """
-        if add_noise_func is None:
+        if add_noise is None:
             return self
+        if isinstance(add_noise, str):
+            from opendataval.dataloader.noisify import NoiseFunc
+
+            add_noise = NoiseFunc(add_noise)
 
         # Passes the DataFetcher to the noise_func, has access to all instance variables
-        noisy_data = add_noise_func(fetcher=self, *noise_args, **noise_kwargs)
+        noisy_data = add_noise(fetcher=self, *noise_args, **noise_kwargs)
 
         self.x_train = noisy_data.get("x_train", self.x_train)
         self.y_train = noisy_data.get("y_train", self.y_train)

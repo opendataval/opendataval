@@ -77,7 +77,7 @@ fetcher = DataFetcher.setup(
     train_count=train_count,
     valid_count=valid_count,
     test_counttest_count=test_count,
-    add_noise_func=add_noise_func,
+    add_noise=add_noise,
     noise_kwargs=noise_kwargs
 )
 x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints

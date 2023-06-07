@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 
 from opendataval.dataloader.fetcher import DataFetcher
 from opendataval.dataloader.util import IndexTransformDataset
+from opendataval.util import FuncEnum
 
 
 def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.ndarray]:
@@ -127,3 +128,8 @@ def add_gauss_noise(
         "x_valid": x_valid,
         "noisy_train_indices": noisy_train_idx,
     }
+
+
+class NoiseFunc(FuncEnum):
+    MIX_LABELS = FuncEnum.wrap(mix_labels)
+    ADD_GAUSS_NOISE = FuncEnum.wrap(add_gauss_noise)

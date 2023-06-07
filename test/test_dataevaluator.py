@@ -68,14 +68,14 @@ class TestDataEvaluator(unittest.TestCase):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
         y = torch.randn(100, 1)
         y_hat = torch.randn(100, 1)
-        evaluator.input_model_metric(self.model, self.metric)
+        evaluator.input_model(self.model).input_metric(self.metric)
 
         self.assertEqual(evaluator.evaluate(y, y_hat), 1.0)
         self.metric.assert_called_once_with(y, y_hat)
 
     def test_input_model_metric(self):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
-        evaluator = evaluator.input_model_metric(self.model, self.metric)
+        evaluator = evaluator.input_model(self.model).input_metric(self.metric)
 
         self.assertEqual(evaluator.pred_model, self.model)
         self.assertEqual(evaluator.metric, self.metric)
@@ -129,7 +129,7 @@ class TestDataEvaluator(unittest.TestCase):
 
     def test_train_evaluate_data_values(self):
         evaluator = DummyDataEvaluator(random_state=self.random_state)
-        evaluator = evaluator.input_model_metric(self.model, self.metric)
+        evaluator = evaluator.input_model(self.model).input_metric(self.metric)
         evaluator = evaluator.input_data(
             self.x_train, self.y_train, self.x_valid, self.y_valid
         )
