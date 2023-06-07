@@ -1,0 +1,44 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Push documentation to organization repo
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["docs"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # Pushes to organization repo after building documentation
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('requirements-extra.txt') }}
+      - name: Build
+        run: |
+          make install-dev
+          pip install -U sphinx furo
+          cd docs
+          make html
+      - run: touch docs/_build/html/.nojekyll
+      - name: Pushes to another repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DOCS_TOKEN }}
+        with:
+          source-directory: 'docs/_build/html'
+          destination-github-username: 'opendataval'
+          destination-repository-name: ${{ secrets.TARGET_REPO }}
+          user-email: opendataval@gmail.com
+          target-branch: main
+

@@ -1,0 +1,41 @@
+name: Push anonymous version of repo to anonymous repo
+
+on:
+  # TODO on release
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # Pushes to organization repo after building documentation
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Anonymize authors
+        run: python .github/scripts/anonymize.py -f LICENSE.txt pyproject.toml
+      - name: Find and Replace old repo name
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: ${{ github.repository }}
+          replace: opendataval/opendataval
+          regex: false
+      - name: Copy output_temp/ to output/ using rsync (to exclude main.epub in this example)
+        run:  rsync -arv --exclude=".git"  ./ output/
+      - name: Pushes to another repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.ANON_TOKEN }}
+        with:
+          source-directory: output/
+          destination-github-username: 'opendataval'
+          destination-repository-name: ${{ secrets.ANON_REPO }}
+          user-email: opendataval@gmail.com
+          target-branch: main
+          commit-message: 'Update anonymous repo from source. Source commit hash ${{ github.sha }}'
+
