@@ -234,8 +234,8 @@ Distributed under the MIT License. See [`LICENSE.txt`][license-url] for more inf
 [license-shield]: https://img.shields.io/github/license/opendataval/opendataval.svg?style=for-the-badge
 [license-url]: https://github.com/opendataval/opendataval/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[test-url]: https://img.shields.io/github/actions/workflow/status/opendataval/opendataval/test?style=for-the-badge
-[test-shield]: https://img.shields.io/github/actions/workflow/status/opendataval/opendataval/test?style=for-the-badge
+[test-url]: https://github.com/opendataval/opendataval/actions/workflows/test.yml
+[test-shield]: https://img.shields.io/github/actions/workflow/status/opendataval/opendataval/test.yml?style=for-the-badge
 [PyTorch-shield]: https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white
 [PyTorch-url]: https://pytorch.org/
 [scikit-learn-shield]: https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white
@@ -245,5 +245,5 @@ Distributed under the MIT License. See [`LICENSE.txt`][license-url] for more inf
 [release-shield]: https://img.shields.io/github/v/release/opendataval/opendataval?style=for-the-badge
 [release-url]: https://github.com/opendataval/opendataval/releases
 <!-- Pytest Coverage Comment:Begin -->
-[coverage_badge]: https://img.shields.io/badge/Coverage-83%25-green.svg?style=for-the-badge
+[coverage_badge]: https://img.shields.io/badge/Coverage-82%25-green.svg?style=for-the-badge
 <!-- Pytest Coverage Comment:End -->
