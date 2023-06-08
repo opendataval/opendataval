@@ -15,8 +15,8 @@ Self = TypeVar("Self")
 
 
 def cache(
-    url: str, cache_dir: str, file_name: str = None, force_download: bool = False
-) -> str:
+    url: str, cache_dir: Path, file_name: str = None, force_download: bool = False
+) -> Path:
     """Download a file if it it is not present and returns the file_path.
 
     Parameters
@@ -35,15 +35,17 @@ def cache(
     str
         File path to the downloaded file
     """
+    if isinstance(cache_dir, str):
+        cache_dir = Path(cache_dir)
+
     if file_name is None:
         file_name = os.path.basename(url)
 
-    if not os.path.isdir(cache_dir):
-        os.mkdir(cache_dir)
+    filepath = cache_dir / file_name
+    filepath.parent.mkdir(parents=True, exist_ok=True)
 
-    filepath = os.path.join(cache_dir, file_name)
-
-    if not os.path.isfile(filepath) or force_download:
+    if not filepath.exists() or force_download:
+        filepath.touch(exist_ok=True)
         with requests.get(url, stream=True, timeout=60) as r, open(filepath, "wb") as f:
             for chunk in tqdm.tqdm(r.iter_content(chunk_size=8192), "Downloading:"):
                 f.write(chunk)
@@ -66,21 +68,21 @@ def one_hot_encode(data: np.ndarray) -> np.ndarray:
 
 def _read_csv(file_path: str, label_columns: Union[str, list]) -> DatasetFunc:
     """Create data set from csv file path, nested functions for api consistency."""
-    return lambda: _from_pandas(pd.read_csv(file_path), label_columns)()
+    return _from_pandas(pd.read_csv(file_path), label_columns)
 
 
 def _from_pandas(df: pd.DataFrame, labels: Union[str, list]) -> DatasetFunc:
     """Create data set from pandas dataframe, nested functions for api consistency."""
     if all(isinstance(col, int) for col in labels):
         labels = df.columns[labels]
-    return lambda: (df.drop(labels, axis=1).values, df[labels].values)
+    return (df.drop(labels, axis=1).values, df[labels].values)
 
 
 def _from_numpy(array: np.ndarray, label_columns: Union[str, list[int]]) -> DatasetFunc:
     """Create data set from numpy array, nested functions for api consistency."""
     if isinstance(label_columns, int):
         label_columns = [label_columns]
-    return lambda: (np.delete(array, label_columns, axis=1), array[:, label_columns])
+    return (np.delete(array, label_columns, axis=1), array[:, label_columns])
 
 
 class Register:
@@ -140,17 +142,17 @@ class Register:
 
     def from_csv(self, file_path: str, label_columns: Union[str, list]):
         """Register data set from csv file."""
-        self.covar_label_func = _read_csv(file_path, label_columns)
+        self.covar_label_func = lambda: _read_csv(file_path, label_columns)
         return self
 
     def from_pandas(self, df: pd.DataFrame, label_columns: Union[str, list]):
         """Register data set from pandas data frame."""
-        self.covar_label_func = _from_pandas(df, label_columns)
+        self.covar_label_func = lambda: _from_pandas(df, label_columns)
         return self
 
     def from_numpy(self, array: np.ndarray, label_columns: Union[int, Sequence[int]]):
         """Register data set from covariate and label numpy array."""
-        self.covar_label_func = _from_numpy(array, label_columns)
+        self.covar_label_func = lambda: _from_numpy(array, label_columns)
         return self
 
     def from_data(self, covar: np.ndarray, label: np.ndarray, one_hot: bool = None):

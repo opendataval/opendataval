@@ -12,10 +12,10 @@ opendataval.dataloader.datasets.cleanlab module
    :undoc-members:
    :show-inheritance:
 
-opendataval.dataloader.datasets.contest module
+opendataval.dataloader.datasets.challenge module
 ----------------------------------------------
 
-.. automodule:: opendataval.dataloader.datasets.contest
+.. automodule:: opendataval.dataloader.datasets.challenge
    :members:
    :undoc-members:
    :show-inheritance:
