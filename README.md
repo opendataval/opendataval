@@ -25,7 +25,7 @@ Assessing the quality of individual data points is critical for improving model 
 |**CI/CD**|[![Build][test-shield]][test-url] ![Coverage][coverage_badge] |
 |**Python**|[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)|
 |**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black) |
-|**Documentation**| [![Github Pages](https://img.shields.io/badge/github%20pages-121013?style=for-the-badge&logo=github&logoColor=white)](opendataval.github.io) |
+|**Documentation**| [![Github Pages](https://img.shields.io/badge/github%20pages-121013?style=for-the-badge&logo=github&logoColor=white)](https://opendataval.github.io) |
 |**Issues**| [![Issues][issues-shield]][issues-url] |
 |**Releases**|[![Releases][release-shield]][release-url]|
 |**License**|[![MIT License][license-shield]][license-url]|
@@ -35,7 +35,7 @@ Assessing the quality of individual data points is critical for improving model 
 
 | Feature | Status | Links | Notes |
 |---------|--------|-------|-------|
-| **[Datasets](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md)** | Stable | [Docs](https://github.com/opendataval/opendataval/releases) | Embeddings available for image/NLP datasets |
+| **[Datasets](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md)** | Stable | [Docs](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md) | Embeddings available for image/NLP datasets |
 | **[Models](https://github.com/opendataval/opendataval/tree/main/opendataval/model/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.model.html#module-opendataval.model) | Support available for sk-learn models |
 | **[Data Evaluators](https://github.com/opendataval/opendataval/tree/main/opendataval/dataval/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataval.html#module-opendataval.dataval) | |
 | **[Experiments](https://github.com/opendataval/opendataval/tree/main/opendataval/experiment/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.experiment.html#module-opendataval.experiment) | |
@@ -176,6 +176,9 @@ For more examples, please refer to the [Documentation](opendataval.github.io)
 ## :medal_sports: opendataval Leaderboards
 For datasets that start with the prefix challenge, we provide [leaderboards](https://opendataval.github.io/leaderboards). Compute the data values with an `ExperimentMediator` and use the `save_dataval` function to save a csv. Upload it to [here](https://opendataval.github.io/upload)!
 
+The [available challenges](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/datasets/challenge.py) are currently:
+1. `challenge-iris`
+
 ```python
 exper_med = ExperimentMediator.model_factory_setup(
     dataset_name='challenge-...', model_name=model_name, train_kwargs={...}, metric_name=metric_name
@@ -205,11 +208,6 @@ If you want to contribute to the project, either through data sets, experiments,
 * **clean, descriptive specification syntax** -- based on modern object-oriented design principles for data science.
 * **fair model assessment and benchmarking** -- Easily build and evaluate your Data Evaluators
 * **easily extensible** -- Easily add your own data sets, data evaluators, models, tests etc!
-
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
-## :books: Cite us
-TODO
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 

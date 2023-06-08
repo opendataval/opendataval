@@ -14,7 +14,7 @@ Open Data Valuation documentation
    license <license>
    modules <modules>
    leaderboards <leaderboards>
-   paper <paper>
+..    paper <paper>
 
 **Version**: |version|
 
