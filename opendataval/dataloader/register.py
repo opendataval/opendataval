@@ -66,23 +66,23 @@ def one_hot_encode(data: np.ndarray) -> np.ndarray:
     return np.eye(num_values)[data]
 
 
-def _read_csv(file_path: str, label_columns: Union[str, list]) -> DatasetFunc:
+def _read_csv(file_path: str, label_columns: Union[str, list]):
     """Create data set from csv file path, nested functions for api consistency."""
     return _from_pandas(pd.read_csv(file_path), label_columns)
 
 
-def _from_pandas(df: pd.DataFrame, labels: Union[str, list]) -> DatasetFunc:
+def _from_pandas(df: pd.DataFrame, labels: Union[str, list]):
     """Create data set from pandas dataframe, nested functions for api consistency."""
     if all(isinstance(col, int) for col in labels):
         labels = df.columns[labels]
-    return (df.drop(labels, axis=1).values, df[labels].values)
+    return df.drop(labels, axis=1).values, df[labels].values
 
 
-def _from_numpy(array: np.ndarray, label_columns: Union[str, list[int]]) -> DatasetFunc:
+def _from_numpy(array: np.ndarray, label_columns: Union[str, list[int]]):
     """Create data set from numpy array, nested functions for api consistency."""
     if isinstance(label_columns, int):
         label_columns = [label_columns]
-    return (np.delete(array, label_columns, axis=1), array[:, label_columns])
+    return np.delete(array, label_columns, axis=1), array[:, label_columns]
 
 
 class Register:
