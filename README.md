@@ -52,7 +52,7 @@ Assessing the quality of individual data points is critical for improving model 
    ```sh
    make install
    ```
-    a. Install optional dependencies if you're contributing  TODO contributing.md
+    a. Install optional dependencies if you're [contributing](CONTRIBUTING.md) 
     ```sh
     make install-dev
     ```
