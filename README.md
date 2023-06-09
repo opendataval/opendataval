@@ -9,33 +9,33 @@
     </picture>
 </a>
 
-# OpenDataVal
+# OpenDataVal: a Unified Benchmark for Data Valuation
 
-> A unified library for  transparent data valuation benchmarks
+<!-- > A unified library for transparent data valuation benchmarks -->
 
-[**Website**](opendataval.github.io) | [**arXiv Paper**](TODO)
+<!-- [**Website**](opendataval.github.io) | [**arXiv Paper**](TODO) -->
 
 Assessing the quality of individual data points is critical for improving model performance and mitigating biases. However, there is no way to systematically benchmark different algorithims.
 
-**opendataval** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a few lines of code.
+**OpenDataVal** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a few lines of code. 
 
 
 | Overview | |
 |----------|-|
-|**CI/CD**|[![Build][test-shield]][test-url] ![Coverage][coverage_badge] |
 |**Python**|[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)|
 |**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black) |
 |**Documentation**| [![Github Pages](https://img.shields.io/badge/github%20pages-121013?style=for-the-badge&logo=github&logoColor=white)](https://opendataval.github.io) |
+|**CI/CD**|[![Build][test-shield]][test-url] ![Coverage][coverage_badge] |
 |**Issues**| [![Issues][issues-shield]][issues-url] |
-|**Releases**|[![Releases][release-shield]][release-url]|
 |**License**|[![MIT License][license-shield]][license-url]|
-|**Contributors**|[![Contributors][contributors-shield]][contributors-url]|
-|**Citation**| TODO |
+<!-- |**Releases**|[![Releases][release-shield]][release-url]| -->
+<!-- |**Contributors**|[![Contributors][contributors-shield]][contributors-url]| -->
+<!-- |**Citation**| TODO | -->
 ## :sparkles: Features
 
 | Feature | Status | Links | Notes |
 |---------|--------|-------|-------|
-| **[Datasets](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md)** | Stable | [Docs](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md) | Embeddings available for image/NLP datasets |
+| **[Datasets](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataloader.datasets.html#opendataval-dataloader-datasets-package) | Embeddings available for image/NLP datasets |
 | **[Models](https://github.com/opendataval/opendataval/tree/main/opendataval/model/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.model.html#module-opendataval.model) | Support available for sk-learn models |
 | **[Data Evaluators](https://github.com/opendataval/opendataval/tree/main/opendataval/dataval/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataval.html#module-opendataval.dataval) | |
 | **[Experiments](https://github.com/opendataval/opendataval/tree/main/opendataval/experiment/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.experiment.html#module-opendataval.experiment) | |
@@ -187,7 +187,6 @@ exper_med.compute_data_values([custom_data_evaluator]).evaluate(save_dataval, sa
 ```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
-
 
 
 <!-- CONTRIBUTING -->
