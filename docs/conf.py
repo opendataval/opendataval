@@ -13,7 +13,7 @@ import opendataval  # noqa: E402
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Open Data Val"
+project = "OpenDataVal"
 copyright = "2023, OpenDataVal"
 author = "OpenDataVal"
 
