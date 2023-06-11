@@ -90,7 +90,7 @@ class DataFetcher:
 
         self.random_state = check_random_state(random_state)
 
-    def _presplit_data(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
+    def _presplit_data(self, x_train, x_valid, x_test, y_train, y_valid, y_test):
         if not len(x_train) == len(y_train):
             raise ValueError("Training Covariates and Labels must be of same length.")
         if not len(x_valid) == len(y_valid):
@@ -235,7 +235,7 @@ class DataFetcher:
             All labels must be of same dimension.
         """
         fetcher = cls.__new__(cls)
-        fetcher._presplit_data(x_train, y_train, x_valid, y_valid, x_test, y_test)
+        fetcher._presplit_data(x_train, x_valid, x_test, y_train, y_valid, y_test)
 
         fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)

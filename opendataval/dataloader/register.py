@@ -1,6 +1,6 @@
 import os
 import warnings
-from functools import partial
+from functools import lru_cache, partial
 from pathlib import Path
 from typing import Callable, Sequence, TypeVar, Union
 
@@ -14,10 +14,15 @@ DatasetFunc = Callable[..., Union[Dataset, np.ndarray, tuple[np.ndarray, np.ndar
 Self = TypeVar("Self")
 
 
+@lru_cache()
+def _request_session():
+    return requests.Session()
+
+
 def cache(
     url: str, cache_dir: Path, file_name: str = None, force_download: bool = False
 ) -> Path:
-    """Download a file if it it is not present and returns the file_path.
+    """Download a file if it it is not present and returns the filepath.
 
     Parameters
     ----------
@@ -34,6 +39,11 @@ def cache(
     -------
     str
         File path to the downloaded file
+
+    Raises
+    ------
+    HTTPError
+        HTTP error occurred during downloading the dataset.
     """
     if isinstance(cache_dir, str):
         cache_dir = Path(cache_dir)
@@ -46,9 +56,14 @@ def cache(
 
     if not filepath.exists() or force_download:
         filepath.touch(exist_ok=True)
-        with requests.get(url, stream=True, timeout=60) as r, open(filepath, "wb") as f:
-            for chunk in tqdm.tqdm(r.iter_content(chunk_size=8192), "Downloading:"):
-                f.write(chunk)
+        session = _request_session()
+
+        with session.get(url, stream=True, timeout=60) as r:
+            r.raise_for_status()
+
+            with open(filepath, "wb") as f:
+                for chunk in tqdm.tqdm(r.iter_content(chunk_size=8192), "Downloading:"):
+                    f.write(chunk)
 
     return filepath
 
@@ -66,9 +81,9 @@ def one_hot_encode(data: np.ndarray) -> np.ndarray:
     return np.eye(num_values)[data]
 
 
-def _read_csv(file_path: str, label_columns: Union[str, list]):
+def _read_csv(filepath: str, label_columns: Union[str, list]):
     """Create data set from csv file path, nested functions for api consistency."""
-    return _from_pandas(pd.read_csv(file_path), label_columns)
+    return _from_pandas(pd.read_csv(filepath), label_columns)
 
 
 def _from_pandas(df: pd.DataFrame, labels: Union[str, list]):
@@ -78,7 +93,7 @@ def _from_pandas(df: pd.DataFrame, labels: Union[str, list]):
     return df.drop(labels, axis=1).values, df[labels].values
 
 
-def _from_numpy(array: np.ndarray, label_columns: Union[str, list[int]]):
+def _from_numpy(array: np.ndarray, label_columns: Union[int, list[int]]):
     """Create data set from numpy array, nested functions for api consistency."""
     if isinstance(label_columns, int):
         label_columns = [label_columns]
@@ -140,9 +155,9 @@ class Register:
 
         Register.Datasets[dataset_name] = self
 
-    def from_csv(self, file_path: str, label_columns: Union[str, list]):
+    def from_csv(self, filepath: str, label_columns: Union[str, list]):
         """Register data set from csv file."""
-        self.covar_label_func = lambda: _read_csv(file_path, label_columns)
+        self.covar_label_func = lambda: _read_csv(filepath, label_columns)
         return self
 
     def from_pandas(self, df: pd.DataFrame, label_columns: Union[str, list]):
