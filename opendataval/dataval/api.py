@@ -64,7 +64,7 @@ class DataEvaluator(ABC):
     def __init_subclass__(cls, *args, **kwargs):
         """Registers DataEvaluator types, used as part of the CLI."""
         super().__init_subclass__(*args, **kwargs)
-        cls.Evaluators[cls.__name__] = cls
+        cls.Evaluators[cls.__name__.lower()] = cls
 
     def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor):
         """Evaluate performance of the specified metric between label and predictions.

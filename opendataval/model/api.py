@@ -23,7 +23,7 @@ class Model(ABC):
     def __init_subclass__(cls, *args, **kwargs):
         """Registers Model types, used as part of the CLI."""
         super().__init_subclass__(*args, **kwargs)
-        cls.Models[cls.__name__] = cls
+        cls.Models[cls.__name__.lower()] = cls
 
     @abstractmethod
     def fit(
