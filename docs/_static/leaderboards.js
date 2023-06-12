@@ -1,13 +1,17 @@
-
 BASE = "https://opendataval.yongchanstat.com/"
 
-async function fetchLeaderboards(table, target_id){ // path
-    console.log(table);
-    uri = new URL(`/leaderboards/${table}`, BASE)
-    data = await fetch(uri, {method: "GET"}).then(response => response.json());
+async function fetchLeaderboards(endpoint, target_id){ // path
+    uri = new URL(`/leaderboards/${endpoint}`, BASE)
+    data = await fetch(uri, {method: "GET", mode: 'cors'}).then(response => response.json());
 
     table = document.getElementById(target_id);
-    buildHtmlTable(data.table, table);
+    buildHtmlTable(data, table);
+}
+
+
+function escapeHtml(unsafe){
+    if (unsafe == undefined || unsafe == null){ return ''; }
+    return String(unsafe).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 }
 
 
@@ -89,19 +93,39 @@ function buildHtmlTable(data, table) {
         return x.id;
     });
 
-
     data.forEach((row) => {
         var tr = _tr_.cloneNode(false);
+        tr.appendChild(dataevalFormat((row[0])))
 
-        columns.forEach((col) => {
-            var td = _td_.cloneNode(false);
-            var cellValue = row[col];
-            td.appendChild(document.createTextNode(row[col] || ''));
-            tr.appendChild(td);
+        columns.forEach((col, i) => {
+            if (i != 0){
+                var td = _td_.cloneNode(false);
+                var cellValue = escapeHtml(row[1][col]);
+                td.appendChild(document.createTextNode(cellValue));
+                tr.appendChild(td);
+            }
         })
 
         table.appendChild(tr);
     })
+}
+
+function dataevalFormat(data) {
+    var td = _td_.cloneNode(false);
+    var sp = document.createElement("span")
+    sp.classList.add('custom-tooltip')
+    sp.innerHTML = `
+    <span class="custom-tooltip">
+        ${escapeHtml(data["name"])}
+        <span class="tooltiptext"> <b>Description:</b> ${escapeHtml(data["description"])} </span>
+    </span>
+    `
+
+    if (data["url"]){
+        sp.innerHTML = `<a href="${data["url"]}" target="_blank">${sp.innerHTML}</a>`
+    }
+    td.appendChild(sp);
+    return td;
 }
 
 

@@ -19,7 +19,7 @@ def _dataset_url(drive_id: str):
 
 def _challenge_ids(challenge: str) -> list[dict[str, str]]:
     """Get challenge ids from the opendataval backend."""
-    return requests.get(f"{CHALLENGE_URL}/{challenge}").json()["table"]
+    return requests.get(f"{CHALLENGE_URL}/{challenge}").json()
 
 
 def download_drive(name: str, drive_id: str, cache_dir: Path, force_download: str):

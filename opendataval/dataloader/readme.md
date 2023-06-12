@@ -141,3 +141,11 @@ covar, labels = pd_dataset.load_data()
 
 ## Embeddings
 For NLP and Image datasets, there are embeddings available from `ResNet50` and `distill-bert-uncased`. Embeddings available have suffix `-embeddings` and cache the embeddings.
+
+
+## Challenge-*
+
+All datasets with the prefix `challenge-*` are challenge datasets. This means we have artifically
+added noise to a proportion of indices to them and will be evaluating how your computed data values
+compares to other evaluators. To load, simply use the `DataFetcher` api and then save your data using
+`save_datavals`. Finally upload it to the link [here](https://opendataval.github.io/upload) to see your DataEvaluator on the leaderboards. Please expect a delay between submission and results.
