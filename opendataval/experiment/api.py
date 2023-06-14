@@ -206,7 +206,11 @@ class ExperimentMediator:
         train_kwargs = {} if train_kwargs is None else train_kwargs
 
         model.fit(x_train, y_train, **train_kwargs)
-        perf = Metrics(metric_name)(y_test, model.predict(x_test).cpu())
+        if metric_name is None:
+            metric = Metrics.ACCURACY if fetcher.one_hot else Metrics.NEG_MSE
+        else:
+            metric = Metrics(metric_name)
+        perf = metric(y_test, model.predict(x_test).cpu())
         print(f"Base line model {metric_name=}: {perf=}")
 
         return cls(

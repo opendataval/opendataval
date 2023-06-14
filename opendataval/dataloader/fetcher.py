@@ -1,3 +1,4 @@
+import warnings
 from itertools import accumulate, chain
 from typing import Any, Callable, Sequence, TypeVar, Union
 
@@ -80,17 +81,17 @@ class DataFetcher:
                 "Ensure the data set is imported and optional dependencies installed."
             )
 
-        dataset = Register.Datasets[dataset_name]
-        self.one_hot = dataset.one_hot
+        self.dataset = Register.Datasets[dataset_name]
+        self.one_hot = self.dataset.one_hot
 
-        if dataset.presplit:
-            self._presplit_data(*dataset.load_data(cache_dir, force_download))
+        if self.dataset.presplit:
+            self._presplit_data(*self.dataset.load_data(cache_dir, force_download))
         else:
-            self._add_data(*dataset.load_data(cache_dir, force_download))
+            self._add_data(*self.dataset.load_data(cache_dir, force_download))
 
         self.random_state = check_random_state(random_state)
 
-    def _presplit_data(self, x_train, y_train, x_valid, y_valid, x_test, y_test):
+    def _presplit_data(self, x_train, x_valid, x_test, y_train, y_valid, y_test):
         if not len(x_train) == len(y_train):
             raise ValueError("Training Covariates and Labels must be of same length.")
         if not len(x_valid) == len(y_valid):
@@ -235,7 +236,7 @@ class DataFetcher:
             All labels must be of same dimension.
         """
         fetcher = cls.__new__(cls)
-        fetcher._presplit_data(x_train, y_train, x_valid, y_valid, x_test, y_test)
+        fetcher._presplit_data(x_train, x_valid, x_test, y_train, y_valid, y_test)
 
         fetcher.one_hot = one_hot
         fetcher.random_state = check_random_state(random_state)
@@ -334,6 +335,10 @@ class DataFetcher:
             Invalid input for splitting the data set, either the proportion is more
             than 1 or the total splits are greater than the len(dataset)
         """
+        if hasattr(self, "dataset") and self.dataset.presplit:
+            warnings.warn("Dataset is already presplit, no need to split data.")
+            return self
+
         if sum((train_count, valid_count, test_count)) > self.num_points:
             raise ValueError(
                 f"Split totals must be < {self.num_points=} and of the same type: "

@@ -143,19 +143,20 @@ def ModelFactory(
     Raises
     ------
     ValueError
-        Raises exception when
+        Raises exception when model name is not matched
     """
     covar_dim, label_dim = fetcher.covar_dim, fetcher.label_dim
+    model_name = model_name.lower()
 
-    if model_name == "LogisticRegression":
+    if model_name == "logisticregression":
         return LogisticRegression(*covar_dim, *label_dim, *args, **kwargs).to(device)
-    elif model_name == "ClassifierMLP":
+    elif model_name == "classifiermlp":
         return ClassifierMLP(*covar_dim, *label_dim, *args, **kwargs).to(device)
-    elif model_name == "RegressionMLP":
+    elif model_name == "regressionmlp":
         return RegressionMLP(*covar_dim, *label_dim, *args, **kwargs).to(device)
-    elif model_name == BertClassifier:
+    elif model_name == "bertclassifier":
         return BertClassifier(num_classes=label_dim[0], *args, **kwargs).to(device)
-    elif model_name == "LeNet":
+    elif model_name == "lenet":
         return LeNet(
             num_classes=label_dim[0],
             gray_scale=covar_dim[0] == 1,  # 1 means grey

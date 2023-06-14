@@ -17,8 +17,10 @@
 
 Assessing the quality of individual data points is critical for improving model performance and mitigating biases. However, there is no way to systematically benchmark different algorithims.
 
-**OpenDataVal** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a few lines of code. 
+**OpenDataVal** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a few lines of code.
 
+**OpenDataVal** also provides a leaderboards for data evaluation tasks. We've curated and added
+artificial noise to some datasets. Create your own `DataEvaluator` to top the [leaderboards](https://opendataval.github.io/leaderboards).
 
 | Overview | |
 |----------|-|
@@ -52,7 +54,7 @@ Assessing the quality of individual data points is critical for improving model 
    ```sh
    make install
    ```
-    a. Install optional dependencies if you're [contributing](CONTRIBUTING.md) 
+    a. Install optional dependencies if you're [contributing](CONTRIBUTING.md)
     ```sh
     make install-dev
     ```
@@ -174,7 +176,7 @@ For more examples, please refer to the [Documentation](opendataval.github.io)
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 ## :medal_sports: opendataval Leaderboards
-For datasets that start with the prefix challenge, we provide [leaderboards](https://opendataval.github.io/leaderboards). Compute the data values with an `ExperimentMediator` and use the `save_dataval` function to save a csv. Upload it to [here](https://opendataval.github.io/upload)!
+For datasets that start with the prefix challenge, we provide [leaderboards](https://opendataval.github.io/leaderboards). Compute the data values with an `ExperimentMediator` and use the `save_dataval` function to save a csv. Upload it to [here](https://opendataval.github.io/leaderboards)! Uploading will allow us to systematically compare your `DataEvaluator` against others in the field.
 
 The [available challenges](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/datasets/challenge.py) are currently:
 1. `challenge-iris`
