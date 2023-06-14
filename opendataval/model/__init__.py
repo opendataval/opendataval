@@ -154,7 +154,7 @@ def ModelFactory(
         return ClassifierMLP(*covar_dim, *label_dim, *args, **kwargs).to(device)
     elif model_name == "regressionmlp":
         return RegressionMLP(*covar_dim, *label_dim, *args, **kwargs).to(device)
-    elif model_name == BertClassifier:
+    elif model_name == "bertclassifier":
         return BertClassifier(num_classes=label_dim[0], *args, **kwargs).to(device)
     elif model_name == "lenet":
         return LeNet(
