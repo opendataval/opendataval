@@ -143,7 +143,7 @@ def ModelFactory(
     Raises
     ------
     ValueError
-        Raises exception when
+        Raises exception when model name is not matched
     """
     covar_dim, label_dim = fetcher.covar_dim, fetcher.label_dim
     model_name = model_name.lower()
