@@ -2,12 +2,8 @@
 OpenDataVal Leaderboards
 ************************
 
-Save and upload the data values for a Challenge task `here <https://docs.google.com/forms/d/e/1FAIpQLSfDzkI-gRKRCvNEmY-VdRh2mZJ5ls8w1baLd-autGbQ7A61bA/viewform?usp=sf_link>`_.
-The status of a submission can be checked at the following URL ``https://opendataval.yongchanstat.com/status/{challenge_name}?name={name}``.
-A status of ``None`` means something went wrong and feel free to resubmit the google form. Otherwise, we'll be validating the results shortly.
-
-After running your experiment and computing the data values, run the following function to receive a csv file.
-Upload the csv file to the above google form to appear to compare your DataEvaluator and to appear on the leaderboards.
+Save and upload the data values for a Challenge task `here <https://docs.google.com/forms/d/e/1FAIpQLSfDzkI-gRKRCvNEmY-VdRh2mZJ5ls8w1baLd-autGbQ7A61bA/viewform?usp=sf_link>`_. After running your experiment and computing the data values, run the following function to receive a csv file.
+Upload the csv file to the above Google Form to appear to compare your DataEvaluator and to appear on the leaderboards.
 All datasets that begin with the prefix ``'challenge-*'`` are valid challenges that can be submitted.
 
 ::
