@@ -6,7 +6,7 @@ on:
     paths:
         - 'opendataval/**'
         - 'test/**'
-        - 'requirements-**.txt'
+        - 'requirements**.txt'
   workflow_dispatch:
 
 jobs:
@@ -59,7 +59,8 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-    - uses: actions/cache@v3
+    - name: Load cache
+      uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
         key: ${{ env.pythonLocation }}-${{ hashFiles('requirements-dev.txt') }}

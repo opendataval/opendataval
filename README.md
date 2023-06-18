@@ -5,9 +5,9 @@
 <div width="175" align="right">
 <a href="https://github.com/kevinfjiang/opendataval">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo-dark-mode.png">
-      <source media="(prefers-color-scheme: light)" srcset="docs/_static/logo-light-mode.png">
-      <img alt="Logo toggles light and dark mode" src="docs/_static/logo-light-mode.png"  width="300" align="right">
+      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/kevinfjiang/opendataval/blob/main/docs/_static/logo-dark-mode.png">
+      <source media="(prefers-color-scheme: light)" srcset="https://github.com/kevinfjiang/opendataval/blob/main/docs/_static/logo-light-mode.png">
+      <img alt="Logo toggles light and dark mode" src="https://github.com/kevinfjiang/opendataval/blob/main/docs/_static/logo-light-mode.png"  width="300" align="right">
     </picture>
 </a>
 </div>
@@ -59,7 +59,7 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
    ```sh
    make install
    ```
-    a. Install optional dependencies if you're [contributing](CONTRIBUTING.md)
+    a. Install optional dependencies if you're [contributing](https://github.com/kevinfjiang/opendataval/blob/main/CONTRIBUTING.md)
     ```sh
     make install-dev
     ```
@@ -177,7 +177,7 @@ df = expermed.evaluate(noisy_detection)
 df, figure = expermed.plot(discover_corrupted_sample)
 ```
 
-For more examples, please refer to the [Documentation](opendataval.github.io)
+For more examples, please refer to the [Documentation](https://opendataval.github.io)
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -200,8 +200,8 @@ exper_med.compute_data_values([custom_data_evaluator]).evaluate(save_dataval, sa
 <!-- CONTRIBUTING -->
 ## :wave: Contributing
 
-If you have a quick suggestion, reccomendation, bug-fixes please open an [issue]([issues-url]).
-If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](CONTRIBUTING.md).
+If you have a quick suggestion, reccomendation, bug-fixes please open an [issue][issues-url].
+If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](https://github.com/kevinfjiang/opendataval/blob/main/CONTRIBUTING.md).
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)

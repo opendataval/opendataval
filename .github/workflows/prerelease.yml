@@ -1,6 +1,8 @@
 name: Make pre-release
 
 on:
+  pull_request:
+    types: [closed]
   push:
     tags:
       - v*
@@ -25,10 +27,14 @@ jobs:
           # one day use github tags, for now just using source version
           echo tag_name=$(python -c "import opendataval; print(opendataval.__version__)") >> $GITHUB_OUTPUT
 
+          if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]]; then
+            echo "pre_release=true" >> $GITHUB_OUTPUT
+          fi
+
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: "v${{ steps.tag.outputs.tag_name }}"
+          automatic_release_tag: "latest"
           draft: True
           title: "Version: ${{ steps.tag.outputs.tag_name }}"
           files: LICENSE.txt

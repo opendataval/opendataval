@@ -10,11 +10,10 @@ import typer
 from pandera.typing import Series
 from typer import Option
 
-from opendataval.dataloader import Register
-from opendataval.dataloader.noisify import NoiseFunc
+from opendataval.dataloader import NoiseFunc, Register
 from opendataval.dataval import DataEvaluator
+from opendataval.experiment import ExperimentMediator
 from opendataval.experiment import exper_methods as em
-from opendataval.experiment.api import ExperimentMediator
 from opendataval.metrics import Metrics
 from opendataval.model import Model
 from opendataval.util import StrEnum
@@ -83,7 +82,7 @@ def setup(
             dir_okay=True, writable=True, resolve_path=True, prompt=True
     )] = ".",
 ):
-    """CLI input to run a singular job from an input CSV file
+    """CLI run a singular job from an input CSV file
 
     Parameters
     ----------
@@ -91,7 +90,7 @@ def setup(
         File path containing jobs to be run. Must be in the specified job format
     id_ : list[int]
         IDs of job to be run, called with multiple ``-n`` arguments
-    output_dir : Optional[Path]
+    output_dir : Path, optional
         Directory of outputs of the experiment. Must be a possible directory, by default
         Path(".") or current working directory.
     """
@@ -148,6 +147,41 @@ def run(
         "--output", "-o", help="Directory of experiments output",
         prompt=True, dir_okay=True, writable=True, resolve_path=True)] = ".",
 ):
+    """CLI to run an opendataval job form input parameters
+
+    Parameters
+    ----------
+    dataval : DataEvaluatorsEnum, str
+        Data evaluator name, must match class name exactly
+    dataset : DatasetsEnum, str
+        Name of the data set, must match registered data set exactly
+    model : ModelsEnum, str
+        Name of the model, should match class name, see py:function`~opendataval.model.ModelFactory`
+    add_noise : NoiseFunc, str, optional
+        Method of adding artificial noise, must match names in py:class`~opendataval.dataloader.NoiseFunc`
+    metric : Metrics, str, optional
+        Method of evaluating the prediction model, must match names in py:class`~opendataval.metrics.Metrics`
+    dataval_kwargs : dict[str, Any], optional, str
+        Data Evaluator Key Work Arguments, by default {}
+    noise_kwargs : dict[str, Any], optional
+        Adding noise Key Work Arguments, by default {}
+    train_kwargs : dict[str, Any], optional
+        Model training Key Work Arguments, by default {}
+    cache_dir : Path, optional
+        Directory to cache downloads, by default Path("data_files/")
+    train : int, optional
+        Number of training data points, by default 25
+    valid : int, optional
+        Number of validation data points, by default 25
+    test : int, optional
+        Number of test data points, by default 25
+    device : str, optional
+        Torch device, by default CPU
+    random_state : int, optional
+         Initial Random State, by default None
+    output_dir : Path, optional
+        Directory of experiments output, by default current working directory
+    """
     dataval = DataEvaluator.Evaluators[dataval](**dataval_kwargs)  # **dataval_kwargs
 
     typer.echo(f"Starting computation of data values for {dataval=}")
@@ -155,10 +189,10 @@ def run(
         dataset_name=dataset,
         cache_dir=cache_dir,
         force_download=False,
-        train_count=train,  #TODO set to 0
+        train_count=train,
         valid_count=valid,
         test_count=test,
-        add_noise=add_noise,  # TODO only supports mix_labels currently
+        add_noise=add_noise,
         noise_kwargs=noise_kwargs,
         random_state=random_state,
         model_name=model,
