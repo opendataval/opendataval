@@ -1,0 +1,39 @@
+name: Make pre-release
+
+on:
+  pull_request:
+    types: [closed]
+  push:
+    tags:
+      - v*
+
+jobs:
+  pre-release:
+    name: Pre-Release
+    runs-on: ubuntu-latest
+    outputs:
+        tag_name: ${{ steps.tag.outputs.tag_name }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Get tag data
+        id: tag
+        run: |
+          # replace the following commands to use the new GITHUB_OUTPUT syntax
+          # one day use github tags, for now just using source version
+          echo tag_name=$(python -c "import opendataval; print(opendataval.__version__)") >> $GITHUB_OUTPUT
+
+          if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]]; then
+            echo "pre_release=true" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: "latest"
+          draft: True
+          title: "Version: ${{ steps.tag.outputs.tag_name }}"
+          files: LICENSE.txt
