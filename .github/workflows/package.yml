@@ -27,6 +27,7 @@ jobs:
         hatch build
     - uses: actions/upload-artifact@v3
       with:
+        name: opendataval-dist
         path: ./dist
 
   publish:
@@ -38,10 +39,13 @@ jobs:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     # retrieve your distributions here
+    - uses: actions/download-artifact@v3
+      name: opendataval-dist
 
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
+        packages-dir: opendataval-dist/
         repository-url: ${{ vars.REGISTRY_URL }}
         skip-existing: true
         verbose: true
