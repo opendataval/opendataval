@@ -10,6 +10,7 @@ jobs:
   # Pushes to organization repo after building documentation
   push:
     runs-on: ubuntu-latest
+    environment: anon
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -27,14 +28,14 @@ jobs:
           regex: false
       - name: Copy output_temp/ to output/ using rsync (to exclude main.epub in this example)
         run:  rsync -arv --exclude=".git"  ./ output/
-      - name: Pushes to another repository
+      - name: Pushes to another repository with hash as commit
         uses: cpina/github-action-push-to-another-repository@main
         env:
-          API_TOKEN_GITHUB: ${{ secrets.ANON_TOKEN }}
+          API_TOKEN_GITHUB: ${{ secrets.REPO_TOKEN }}
         with:
           source-directory: output/
           destination-github-username: 'opendataval'
-          destination-repository-name: ${{ secrets.ANON_REPO }}
+          destination-repository-name: ${{ vars.REPO }}
           user-email: opendataval@gmail.com
           target-branch: main
           commit-message: 'Update anonymous repo from source. Source commit hash ${{ github.sha }}'

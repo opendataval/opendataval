@@ -1,4 +1,4 @@
-<a name="readme-top"></a>
+<a name="readme-top" id="readme-top"></a>
 
 <!-- PROJECT LOGO -->
 
@@ -15,8 +15,6 @@
 # OpenDataVal: a Unified Benchmark for Data Valuation
 
 <!-- > A unified library for transparent data valuation benchmarks -->
-
-<!-- [**Website**](opendataval.github.io) | [**arXiv Paper**](TODO) -->
 
 Assessing the quality of individual data points is critical for improving model performance and mitigating biases. However, there is no way to systematically benchmark different algorithims.
 
@@ -49,14 +47,14 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-## Installation
-----
-1. Clone the repo
+## :hourglass_flowing_sand: Installation options
+1. Install with pip
+    ```sh
+    pip install opendataval
+    ```
+2. Clone the repo and install
    ```sh
    git clone https://github.com/kevinfjiang/opendataval.git
-   ```
-2. Install dependencies
-   ```sh
    make install
    ```
     a. Install optional dependencies if you're [contributing](https://github.com/kevinfjiang/opendataval/blob/main/CONTRIBUTING.md)
