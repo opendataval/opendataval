@@ -3,7 +3,7 @@
 Uses HuggingFace
 `transformers <https://huggingface.co/docs/transformers/index>`_. as dependency.
 """
-import os
+from pathlib import Path
 from typing import Callable
 
 import numpy as np
@@ -43,13 +43,14 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
 
         BERT_PRETRAINED_NAME = "distilbert-base-uncased"  # TODO update this
 
+        cache_dir = Path(cache_dir)
         embed_file_name = f"{func.__name__}_{MAX_DATASET_SIZE}_embed.pt"
-        embed_path = os.path.join(cache_dir, embed_file_name)
+        embed_path = cache_dir / embed_file_name
 
         dataset, labels = func(cache_dir, force_download, *args, **kwargs)
         subset = np.random.RandomState(10).permutation(len(dataset))
 
-        if os.path.isfile(embed_path):
+        if embed_path.exists():
             nlp_embeddings = torch.load(embed_path)
             return nlp_embeddings, labels[subset[: len(nlp_embeddings)]]
 

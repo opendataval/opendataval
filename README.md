@@ -1,19 +1,17 @@
-<a name="readme-top"></a>
+<a name="readme-top" id="readme-top"></a>
 
 <!-- PROJECT LOGO -->
 <a href="https://github.com/opendataval/opendataval">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo-dark-mode.png">
-      <source media="(prefers-color-scheme: light)" srcset="docs/_static/logo-light-mode.png">
-      <img alt="Logo toggles light and dark mode" src="docs/_static/logo-light-mode.png"  width="300" align="right">
+      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/opendataval/opendataval/blob/main/docs/_static/logo-dark-mode.png">
+      <source media="(prefers-color-scheme: light)" srcset="https://github.com/opendataval/opendataval/blob/main/docs/_static/logo-light-mode.png">
+      <img alt="Logo toggles light and dark mode" src="https://github.com/opendataval/opendataval/blob/main/docs/_static/logo-light-mode.png"  width="300" align="right">
     </picture>
 </a>
 
 # OpenDataVal: a Unified Benchmark for Data Valuation
 
 <!-- > A unified library for transparent data valuation benchmarks -->
-
-<!-- [**Website**](opendataval.github.io) | [**arXiv Paper**](TODO) -->
 
 Assessing the quality of individual data points is critical for improving model performance and mitigating biases. However, there is no way to systematically benchmark different algorithims.
 
@@ -45,16 +43,17 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-## :hourglass_flowing_sand: Installation
-1. Clone the repo
+## :hourglass_flowing_sand: Installation options
+1. Install with pip
+    ```sh
+    pip install opendataval
+    ```
+2. Clone the repo and install
    ```sh
    git clone https://github.com/opendataval/opendataval.git
-   ```
-2. Install dependencies
-   ```sh
    make install
    ```
-    a. Install optional dependencies if you're [contributing](CONTRIBUTING.md)
+    a. Install optional dependencies if you're [contributing](https://github.com/opendataval/opendataval/blob/main/CONTRIBUTING.md)
     ```sh
     make install-dev
     ```
@@ -171,7 +170,7 @@ df = expermed.evaluate(noisy_detection)
 df, figure = expermed.plot(discover_corrupted_sample)
 ```
 
-For more examples, please refer to the [Documentation](opendataval.github.io)
+For more examples, please refer to the [Documentation](https://opendataval.github.io)
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -195,7 +194,7 @@ exper_med.compute_data_values([custom_data_evaluator]).evaluate(save_dataval, sa
 ## :wave: Contributing
 
 If you have a quick suggestion, reccomendation, bug-fixes please open an [issue][issues-url].
-If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](CONTRIBUTING.md).
+If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](https://github.com/opendataval/opendataval/blob/main/CONTRIBUTING.md).
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)

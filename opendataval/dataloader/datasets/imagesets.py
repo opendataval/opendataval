@@ -4,6 +4,7 @@ Uses `torchvision <https://github.com/pytorch/vision>`_. as a dependency.
 """
 
 import os
+from pathlib import Path
 from typing import TypeVar, Union
 
 import matplotlib as plt
@@ -15,7 +16,15 @@ import torchvision.transforms.functional as F
 import tqdm
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, Subset
-from torchvision.datasets import CIFAR10, CIFAR100, MNIST, FashionMNIST, VisionDataset
+from torchvision.datasets import (
+    CIFAR10,
+    CIFAR100,
+    MNIST,
+    STL10,
+    SVHN,
+    FashionMNIST,
+    VisionDataset,
+)
 
 from opendataval.dataloader.register import Register
 
@@ -70,21 +79,21 @@ def ResnetEmbeding(
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ]
         )
-
+        cache_dir = Path(cache_dir)
         embed_file_name = f"{dataset_class.__name__}_{MAX_DATASET_SIZE}_embed.pt"
-        embed_path = os.path.join(cache_dir, embed_file_name)
+        embed_path = cache_dir / embed_file_name
 
         # Resnet inputs expect `img2vec_transforms`ed images as input
         dataset = dataset_class(
             root=cache_dir.replace("-embeddings", ""),  # Uses original embedding cache
-            download=force_download or not os.path.exists(cache_dir),
+            download=force_download or not cache_dir.exists(),
             transform=img2vec_transforms,
             *args,
             **kwargs,
         )
         subset = np.random.RandomState(10).permutation(len(dataset))
 
-        if os.path.isfile(embed_path):
+        if embed_path.exists():
             image_embeddings = torch.load(embed_path)
             return (
                 image_embeddings,
@@ -124,6 +133,7 @@ def ResnetEmbeding(
                 labels_list.extend(labels)
 
         image_embeddings = image_embeddings.detach()
+        embed_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(image_embeddings, embed_path)
         return image_embeddings, np.array(labels_list)
 
@@ -229,3 +239,9 @@ cifar10 = Register("cifar10", True, True)(VisionAdapter(CIFAR10))
 
 cifar10_embed = Register("cifar10-embeddings", True, True)(ResnetEmbeding(CIFAR10))
 """Vision Classification registered as ``"cifar10-embeddings"`` ResNet50 embeddings"""
+
+stl10_embed = Register("stl10-embeddings", True, True)(ResnetEmbeding(STL10))
+"""Vision Classification registered as ``"stl10-embeddings"`` ResNet50 embeddings"""
+
+svhn_embed = Register("svhn-embeddings", True, True)(ResnetEmbeding(SVHN))
+"""Vision Classification registered as ``"svhn-embeddings"`` ResNet50 embeddings"""

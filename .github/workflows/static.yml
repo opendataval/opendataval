@@ -13,6 +13,7 @@ jobs:
   # Pushes to organization repo after building documentation
   push:
     runs-on: ubuntu-latest
+    environment: docs
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -34,11 +35,11 @@ jobs:
       - name: Pushes to another repository
         uses: cpina/github-action-push-to-another-repository@main
         env:
-          API_TOKEN_GITHUB: ${{ secrets.DOCS_TOKEN }}
+          API_TOKEN_GITHUB: ${{ secrets.REPO_TOKEN }}
         with:
           source-directory: 'docs/_build/html'
           destination-github-username: 'opendataval'
-          destination-repository-name: ${{ secrets.TARGET_REPO }}
+          destination-repository-name: ${{ vars.REPO }}
           user-email: opendataval@gmail.com
           target-branch: main
 
