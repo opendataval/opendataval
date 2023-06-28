@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import ClassVar, Optional
 
 import numpy as np
 import torch
@@ -42,7 +43,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         Random initial state, by default None
     """
 
-    CACHE = {}
+    CACHE: ClassVar[dict[str, np.ndarray]] = {}
     """Cached marginal contributions."""
     GR_MAX = 100
     """Default maximum Gelman-Rubin statistic. Used for burn-in."""
@@ -53,8 +54,8 @@ class ShapEvaluator(DataEvaluator, ABC):
         max_mc_epochs: int = 100,
         models_per_iteration: int = 100,
         mc_epochs: int = 1000,
-        cache_name: str = None,
-        random_state: RandomState = None,
+        cache_name: Optional[str] = None,
+        random_state: Optional[RandomState] = None,
     ):
         self.max_mc_epochs = max_mc_epochs
         self.gr_threshold = gr_threshold

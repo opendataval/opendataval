@@ -1,6 +1,6 @@
 import warnings
 from itertools import accumulate, chain
-from typing import Any, Callable, Sequence, TypeVar, Union
+from typing import Any, Callable, Optional, Sequence, TypeVar, Union
 
 import numpy as np
 import torch
@@ -71,9 +71,9 @@ class DataFetcher:
     def __init__(
         self,
         dataset_name: str,
-        cache_dir: str = None,
+        cache_dir: Optional[str] = None,
         force_download: bool = False,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         if dataset_name not in Register.Datasets:
             raise KeyError(
@@ -126,14 +126,14 @@ class DataFetcher:
     def setup(
         cls,
         dataset_name: str,
-        cache_dir: str = None,
+        cache_dir: Optional[str] = None,
         force_download: bool = False,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
         test_count: Union[int, float] = 0,
-        add_noise: Callable[[Self, Any, ...], dict[str, Any]] = None,
-        noise_kwargs: dict[str, Any] = None,
+        add_noise: Optional[Callable[[Self, Any, ...], dict[str, Any]]] = None,
+        noise_kwargs: Optional[dict[str, Any]] = None,
     ):
         """Create, split, and add noise to DataFetcher from input arguments."""
         noise_kwargs = {} if noise_kwargs is None else noise_kwargs
@@ -163,7 +163,7 @@ class DataFetcher:
         covar: Union[Dataset, np.ndarray],
         labels: np.ndarray,
         one_hot: bool,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         """Return DataFetcher from input Covariates and Labels.
 
@@ -203,7 +203,7 @@ class DataFetcher:
         x_test: Union[Dataset, np.ndarray],
         y_test: np.ndarray,
         one_hot: bool,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         """Return DataFetcher from already split data.
 
@@ -366,9 +366,9 @@ class DataFetcher:
 
     def split_dataset_by_indices(
         self,
-        train_indices: Sequence[int] = None,
-        valid_indices: Sequence[int] = None,
-        test_indices: Sequence[int] = None,
+        train_indices: Optional[Sequence[int]] = None,
+        valid_indices: Optional[Sequence[int]] = None,
+        test_indices: Optional[Sequence[int]] = None,
     ):
         """Split the covariates and labels to the specified indices.
 
@@ -426,7 +426,7 @@ class DataFetcher:
 
     def noisify(
         self,
-        add_noise: Union[Callable[[Self, Any, ...], dict[str, Any]], str] = None,
+        add_noise: Union[Callable[[Self, Any, ...], dict[str, Any]], str, None] = None,
         *noise_args,
         **noise_kwargs,
     ):

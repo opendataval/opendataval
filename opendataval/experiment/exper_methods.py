@@ -4,7 +4,7 @@ Experiments pass into :py:meth:`~opendataval.experiment.api.ExperimentMediator.e
 and :py:meth:`~opendataval.experiment.api.ExperimentMediator.plot` evaluate performance
 of one :py:class:`~opendataval.dataval.api.DataEvaluator` at a time.
 """
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -71,9 +71,9 @@ def remove_high_low(
     evaluator: DataEvaluator,
     fetcher: DataFetcher,
     percentile: float = 0.05,
-    plot: Axes = None,
+    plot: Optional[Axes] = None,
     metric_name: str = "accuracy",
-    train_kwargs: dict[str, Any] = None,
+    train_kwargs: Optional[dict[str, Any]] = None,
 ) -> dict[str, list[float]]:
     """Evaluate performance after removing high/low points determined by data valuator.
 
@@ -176,7 +176,7 @@ def discover_corrupted_sample(
     evaluator: DataEvaluator,
     fetcher: DataFetcher,
     percentile: float = 0.05,
-    plot: Axes = None,
+    plot: Optional[Axes] = None,
 ) -> dict[str, list[float]]:
     """Evaluate discovery of noisy indices in low data value points.
 
@@ -277,9 +277,9 @@ def increasing_bin_removal(
     evaluator: DataEvaluator,
     fetcher: DataFetcher,
     bin_size: int = 1,
-    plot: Axes = None,
+    plot: Optional[Axes] = None,
     metric_name: str = "accuracy",
-    train_kwargs: dict[str, Any] = None,
+    train_kwargs: Optional[dict[str, Any]] = None,
 ) -> dict[str, list[float]]:
     """Evaluate accuracy after removing data points with data values above threshold.
 

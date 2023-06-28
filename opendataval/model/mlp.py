@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Callable
+from typing import Callable, Optional
 
 import torch
 import torch.nn as nn
@@ -34,7 +34,7 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
         num_classes: int,
         layers: int = 5,
         hidden_dim: int = 25,
-        act_fn: Callable = None,
+        act_fn: Optional[Callable] = None,
     ):
         super().__init__()
 
@@ -95,7 +95,7 @@ class RegressionMLP(TorchRegressMixin, TorchPredictMixin):
         num_classes: int,
         layers: int = 5,
         hidden_dim: int = 25,
-        act_fn: Callable = None,
+        act_fn: Optional[Callable] = None,
     ):
         super().__init__()
 

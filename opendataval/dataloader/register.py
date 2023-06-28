@@ -2,7 +2,7 @@ import os
 import warnings
 from functools import lru_cache, partial
 from pathlib import Path
-from typing import Callable, Sequence, TypeVar, Union
+from typing import Callable, ClassVar, Optional, Sequence, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,10 @@ def _request_session():
 
 
 def cache(
-    url: str, cache_dir: Path, file_name: str = None, force_download: bool = False
+    url: str,
+    cache_dir: Path,
+    file_name: Optional[str] = None,
+    force_download: bool = False,
 ) -> Path:
     """Download a file if it it is not present and returns the filepath.
 
@@ -128,7 +131,7 @@ class Register:
     CACHE_DIR = "data_files"
     """Default directory to cache downloads to."""
 
-    Datasets: dict[str, Self] = {}
+    Datasets: ClassVar[dict[str, Self]] = {}
     """Creates a directory for all registered/downloadable data set functions."""
 
     def __init__(
@@ -170,14 +173,13 @@ class Register:
         self.covar_label_func = lambda: _from_numpy(array, label_columns)
         return self
 
-    def from_data(self, covar: np.ndarray, label: np.ndarray, one_hot: bool = None):
+    def from_data(self, covar: np.ndarray, label: np.ndarray, one_hot: bool = False):
         """Register data set from covariate and label numpy array."""
         self.covar_label_func = lambda: (covar, label)
-        # Overrides default one_hot if specified
-        if one_hot is not None:
-            self.one_hot = one_hot
-            self.cacheable = False
-            self.label_transform = one_hot_encode if one_hot else self.label_transform
+        self.cacheable = False
+
+        self.one_hot = one_hot
+        self.label_transform = one_hot_encode if one_hot else self.label_transform
 
         return self
 
@@ -211,7 +213,7 @@ class Register:
         return self
 
     def load_data(
-        self, cache_dir: str = None, force_download: bool = False
+        self, cache_dir: Optional[str] = None, force_download: bool = False
     ) -> tuple[Dataset, np.ndarray]:
         """Retrieve data from specified data input functions.
 

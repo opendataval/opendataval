@@ -1,7 +1,7 @@
 import copy
 import warnings
 from abc import ABC, abstractmethod
-from typing import TypeVar, Union
+from typing import ClassVar, Optional, TypeVar, Union
 
 import numpy as np
 import torch
@@ -18,7 +18,7 @@ Self = TypeVar("Self")
 class Model(ABC):
     """Abstract class of Models. Provides a template for models."""
 
-    Models: dict[str, Self] = {}
+    Models: ClassVar[dict[str, Self]] = {}
 
     def __init_subclass__(cls, *args, **kwargs):
         """Registers Model types, used as part of the CLI."""
@@ -31,7 +31,7 @@ class Model(ABC):
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weights: torch.Tensor = None,
+        sample_weights: Optional[torch.Tensor] = None,
         **kwargs
     ) -> Self:
         """Fits the model on the training data.
@@ -99,7 +99,7 @@ class TorchClassMixin(Model, nn.Module):
         self,
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
-        sample_weight: torch.Tensor = None,
+        sample_weight: Optional[torch.Tensor] = None,
         batch_size: int = 32,
         epochs: int = 1,
         lr: float = 0.01,
@@ -166,7 +166,7 @@ class TorchRegressMixin(Model, nn.Module):
         self,
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
-        sample_weight: torch.Tensor = None,
+        sample_weight: Optional[torch.Tensor] = None,
         batch_size: int = 32,
         epochs: int = 1,
         lr: float = 0.01,
@@ -284,7 +284,7 @@ class ClassifierSkLearnWrapper(Model):
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weight: torch.Tensor = None,
+        sample_weight: Optional[torch.Tensor] = None,
         **kwargs
     ):
         """Fits the model on the training data.
@@ -385,7 +385,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weight: torch.Tensor = None,
+        sample_weight: Optional[torch.Tensor] = None,
         **kwargs
     ):
         """Fits the model on the training data.
@@ -465,7 +465,7 @@ class RegressionSkLearnWrapper(Model):
         x_train: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        sample_weight: torch.Tensor = None,
+        sample_weight: Optional[torch.Tensor] = None,
         **kwargs
     ):
         """Fits the model on the training data.

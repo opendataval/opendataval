@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Callable, TypeVar, Union
+from typing import Callable, ClassVar, Optional, TypeVar, Union
 
 import numpy as np
 import torch
@@ -56,9 +56,9 @@ class DataEvaluator(ABC):
         Cached data values, used by :py:mod:`opendataval.experiment.exper_methods`
     """
 
-    Evaluators: dict[str, Self] = {}
+    Evaluators: ClassVar[dict[str, Self]] = {}
 
-    def __init__(self, random_state: RandomState = None, *args, **kwargs):
+    def __init__(self, random_state: Optional[RandomState] = None, *args, **kwargs):
         self.random_state = check_random_state(random_state)
 
     def __init_subclass__(cls, *args, **kwargs):
@@ -163,7 +163,7 @@ class DataEvaluator(ABC):
         self,
         fetcher: DataFetcher,
         pred_model: Model,
-        metric: Callable[[torch.Tensor, torch.Tensor], float] = None,
+        metric: Optional[Callable[[torch.Tensor, torch.Tensor], float]] = None,
     ):
         """Iputs model, metric and data into Data Evaluator.
 
@@ -201,7 +201,7 @@ class DataEvaluator(ABC):
         self,
         fetcher: DataFetcher,
         pred_model: Model,
-        metric: Callable[[torch.Tensor, torch.Tensor], float] = None,
+        metric: Optional[Callable[[torch.Tensor, torch.Tensor], float]] = None,
         *args,
         **kwargs,
     ):

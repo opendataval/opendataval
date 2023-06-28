@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
@@ -16,7 +18,7 @@ class RandomEvaluator(DataEvaluator):
         Random initial state, by default None
     """
 
-    def __init__(self, random_state: RandomState = None):
+    def __init__(self, random_state: Optional[RandomState] = None):
         self.random_state = check_random_state(random_state)
 
     def train_data_values(self, *args, **kwargs):

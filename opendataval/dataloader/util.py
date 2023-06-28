@@ -1,4 +1,4 @@
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, Callable, Optional, Sequence, TypeVar
 
 from torch.utils.data import Dataset
 
@@ -53,7 +53,7 @@ class IndexTransformDataset(Dataset[T_co]):
     def __init__(
         self,
         dataset: Dataset[T_co],
-        index_transformation: Callable[[T_co, int], T_co] = None,
+        index_transformation: Optional[Callable[[T_co, int], T_co]] = None,
     ):
         self.dataset = dataset
         self._transform = index_transformation
