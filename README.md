@@ -243,5 +243,5 @@ Distributed under the MIT License. See [`LICENSE.txt`][license-url] for more inf
 [release-shield]: https://img.shields.io/github/v/release/opendataval/opendataval?style=for-the-badge
 [release-url]: https://github.com/opendataval/opendataval/releases
 <!-- Pytest Coverage Comment:Begin -->
-[coverage_badge]: https://img.shields.io/badge/Coverage-82%25-green.svg?style=for-the-badge
+[coverage_badge]: https://img.shields.io/badge/Coverage-25-.svg?style=for-the-badge
 <!-- Pytest Coverage Comment:End -->
