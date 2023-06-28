@@ -3,7 +3,7 @@ import pathlib
 import time
 import warnings
 from datetime import timedelta
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 import pandas as pd
 import torch
@@ -47,9 +47,9 @@ class ExperimentMediator:
         self,
         fetcher: DataFetcher,
         pred_model: Model,
-        train_kwargs: dict[str, Any] = None,
-        metric_name: str = None,
-        output_dir: Union[str, pathlib.Path] = None,
+        train_kwargs: Optional[dict[str, Any]] = None,
+        metric_name: Optional[str] = None,
+        output_dir: Optional[Union[str, pathlib.Path]] = None,
     ):
         self.fetcher = fetcher
         self.pred_model = pred_model
@@ -69,18 +69,18 @@ class ExperimentMediator:
     def setup(
         cls,
         dataset_name: str,
-        cache_dir: Union[str, pathlib.Path] = None,
+        cache_dir: Optional[Union[str, pathlib.Path]] = None,
         force_download: bool = False,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
         test_count: Union[int, float] = 0,
         add_noise: Union[Callable[[DataFetcher], dict[str, Any]], str] = mix_labels,
-        noise_kwargs: dict[str, Any] = None,
-        random_state: RandomState = None,
-        pred_model: Model = None,
-        train_kwargs: dict[str, Any] = None,
-        metric_name: str = None,
-        output_dir: Union[str, pathlib.Path] = None,
+        noise_kwargs: Optional[dict[str, Any]] = None,
+        random_state: Optional[RandomState] = None,
+        pred_model: Optional[Model] = None,
+        train_kwargs: Optional[dict[str, Any]] = None,
+        metric_name: Optional[str] = None,
+        output_dir: Optional[Union[str, pathlib.Path]] = None,
     ):
         """Create a DataFetcher from args and passes it into the init."""
         random_state = check_random_state(random_state)
@@ -110,19 +110,19 @@ class ExperimentMediator:
     def model_factory_setup(
         cls,
         dataset_name: str,
-        cache_dir: Union[str, pathlib.Path] = None,
+        cache_dir: Optional[Union[str, pathlib.Path]] = None,
         force_download: bool = False,
         train_count: Union[int, float] = 0,
         valid_count: Union[int, float] = 0,
         test_count: Union[int, float] = 0,
         add_noise: Union[Callable[[DataFetcher], dict[str, Any]], str] = mix_labels,
-        noise_kwargs: dict[str, Any] = None,
-        random_state: RandomState = None,
-        model_name: str = None,
+        noise_kwargs: Optional[dict[str, Any]] = None,
+        random_state: Optional[RandomState] = None,
+        model_name: Optional[str] = None,
         device: torch.device = torch.device("cpu"),
-        train_kwargs: dict[str, Any] = None,
-        metric_name: str = None,
-        output_dir: Union[str, pathlib.Path] = None,
+        train_kwargs: Optional[dict[str, Any]] = None,
+        metric_name: Optional[str] = None,
+        output_dir: Optional[Union[str, pathlib.Path]] = None,
     ):
         """Set up ExperimentMediator from ModelFactory using an input string.
 
@@ -318,8 +318,8 @@ class ExperimentMediator:
     def plot(
         self,
         exper_func: Callable[[DataEvaluator, DataFetcher, Axes, ...], dict[str, Any]],
-        figure: Figure = None,
-        row: int = None,
+        figure: Optional[Figure] = None,
+        row: Optional[int] = None,
         col: int = 2,
         include_train: bool = False,
         save_output: bool = False,

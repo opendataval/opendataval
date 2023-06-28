@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import tqdm
@@ -38,8 +40,8 @@ class KNNShapley(DataEvaluator, ModelLessMixin):
         self,
         k_neighbors: int = 10,
         batch_size: int = 32,
-        embedding_model: Model = None,
-        random_state: RandomState = None,
+        embedding_model: Optional[Model] = None,
+        random_state: Optional[RandomState] = None,
     ):
         self.k_neighbors = k_neighbors
         self.batch_size = batch_size

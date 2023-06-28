@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Optional
 
 import numpy as np
 import torch
@@ -37,7 +38,7 @@ class DataOob(DataEvaluator):
         self,
         num_models: int = 1000,
         proportion: int = 1.0,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         self.num_models = num_models
         self.proportion = proportion

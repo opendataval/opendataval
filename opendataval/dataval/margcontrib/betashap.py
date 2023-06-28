@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from numpy.random import RandomState
 from scipy.special import beta
@@ -45,10 +47,10 @@ class BetaShapley(ShapEvaluator):
         max_mc_epochs: int = 100,
         models_per_iteration: int = 100,
         mc_epochs: int = 1000,
-        cache_name: str = None,
+        cache_name: Optional[str] = None,
         alpha: int = 4,
         beta: int = 1,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         super().__init__(
             gr_threshold=gr_threshold,

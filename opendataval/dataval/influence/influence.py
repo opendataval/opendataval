@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import tqdm
@@ -36,7 +38,7 @@ class InfluenceFunctionEval(DataEvaluator):
         self,
         num_models: int = 1000,
         proportion: float = 0.7,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         self.num_models = num_models
         self.proportion = proportion

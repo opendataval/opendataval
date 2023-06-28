@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from numpy.random import RandomState
 
@@ -37,8 +39,8 @@ class DataShapley(ShapEvaluator):
         max_mc_epochs: int = 100,
         models_per_iteration: int = 100,
         mc_epochs: int = 1000,
-        cache_name: str = None,
-        random_state: RandomState = None,
+        cache_name: Optional[str] = None,
+        random_state: Optional[RandomState] = None,
     ):
         super().__init__(
             gr_threshold=gr_threshold,

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import tqdm
@@ -28,7 +30,9 @@ class AME(DataEvaluator):
         Random initial state, by default None
     """
 
-    def __init__(self, num_models: int = 1000, random_state: RandomState = None):
+    def __init__(
+        self, num_models: int = 1000, random_state: Optional[RandomState] = None
+    ):
         self.num_models = num_models
         self.random_state = check_random_state(random_state)
 
@@ -107,7 +111,7 @@ class BaggingEvaluator(DataEvaluator):
         self,
         num_models: int = 1000,
         proportion: float = 1.0,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         self.num_models = num_models
         self.proportion = proportion

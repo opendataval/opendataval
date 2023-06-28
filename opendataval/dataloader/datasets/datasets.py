@@ -247,4 +247,3 @@ def download_nomao():
 def download_creditcard():
     """Categorical data set registered as ``"creditcard"``."""
     return load_openml(data_id=42477)
-

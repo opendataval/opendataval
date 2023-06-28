@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Optional
 
 import numpy as np
 import torch
@@ -57,7 +58,7 @@ class DVRL(DataEvaluator):
         lr: float = 0.01,
         threshold: float = 0.9,
         device: torch.device = torch.device("cpu"),
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         # Value estimator parameters
         self.hidden_dim = hidden_dim
@@ -321,7 +322,7 @@ class DataValueEstimatorRL(nn.Module):
         hidden_dim: int,
         layer_number: int,
         comb_dim: int,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         super().__init__()
 

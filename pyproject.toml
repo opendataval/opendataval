@@ -53,7 +53,7 @@ dev = [
     "hatch~=1.7.0",
     "pip-tools~=6.13.0",
     "pre-commit~=3.2",
-    "ruff~=0.0.2",
+    "ruff~=0.0.275",
     "sphinx~=6.1"
 ]
 test = [

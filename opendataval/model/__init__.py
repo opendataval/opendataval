@@ -84,6 +84,8 @@ Default Hyperparameters
     \end{array}
 """
 # Model Factory imports
+from typing import Optional
+
 import torch
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression as SkLogReg
@@ -108,7 +110,7 @@ from opendataval.model.mlp import ClassifierMLP, RegressionMLP
 
 def ModelFactory(
     model_name: str,
-    fetcher: DataFetcher = None,
+    fetcher: Optional[DataFetcher] = None,
     device: torch.device = torch.device("cpu"),
     *args,
     **kwargs,

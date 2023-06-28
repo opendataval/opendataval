@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 import torch
 import torch.nn as nn
@@ -75,7 +75,9 @@ class BertClassifier(Model, nn.Module):
             for param in layer.parameters():
                 param.requires_grad = False
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None):
+    def forward(
+        self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None
+    ):
         """Forward pass through DistilBert with inputs from DistilBERT tokenizer output.
 
         NOTE this is only applicable for a DistilBERT model that doesn't require
@@ -151,7 +153,7 @@ class BertClassifier(Model, nn.Module):
         self,
         x_train: Dataset[Union[str, list[str]]],
         y_train: torch.Tensor,
-        sample_weight: torch.Tensor = None,
+        sample_weight: Optional[torch.Tensor] = None,
         batch_size: int = 32,
         epochs: int = 1,
         lr: float = 0.001,

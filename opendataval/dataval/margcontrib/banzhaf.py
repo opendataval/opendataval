@@ -1,4 +1,5 @@
 from itertools import accumulate
+from typing import Optional
 
 import numpy as np
 import torch
@@ -28,7 +29,9 @@ class DataBanzhaf(DataEvaluator):
         Random initial state, by default None
     """
 
-    def __init__(self, num_models: int = 1000, random_state: RandomState = None):
+    def __init__(
+        self, num_models: int = 1000, random_state: Optional[RandomState] = None
+    ):
         self.num_models = num_models
         self.random_state = check_random_state(random_state)
 
@@ -164,8 +167,8 @@ class DataBanzhafMargContrib(ShapEvaluator):
         max_mc_epochs: int = 100,
         models_per_iteration: int = 100,
         mc_epochs: int = 1000,
-        cache_name: str = None,
-        random_state: RandomState = None,
+        cache_name: Optional[str] = None,
+        random_state: Optional[RandomState] = None,
     ):
         super().__init__(
             gr_threshold=gr_threshold,

@@ -3,7 +3,7 @@ import time
 from datetime import timedelta
 from enum import Enum
 from functools import update_wrapper
-from typing import Callable, Generic, TypeVar
+from typing import Callable, Generic, Optional, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ def load_mediator_output(filepath: str):
     return pd.read_csv(filepath, index_col=[0])
 
 
-def set_random_state(random_state: RandomState = None) -> RandomState:
+def set_random_state(random_state: Optional[RandomState] = None) -> RandomState:
     """Set the random state of opendataval, useful for recreation of results."""
     print(f"Initial random seed is: {random_state}.")
     torch.manual_seed(check_random_state(random_state).tomaxint())
@@ -46,7 +46,7 @@ X, Y = TypeVar("X"), TypeVar("Y")
 
 
 class wrapper(str, Generic[X, Y]):
-    def __new__(cls, function: Callable[[X, ...], Y], name: str = None):
+    def __new__(cls, function: Callable[[X, ...], Y], name: Optional[str] = None):
         """Wrapper is a walks and talks like a str but can be called with the func."""
         out = str.__new__(cls, function.__name__ if name is None else name)
         out.function = function
@@ -64,9 +64,9 @@ class FuncEnum(StrEnum):
     """Creating a Enum of functions identifiable by a string."""
 
     @staticmethod
-    def wrap(function: Callable[[X, ...], Y], name: str = None) -> wrapper[X, Y]:
+    def wrap(func: Callable[[X, ...], Y], name: Optional[str] = None) -> wrapper[X, Y]:
         """Function wrapper: class functions are seen as methods and str conversion."""
-        return wrapper(function, name)
+        return wrapper(func, name)
 
     def __call__(self, *args, **kwargs) -> Y:
         """Redirecting the function call."""
