@@ -176,6 +176,6 @@ def ModelFactory(
             KNeighborsClassifier, label_dim[0], label_dim[0], *args, **kwargs
         )
     elif model_name == "sklinreg":
-        return RegressionSkLearnWrapper(LinearRegression, label_dim[0], *args, **kwargs)
+        return RegressionSkLearnWrapper(LinearRegression, *args, **kwargs)
     else:
         raise ValueError(f"{model_name} is not a valid predefined model")
