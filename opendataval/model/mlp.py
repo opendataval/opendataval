@@ -92,7 +92,7 @@ class RegressionMLP(TorchRegressMixin, TorchPredictMixin):
     def __init__(
         self,
         input_dim: int,
-        num_classes: int,
+        num_classes: int = 1,
         layers: int = 5,
         hidden_dim: int = 25,
         act_fn: Optional[Callable] = None,

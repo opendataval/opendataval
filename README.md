@@ -43,6 +43,7 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
 | **[Models](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/model/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.model.html#module-opendataval.model) | Support available for sk-learn models |
 | **[Data Evaluators](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataval/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataval.html#module-opendataval.dataval) | |
 | **[Experiments](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/experiment/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.experiment.html#module-opendataval.experiment) | |
+| **[Examples](https://github.com/kevinfjiang/opendataval/tree/main/examples/readme.md)** | Stable | | |
 | **[CLI](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/__main__.py)** | Experimental | `opendataval --help` | No support for null values |
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>

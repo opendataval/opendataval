@@ -1,18 +1,15 @@
 ## `Examples`
-We offer a comprehensive collection of user-friendly notebook examples that greatly simplify the utilization of data values in practical data analysis. Our notebooks cover a wide range of data domains, including image and text analysis as well as various models (logistic regression, BERT, ResNet, Random Forest, Gradient Boosting, ...). Below, you'll find a summary of the current examples provided by `opendataval`:
+We provide easy-to-follow notebook examples to facilitate the use of data values in practical data analysis. Our notebooks covers diverse domains of data, from image to text. The following table summarizes the current examples `opendataval` provides!
 
 | Task | Datasets | Prediction Model | Notes |
 |---------|--------|-------|-------|
-| classification | adult | LogisticRegression | Tabular, label noise |
-| classification | nomao | LogisticRegression | Tabular, label noise, F1-score |
-| classification | synthetic | RandomForest | Custom Dataset, label noise |
-| classification | pol | Gradient Boosting | Tabular, label noise, custom model paramters |
-| classification | BBC-embeddings | DistilBertModel + LogisticRegression | Text, feature noise |
-| classification | IMDB-embeddings | DistilBertModel + LogisticRegression | Text, label noise |
-| classification | CIFAR-embeddings | ResNet50 + LogisticRegression | Images, label noise |
+| classification | adult | LogisticRegression | Tabular |
+| classification | random | RandomForest | Custom Tabular Dataset |
+| classification | BBC-embeddings | DistilBertModel + LogisticRegression | Text |
 | classification | BBC | DistilBertModel | Text (very slow; not recommended) |
-| regression | diabetes | LinearRegression | Tabular, feature noise |
-| regression | wave_energy | Gradient Boosting | Tabular, feature noise |
-| regression | stock | Multi-Layer Perceptron | Tabular, feature noise |
+| classification | CIFAR-embeddings | ResNet50 + LogisticRegression | Images |
+| regression | diabetes | LinearRegression | Tabular |
+| regression | wave_energy | Gradient Boosting | Tabular |
+| regression | stock | Multi-Layer Perceptron | Tabular |
 
-Are you interested in sharing your data analysis? Please see our [Contribution page](https://github.com/opendataval/opendataval/blob/main/CONTRIBUTING.md).
+Are you interested in sharing your data analysis? Please see our [Contribution page](https://github.com/kevinfjiang/opendataval/blob/main/CONTRIBUTING.md).
