@@ -85,7 +85,7 @@ def ResnetEmbeding(
 
         # Resnet inputs expect `img2vec_transforms`ed images as input
         dataset = dataset_class(
-            root=cache_dir.replace("-embeddings", ""),  # Uses original embedding cache
+            root=cache_dir,
             download=force_download or not cache_dir.exists(),
             transform=img2vec_transforms,
             *args,

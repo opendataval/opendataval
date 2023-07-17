@@ -57,15 +57,26 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
         labels = labels[subset[:MAX_DATASET_SIZE]]
         entries = [entry for entry in dataset[subset[:MAX_DATASET_SIZE]]]
 
+        # Slow down on gpu vs cpu is quite substantial, uses gpu accel if available
+        device = torch.device(
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+
         tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_PRETRAINED_NAME)
-        bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME)
+        bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME).to(device)
 
         res = tokenizer.__call__(
             entries, max_length=200, padding=True, truncation=True, return_tensors="pt"
-        )
+        ).to(device)
 
         with torch.no_grad():
-            pooled_embeddings = bert_model(res.input_ids, res.attention_mask)[0][:, 0]
+            pooled_embeddings = (
+                (bert_model(res.input_ids, res.attention_mask)[0]).detach().cpu()[:, 0]
+            )
 
         torch.save(pooled_embeddings.detach(), embed_path)
         return pooled_embeddings, np.array(labels)

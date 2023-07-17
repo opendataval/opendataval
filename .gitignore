@@ -89,3 +89,7 @@ tmp_*/
 tmp/
 csv/
 kaggle.json
+
+demo/
+demo*.ipynb
+

@@ -9,6 +9,8 @@ References
 .. [1] C. G. Northcutt, A. Athalye, and J. Mueller,
     Pervasive Label Errors in Test Sets Destabilize Machine Learning Benchmarks
     arXiv.org, 2021. [Online]. Available: https://arxiv.org/abs/2103.14749.
+
+UNDER CONSTRUCTION
 """
 import glob
 import tarfile
@@ -69,10 +71,10 @@ imagenet_embed = Register("imagenet-val-embeddings", True, True)(ResnetEmbeding(
 cifar10 = Register("cifar10-val", True, True)(VisionAdapter(CIFAR10), train=False)
 """Vision Classification registered as ``"cifar10-val"``, from TorchVision."""
 
-cifar10_embed = Register("cifar10-val-embeddings", True, True)(ResnetEmbeding(CIFAR100), train=False)
+cifar10_embed = Register("cifar10-val-embeddings", True, True)(ResnetEmbeding(CIFAR10), train=False)
 """Vision Classification registered as ``"cifar10-val-embeddings"`` ResNet50 embeddings"""
 
-cifar100 = Register("cifar100-val", True, True)(VisionAdapter(CIFAR10), train=False)
+cifar100 = Register("cifar100-val", True, True)(VisionAdapter(CIFAR100), train=False)
 """Vision Classification registered as ``"cifar100-val"``, from TorchVision."""
 
 cifar100_embed = Register("cifar100-val-embeddings", True, True)(ResnetEmbeding(CIFAR100), train=False)

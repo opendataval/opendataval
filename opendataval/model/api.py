@@ -459,6 +459,7 @@ class RegressionSkLearnWrapper(Model):
 
     def __init__(self, base_model, *args, **kwargs):
         self.model = base_model(*args, **kwargs)
+        self.num_classes = 1
 
     def fit(
         self,

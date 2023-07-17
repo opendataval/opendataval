@@ -258,7 +258,9 @@ class DataFetcher:
         """
         x_trn, x_val, x_test = self.x_train, self.x_valid, self.x_test
 
-        if not isinstance(self.x_train, Dataset):  # Turns arrays -> cpu tensors
+        if not isinstance(self.x_train, Dataset) and not isinstance(
+            self.x_train, torch.Tensor
+        ):  # Turns arrays -> cpu tensors
             x_trn = torch.tensor(x_trn, dtype=torch.float).view(-1, *self.covar_dim)
             x_val = torch.tensor(x_val, dtype=torch.float).view(-1, *self.covar_dim)
             x_test = torch.tensor(x_test, dtype=torch.float).view(-1, *self.covar_dim)

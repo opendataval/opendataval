@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler, minmax_scale
 from opendataval.dataloader.register import Register, cache
 
 
-def load_openml(data_id: int):
+def load_openml(data_id: int, is_classification=True):
     """load openml datasets.
 
     A help function to load openml datasets with OpenML ID.
@@ -25,7 +25,13 @@ def load_openml(data_id: int):
         X, y = dataset["data"][:, noncategory_indices], dataset["target"]
     else:
         X, y = dataset["data"], dataset["target"]
-    list_of_classes, y = np.unique(y, return_inverse=True)
+
+    # label transformation
+    if is_classification is True:
+        list_of_classes, y = np.unique(y, return_inverse=True)
+    else:
+        y = (y - np.mean(y)) / (np.std(y) + 1e-8)
+
     X = (X - np.mean(X, axis=0)) / (np.std(X, axis=0) + 1e-8)  # standardization
     return X, y
 
@@ -206,7 +212,7 @@ def download_linnerud():
     return ds.load_linnerud(return_X_y=True)
 
 
-# OpenML Datasets
+# OpenML Classification Datasets
 @Register("2dplanes", one_hot=True)
 def download_2dplanes():
     """Categorical data set registered as ``"2dplanes"``."""
@@ -247,3 +253,34 @@ def download_nomao():
 def download_creditcard():
     """Categorical data set registered as ``"creditcard"``."""
     return load_openml(data_id=42477)
+
+
+# OpenML Regression Datasets
+@Register("wave_energy")
+def download_wave_energy():
+    """Regression data set registered as ``"wave_energy"``."""
+    return load_openml(data_id=44975, is_classification=False)
+
+
+@Register("lowbwt")
+def download_lowbwt():
+    """Regression data set registered as ``"lowbwt"``."""
+    return load_openml(data_id=1193, is_classification=False)
+
+
+@Register("mv")
+def download_mv():
+    """Regression data set registered as ``"mv"``."""
+    return load_openml(data_id=344, is_classification=False)
+
+
+@Register("stock")
+def download_stock():
+    """Regression data set registered as ``"stock"``."""
+    return load_openml(data_id=1200, is_classification=False)
+
+
+@Register("echoMonths")
+def download_echoMonths():
+    """Regression data set registered as ``"echoMonths"``."""
+    return load_openml(data_id=1199, is_classification=False)
