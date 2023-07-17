@@ -1,5 +1,5 @@
 ## `Examples`
-We provide easy-to-follow notebook examples to facilitate the use of data values in practical data analysis. Our notebooks covers diverse domains of data, from image to text. The following table summarizes the current examples `opendataval` provides!
+We offer a comprehensive collection of user-friendly notebook examples that greatly simplify the utilization of data values in practical data analysis. Our notebooks cover a wide range of data domains, including image and text analysis as well as various models (logistic regression, BERT, ResNet, Random Forest, Boosting, ...). Below, you'll find a summary of the current examples provided by `opendataval`:
 
 | Task | Datasets | Prediction Model | Notes |
 |---------|--------|-------|-------|
