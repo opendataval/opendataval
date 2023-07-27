@@ -92,4 +92,5 @@ kaggle.json
 
 demo/
 demo*.ipynb
+.DS_STORE
 

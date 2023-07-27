@@ -22,7 +22,7 @@ def _challenge_ids(challenge: str) -> list[dict[str, str]]:
     return requests.get(f"{CHALLENGE_URL}/{challenge}").json()
 
 
-def download_drive(name: str, drive_id: str, cache_dir: Path, force_download: str):
+def download_drive(name: str, drive_id: str, cache_dir: Path, force_download: bool):
     """Downloads file from google drive with set retry attempts."""
     download_url = _dataset_url(drive_id)
     cache_dir = Path(cache_dir)
@@ -47,7 +47,7 @@ def basename(file_name: str):
 
 @Register("challenge-iris", cacheable=True, one_hot=True, presplit=True)
 def iris_challenge(cache_dir: str, force_download: bool):
-    drive_ids = _challenge_ids("challenge-iris")
+    drive_ids = _challenge_ids("ChallengeIris")
 
     data = {}
     for row in drive_ids:
