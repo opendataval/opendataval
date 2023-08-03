@@ -1,14 +1,18 @@
+import json
 import warnings
 from itertools import accumulate, chain
+from pathlib import Path
 from typing import Any, Callable, Optional, Sequence, TypeVar, Union
 
 import numpy as np
+import pandas as pd
 import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import DataLoader, Dataset, Subset
 
 from opendataval.dataloader.register import Register
+from opendataval.dataloader.util import CatDataset
 
 Self = TypeVar("Self")
 
@@ -483,3 +487,51 @@ class DataFetcher:
         self.noisy_train_indices = noisy_data.get("noisy_train_indices", np.array([]))
 
         return self
+
+    def export_dataset(
+        self,
+        covariates_names: list[str],
+        labels_names: list[str],
+        output_directory: Path = Path.cwd(),
+    ):
+        if isinstance(covariates_names, str):
+            covariates_names = [covariates_names]
+        if isinstance(labels_names, str):
+            labels_names = [labels_names]
+        if not isinstance(output_directory, Path):
+            output_directory = Path(output_directory)
+        if not output_directory.exists():
+            output_directory.mkdir(parents=True)
+
+        columns = covariates_names + labels_names
+        x_train, x_valid, x_test = self.x_train, self.x_valid, self.x_test
+        y_train, y_valid, y_test = self.y_train, self.y_valid, self.y_test
+
+        if self.one_hot:
+            y_train = np.argmax(y_train, axis=1, keepdims=True) if y_train.size else []
+            y_valid = np.argmax(y_valid, axis=1, keepdims=True) if y_valid.size else []
+            y_test = np.argmax(y_test, axis=1, keepdims=True) if y_test.size else []
+
+        def generate_data(covariates, labels):
+            data = CatDataset(covariates, labels)
+            for cov, lab in DataLoader(data, batch_size=1, shuffle=False):
+                yield from np.hstack((cov, lab))
+
+        def save_to_csv(data, file_name):
+            file_path = output_directory / file_name
+            pd.DataFrame(data, columns=columns).to_csv(file_path, index=False)
+
+        save_to_csv(generate_data(x_train, y_train), "train.csv")
+        save_to_csv(generate_data(x_valid, y_valid), "valid.csv")
+        save_to_csv(generate_data(x_test, y_test), "test.csv")
+
+        noisy_indices = (
+            self.noisy_train_indices.tolist()
+            if hasattr(self, "noisy_train_indices")
+            else []
+        )
+        out_path = output_directory / f"noisy-indices-{self.dataset.dataset_name}.json"
+        with open(out_path, "w+") as f:
+            json.dump(noisy_indices, f)
+
+        return
