@@ -11,9 +11,11 @@ Subpackages
    opendataval.dataval.dvrl
    opendataval.dataval.influence
    opendataval.dataval.knnshap
+   opendataval.dataval.lava
    opendataval.dataval.margcontrib
    opendataval.dataval.oob
    opendataval.dataval.random
+   opendataval.dataval.volume
 
 Submodules
 ----------

@@ -42,6 +42,7 @@ from opendataval.dataval.lava import LavaEvaluator
 from opendataval.dataval.margcontrib import (
     BetaShapley,
     DataBanzhaf,
+    DataBanzhafMargContrib,
     DataShapley,
     LeaveOneOut,
     ShapEvaluator,

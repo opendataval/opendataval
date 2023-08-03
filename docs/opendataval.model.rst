@@ -44,14 +44,6 @@ opendataval.model.mlp module
    :undoc-members:
    :show-inheritance:
 
-opendataval.model.resnet module
--------------------------------
-
-.. automodule:: opendataval.model.resnet
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

@@ -10,23 +10,21 @@ import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-from sklearn.cluster import KMeans
-from sklearn.metrics import f1_score
 from torch.utils.data import Subset
 
 from opendataval.dataloader import DataFetcher
 from opendataval.dataval import DataEvaluator
+from opendataval.experiment.util import f1_score, oned_twonn_clustering
 
 
 def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str, float]:
     """Evaluate ability to identify noisy indices.
 
     Compute F1 score (of 2NN classifier) of the data evaluator
-    on the noisy indices. Noisy indices will be labeled 1 for the positives,
-    while non-Noisy are labeled zero. KMeans labels are random, but because
-    of the convexity the highest data point and lowest data point have different
-    labels and belong to the most valuable/least valuable group. Thus, the least
-    valuable group will be set to 1 and most valuable to zero for the F1 score.
+    on the noisy indices. KMeans labels are random, but because of the convexity of
+    KMeans, the highest data point and lowest data point have different labels and
+    belong to the most valuable/least valuable group. Thus, the least valuable group
+    will be in one group and most valuable to zero for the F1 score.
 
     Parameters
     ----------
@@ -46,23 +44,8 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
     data_values = evaluator.data_values
     noisy_train_indices = fetcher.noisy_train_indices
 
-    num_points = len(data_values)
-    sorted_indices = np.argsort(data_values)
-
-    # Computes F1 of a KMeans(k=2) classifier of the data values
-    kmeans = KMeans(n_clusters=2, n_init="auto").fit(data_values.reshape(-1, 1))
-
-    # Because of the convexity of KMeans classification, the least valuable data point
-    # will always belong to one cluster, while the most valuable will belong to another.
-    labels = (  # If the least valuable group isn't labeled as 1, flips the labels
-        kmeans.labels_ if kmeans.labels_[sorted_indices[0]] == 1 else 1 - kmeans.labels_
-    )
-
-    # Noisy group is what we're trying to detect, which is why it's set to the positives
-    validation = np.zeros(shape=(num_points,))
-    validation[noisy_train_indices] = 1
-
-    f1_kmeans_label = f1_score(labels, validation)
+    unvaluable, _ = oned_twonn_clustering(data_values.flatten())
+    f1_kmeans_label = f1_score(unvaluable, noisy_train_indices, len(data_values))
 
     return {"kmeans_f1": f1_kmeans_label}
 

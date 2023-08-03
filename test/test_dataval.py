@@ -7,10 +7,25 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher, mix_labels
-from opendataval.dataval.random import RandomEvaluator
+
+# Data Evaluators
+from opendataval.dataval import (
+    AME,
+    DVRL,
+    BetaShapley,
+    DataBanzhaf,
+    DataBanzhafMargContrib,
+    DataOob,
+    DataShapley,
+    InfluenceFunctionEval,
+    KNNShapley,
+    LavaEvaluator,
+    LeaveOneOut,
+    RandomEvaluator,
+    RobustVolumeShapley,
+)
 from opendataval.experiment import ExperimentMediator, discover_corrupted_sample
 from opendataval.model import Model
-from opendataval.presets import dummy_evaluators
 from opendataval.util import set_random_state
 
 
@@ -70,3 +85,26 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
                 data_val.evaluate_data_values(),
             )
         )
+
+
+# fmt: off
+# ruff: noqa: E501 D103
+# Dummy evaluators used for low iteration training, for testing
+RANDOM_STATE = set_random_state(10)  # Constant random state for testing
+
+dummy_evaluators = [
+    AME(2, random_state=RANDOM_STATE),  # For lasso, minimum needs 5 for split
+    DVRL(1, rl_epochs=1, random_state=RANDOM_STATE),
+    DataOob(1, random_state=RANDOM_STATE),
+    InfluenceFunctionEval(1, random_state=RANDOM_STATE),
+    KNNShapley(5, random_state=RANDOM_STATE),
+    LeaveOneOut(random_state=RANDOM_STATE),
+    LavaEvaluator(random_state=RANDOM_STATE),
+    DataBanzhaf(num_models=1, random_state=RANDOM_STATE),
+    DataBanzhafMargContrib(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    BetaShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    DataShapley(cache_name="cache_preset", random_state=RANDOM_STATE),
+    DataShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset_other", random_state=RANDOM_STATE),
+    RandomEvaluator(random_state=RANDOM_STATE),
+    RobustVolumeShapley(5, robust=False, random_state=RANDOM_STATE)
+]
