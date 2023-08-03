@@ -31,6 +31,7 @@ Catalog
     LeaveOneOut
     ShapEvaluator
     RandomEvaluator
+    RobustVolumeShapley
 """
 from opendataval.dataval.ame import AME
 from opendataval.dataval.api import DataEvaluator
@@ -47,3 +48,4 @@ from opendataval.dataval.margcontrib import (
 )
 from opendataval.dataval.oob import DataOob
 from opendataval.dataval.random import RandomEvaluator
+from opendataval.dataval.volume import RobustVolumeShapley

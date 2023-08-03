@@ -37,6 +37,11 @@ class LavaEvaluator(DataEvaluator, ModelLessMixin):
         Tensor device for acceleration, by default torch.device("cpu")
     random_state: RandomState, optional
         Random initial state, by default None
+
+    Mixins
+    ------
+    ModelLessMixin
+        Mixin for a data evaluator that doesn't require a model or evaluation metric.
     """
 
     def __init__(
