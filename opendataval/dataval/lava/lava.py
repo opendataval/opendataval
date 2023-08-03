@@ -5,7 +5,7 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from opendataval.dataval.api import DataEvaluator, EmbeddingMixin
+from opendataval.dataval.api import DataEvaluator, ModelLessMixin
 from opendataval.dataval.lava.otdd import DatasetDistance, FeatureCost
 from opendataval.model import Model
 
@@ -22,7 +22,7 @@ def macos_fix():
         os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
-class LavaEvaluator(DataEvaluator, EmbeddingMixin):
+class LavaEvaluator(DataEvaluator, ModelLessMixin):
     """Data valuation using LAVA implementation.
 
     References
@@ -37,11 +37,6 @@ class LavaEvaluator(DataEvaluator, EmbeddingMixin):
         Tensor device for acceleration, by default torch.device("cpu")
     random_state: RandomState, optional
         Random initial state, by default None
-
-    Mixins
-    ------
-    EmbeddingMixin
-        Mixin for a data evaluator to possibly use an embedding model.
     """
 
     def __init__(
@@ -92,7 +87,7 @@ class LavaEvaluator(DataEvaluator, EmbeddingMixin):
             y_train=self.y_train,
             x_valid=x_valid,
             y_valid=self.y_valid,
-            feature_cost=feature_cost if feature_cost else "euclidean",
+            feature_cost=feature_cost if feature_cost else None,
             lam_x=1.0,
             lam_y=1.0,
             p=2,
@@ -117,8 +112,4 @@ class LavaEvaluator(DataEvaluator, EmbeddingMixin):
         f1k = self.dual_sol[0].squeeze()
         num_points = len(f1k) - 1
         train_gradient = f1k * (1 + 1 / (num_points)) - f1k.sum() / num_points
-
-        # We multiply -1 to align LAVA with other data valuation algorithms
-        # Low values should indicate detrimental data points
-        train_gradient = -1 * train_gradient
         return train_gradient.numpy(force=True)

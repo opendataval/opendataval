@@ -27,6 +27,7 @@ Catalog
     DataBanzhaf
     BetaShapley
     DataShapley
+    LavaEvaluator
     LeaveOneOut
     ShapEvaluator
     RandomEvaluator
@@ -36,6 +37,7 @@ from opendataval.dataval.api import DataEvaluator
 from opendataval.dataval.dvrl import DVRL
 from opendataval.dataval.influence import InfluenceFunctionEval
 from opendataval.dataval.knnshap import KNNShapley
+from opendataval.dataval.lava import LavaEvaluator
 from opendataval.dataval.margcontrib import (
     BetaShapley,
     DataBanzhaf,

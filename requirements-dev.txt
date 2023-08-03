@@ -6,6 +6,8 @@
 #
 alabaster==0.7.13
     # via sphinx
+anyio==3.7.1
+    # via httpcore
 attrs==22.2.0
     # via pytest
 babel==2.12.1
@@ -16,6 +18,8 @@ build==0.10.0
     # via pip-tools
 certifi==2022.12.7
     # via
+    #   httpcore
+    #   httpx
     #   kaggle
     #   requests
 cfgv==3.3.1
@@ -25,9 +29,11 @@ charset-normalizer==3.1.0
 click==8.1.3
     # via
     #   black
+    #   hatch
     #   opendatasets
     #   pip-tools
     #   typer
+    #   userpath
 contourpy==1.0.7
     # via matplotlib
 cycler==0.11.0
@@ -36,6 +42,8 @@ distlib==0.3.6
     # via virtualenv
 docutils==0.19
     # via sphinx
+editables==0.5
+    # via hatchling
 filelock==3.11.0
     # via
     #   huggingface-hub
@@ -46,16 +54,38 @@ fonttools==4.39.3
     # via matplotlib
 fsspec==2023.5.0
     # via huggingface-hub
+geomloss==0.2.6
+    # via opendataval (pyproject.toml)
+h11==0.14.0
+    # via httpcore
+hatch==1.7.0
+    # via opendataval (pyproject.toml)
+hatchling==1.18.0
+    # via hatch
+httpcore==0.17.3
+    # via httpx
+httpx==0.24.1
+    # via hatch
 huggingface-hub==0.14.1
     # via transformers
+hyperlink==21.0.0
+    # via hatch
 identify==2.5.22
     # via pre-commit
 idna==3.4
-    # via requests
+    # via
+    #   anyio
+    #   httpx
+    #   hyperlink
+    #   requests
 imagesize==1.4.1
     # via sphinx
+importlib-metadata==6.8.0
+    # via keyring
 iniconfig==2.0.0
     # via pytest
+jaraco-classes==3.3.0
+    # via keyring
 jinja2==3.1.2
     # via
     #   sphinx
@@ -64,12 +94,22 @@ joblib==1.2.0
     # via scikit-learn
 kaggle==1.5.13
     # via opendatasets
+keopscore==2.1.2
+    # via pykeops
+keyring==24.2.0
+    # via hatch
 kiwisolver==1.4.4
     # via matplotlib
+markdown-it-py==3.0.0
+    # via rich
 markupsafe==2.1.2
     # via jinja2
 matplotlib==3.7.1
     # via opendataval (pyproject.toml)
+mdurl==0.1.2
+    # via markdown-it-py
+more-itertools==10.0.0
+    # via jaraco-classes
 mpmath==1.3.0
     # via sympy
 multimethod==1.9.1
@@ -85,10 +125,12 @@ nodeenv==1.7.0
 numpy==1.24.2
     # via
     #   contourpy
+    #   geomloss
     #   matplotlib
     #   opendataval (pyproject.toml)
     #   pandas
     #   pandera
+    #   pykeops
     #   scikit-learn
     #   scipy
     #   torchvision
@@ -98,6 +140,8 @@ opendatasets==0.1.22
 packaging==23.0
     # via
     #   build
+    #   hatch
+    #   hatchling
     #   huggingface-hub
     #   matplotlib
     #   pandera
@@ -111,7 +155,11 @@ pandas==2.0.0
 pandera==0.15.1
     # via opendataval (pyproject.toml)
 pathspec==0.11.1
-    # via black
+    # via
+    #   black
+    #   hatchling
+pexpect==4.8.0
+    # via hatch
 pillow==9.5.0
     # via
     #   matplotlib
@@ -121,15 +169,30 @@ pip-tools==6.13.0
 platformdirs==3.2.0
     # via
     #   black
+    #   hatch
     #   virtualenv
+pluggy==1.0.0
+    # via
+    #   hatchling
+    #   pytest
 pre-commit==3.2.2
     # via opendataval (pyproject.toml)
+ptyprocess==0.7.0
+    # via pexpect
+pybind11==2.11.1
+    # via pykeops
 pydantic==1.10.8
     # via pandera
 pygments==2.14.0
-    # via sphinx
+    # via
+    #   rich
+    #   sphinx
+pykeops==2.1.2
+    # via opendataval (pyproject.toml)
 pyparsing==3.0.9
     # via matplotlib
+pyperclip==1.8.2
+    # via hatch
 pyproject-hooks==1.0.0
     # via build
 pytest==7.2.2
@@ -162,7 +225,9 @@ requests==2.31.0
     #   sphinx
     #   torchvision
     #   transformers
-ruff==0.0.261
+rich==13.5.2
+    # via hatch
+ruff==0.0.282
     # via opendataval (pyproject.toml)
 safetensors==0.3.1
     # via transformers
@@ -172,10 +237,17 @@ scipy==1.10.1
     # via
     #   opendataval (pyproject.toml)
     #   scikit-learn
+shellingham==1.5.0.post1
+    # via hatch
 six==1.16.0
     # via
     #   kaggle
     #   python-dateutil
+sniffio==1.3.0
+    # via
+    #   anyio
+    #   httpcore
+    #   httpx
 snowballstemmer==2.2.0
     # via sphinx
 sphinx==6.1.3
@@ -200,8 +272,13 @@ threadpoolctl==3.1.0
     # via scikit-learn
 tokenizers==0.13.3
     # via transformers
+tomli-w==1.0.0
+    # via hatch
+tomlkit==0.12.1
+    # via hatch
 torch==2.0.0
     # via
+    #   geomloss
     #   opendataval (pyproject.toml)
     #   torchvision
 torchvision==0.15.1
@@ -215,6 +292,8 @@ tqdm==4.65.0
     #   transformers
 transformers==4.30.1
     # via opendataval (pyproject.toml)
+trove-classifiers==2023.7.6
+    # via hatchling
 typeguard==4.0.0
     # via pandera
 typer==0.9.0
@@ -234,12 +313,18 @@ urllib3==1.26.15
     # via
     #   kaggle
     #   requests
+userpath==1.9.0
+    # via hatch
 virtualenv==20.21.0
-    # via pre-commit
+    # via
+    #   hatch
+    #   pre-commit
 wheel==0.40.0
     # via pip-tools
 wrapt==1.15.0
     # via pandera
+zipp==3.16.2
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
