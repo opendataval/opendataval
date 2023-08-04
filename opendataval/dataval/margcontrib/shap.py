@@ -188,7 +188,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         """
         # for each iteration, we use random permutation for our MCMC
         subset = self.random_state.permutation(self.num_points)
-        marginal_increment = np.zeros(self.num_points) + 1e-12  # Prevents overflow
+        marginal_increment = np.zeros(self.num_points) + 1e-8  # Prevents overflow
         coalition = list(subset[:min_cardinality])
         truncation_counter = 0
 

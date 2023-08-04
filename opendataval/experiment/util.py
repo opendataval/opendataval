@@ -4,7 +4,7 @@ from typing import Sequence
 import numpy as np
 
 
-def oned_twonn_clustering(inputs: Sequence[float]) -> tuple[list[int], list[int]]:
+def oned_twonn_clustering(vals: Sequence[float]) -> tuple[Sequence[int], Sequence[int]]:
     """O(nlog(n)) sort, O(n) pass exact 2-NN clustering of 1 dimensional input data.
 
     References
@@ -14,12 +14,22 @@ def oned_twonn_clustering(inputs: Sequence[float]) -> tuple[list[int], list[int]
         Fast Exact k-Means, k-Medians and Bregman Divergence Clustering in 1D,
         arXiv.org, 2017. https://arxiv.org/abs/1701.07204.
 
-    """
-    sid = np.argsort(inputs, kind="stable")
-    n = len(inputs)
+    Parameters
+    ----------
+    vals : Sequence[float]
+        Input floats which to cluster
 
-    psums = list(accumulate((inputs[sid[i]] for i in range(n)), initial=0.0))
-    psqsums = list(accumulate((inputs[sid[i]] ** 2 for i in range(n)), initial=0.0))
+    Returns
+    -------
+    tuple[Sequence[int], Sequence[int]]
+        Indices of the data points in each cluster, because of the convexity of KMeans,
+        the first sequence represents the lower value group and the second the higher
+    """
+    sid = np.argsort(vals, kind="stable")
+    n = len(vals)
+
+    psums = list(accumulate((vals[sid[i]] for i in range(n)), initial=0.0))
+    psqsums = list(accumulate((vals[sid[i]] ** 2 for i in range(n)), initial=0.0))
 
     def cost(i: int, j: int):
         sij = psums[j + 1] - psums[i]
