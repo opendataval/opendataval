@@ -29,9 +29,9 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
     Parameters
     ----------
-    num_samples : int, optional
+    num_models : int, optional
         Number of samples from TMC-Shapley, the total number of iterations will equal
-        len(x_train) * num_samples, by default 1000
+        len(x_train) * num_models, by default 1000. Name could be misleading.
     robust : bool, optional
         If the robust volume measure will be used which trades off a "more refined
         representation of diversity for greater robustness to replication"
@@ -50,12 +50,12 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
     def __init__(
         self,
-        num_samples: int = 1000,
-        robust: bool = False,
+        num_models: int = 1000,
+        robust: bool = True,
         omega: Optional[float] = None,
         random_state: Optional[RandomState] = None,
     ):
-        self.num_samples = num_samples
+        self.num_models = num_models
         self.robust = robust
         self.omega = omega if robust and omega is not None else 0.05
 
@@ -97,10 +97,11 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
         """Trains model to predict data values.
 
         Uses TMC-Shapley sampling to find the marginal contribution to volume of each
-        data point, takes self.num_samples number of samples.
+        data point, takes self.num_models number of samples.
         """
-        for _ in tqdm.trange(self.num_samples):
+        for _ in tqdm.trange(self.num_models):
             self._calculate_marginal_volume()
+
         self.data_values = self.marginal_contrib / self.marginal_count
         return self
 
@@ -163,7 +164,7 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
             x_tilde, cubes = compute_x_tilde_and_counts(x_train, self.omega)
             return compute_robust_volumes(x_tilde, cubes)
         else:
-            return torch.sqrt(torch.linalg.det(x_train.T @ x_train).abs() + 1e-12)
+            return torch.sqrt(abs(torch.linalg.det(x_train.T @ x_train)) + 1e-8)
 
 
 def compute_x_tilde_and_counts(x: torch.Tensor, omega: float):
@@ -195,7 +196,7 @@ def compute_robust_volumes(x_tilde: torch.Tensor, hypercubes: dict[tuple, int]):
     alpha = 1.0 / (10 * len(x_tilde))  # it means we set beta = 10
 
     flat_data = x_tilde.reshape(-1, x_tilde.shape[1])
-    volume = np.sqrt(np.linalg.det(flat_data.T @ flat_data).abs() + 1e-8)
+    volume = np.sqrt(abs(np.linalg.det(flat_data.T @ flat_data)) + 1e-8)
     rho_omega_prod = 1.0
 
     for freq_count in hypercubes.values():
