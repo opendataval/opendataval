@@ -27,21 +27,26 @@ Catalog
     DataBanzhaf
     BetaShapley
     DataShapley
+    LavaEvaluator
     LeaveOneOut
     ShapEvaluator
     RandomEvaluator
+    RobustVolumeShapley
 """
 from opendataval.dataval.ame import AME
 from opendataval.dataval.api import DataEvaluator
 from opendataval.dataval.dvrl import DVRL
 from opendataval.dataval.influence import InfluenceFunctionEval
 from opendataval.dataval.knnshap import KNNShapley
+from opendataval.dataval.lava import LavaEvaluator
 from opendataval.dataval.margcontrib import (
     BetaShapley,
     DataBanzhaf,
+    DataBanzhafMargContrib,
     DataShapley,
     LeaveOneOut,
     ShapEvaluator,
 )
 from opendataval.dataval.oob import DataOob
 from opendataval.dataval.random import RandomEvaluator
+from opendataval.dataval.volume import RobustVolumeShapley

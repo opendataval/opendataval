@@ -20,6 +20,14 @@ opendataval.experiment.exper\_methods module
    :undoc-members:
    :show-inheritance:
 
+opendataval.experiment.util module
+----------------------------------
+
+.. automodule:: opendataval.experiment.util
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

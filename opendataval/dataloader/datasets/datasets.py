@@ -151,7 +151,7 @@ def download_digits():
 
 @Register("breast_cancer", True).add_covar_transform(minmax_scale)
 def download_breast_cancer():
-    """Categorical data set registered as ``"digits"``."""
+    """Categorical data set registered as ``"breast_cancer"``."""
     return ds.load_breast_cancer(return_X_y=True)
 
 

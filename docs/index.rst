@@ -19,10 +19,10 @@ OpenDataVal Documentation
 **Version**: |version|
 
 **Useful links**:
-`Installation <https://github.com/opendataval/opendataval/#hourglass_flowing_sand-installation>`_ |
+`Installation <https://github.com/opendataval/opendataval/#hourglass_flowing_sand-installation-options>`_ |
 `Source Repository <https://github.com/opendataval/opendataval/>`_ |
 `Issue Tracker <https://github.com/opendataval/opendataval/issues>`_ |
-`Releases <https://github.com/opendataval/opendataval/issues>`_
+`Releases <https://github.com/opendataval/opendataval/releases>`_
 
 
 **OpenDataVal** is an open-source initiative that with a diverse array of datasets/models

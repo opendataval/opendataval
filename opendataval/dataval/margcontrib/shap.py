@@ -12,7 +12,7 @@ from opendataval.dataval.api import DataEvaluator
 
 
 class ShapEvaluator(DataEvaluator, ABC):
-    """Abstract class for all Shapley-based methods of computing data values.
+    """Abstract class for all semivalue-based methods of computing data values.
 
     References
     ----------
@@ -90,7 +90,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """Store and transform input data for Shapley-based predictors.
+        """Store and transform input data for semivalue-based predictors.
 
         Parameters
         ----------
@@ -188,7 +188,7 @@ class ShapEvaluator(DataEvaluator, ABC):
         """
         # for each iteration, we use random permutation for our MCMC
         subset = self.random_state.permutation(self.num_points)
-        marginal_increment = np.zeros(self.num_points) + 1e-12  # Prevents overflow
+        marginal_increment = np.zeros(self.num_points) + 1e-8  # Prevents overflow
         coalition = list(subset[:min_cardinality])
         truncation_counter = 0
 
@@ -204,15 +204,11 @@ class ShapEvaluator(DataEvaluator, ABC):
             # When the cardinality of random set is 'n',
             self.marginal_contrib_sum[idx, cutoff] += curr_perf - prev_perf
             self.marginal_count[idx, cutoff] += 1
-
-            # if a new increment is not large enough, we terminate the valuation.
-            distance = abs(curr_perf - prev_perf) / np.sum(marginal_increment)
-
-            # update prev_perf
             prev_perf = curr_perf
 
+            # If a new increment is not large enough, we terminate the valuation.
             # If updates are too small then we assume it contributes 0.
-            if distance < 1e-8:
+            if abs(curr_perf - prev_perf) / np.sum(marginal_increment) < 1e-8:
                 truncation_counter += 1
             else:
                 truncation_counter = 0

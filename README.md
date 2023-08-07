@@ -243,6 +243,6 @@ Distributed under the MIT License. See [`LICENSE.txt`][license-url] for more inf
 [numpy-shield]: https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white\
 [release-shield]: https://img.shields.io/github/v/release/opendataval/opendataval?style=for-the-badge
 [release-url]: https://github.com/opendataval/opendataval/releases
-<!-- Pytest Coverage Comment:Begin -->
-[coverage_badge]: https://img.shields.io/badge/Coverage-82%25-green.svg?style=for-the-badge
-<!-- Pytest Coverage Comment:End -->
+<!-- Coverage Comment:Begin -->
+[coverage_badge]: https://img.shields.io/badge/Coverage-needs.write_coverage.outputs.coverage%25-needs.write_coverage.outputs.color.svg?style=for-the-badge
+<!-- Coverage Comment:End -->

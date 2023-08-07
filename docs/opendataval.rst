@@ -15,10 +15,10 @@ Subpackages
 Submodules
 ----------
 
-opendataval.presets module
+opendataval.metrics module
 --------------------------
 
-.. automodule:: opendataval.presets
+.. automodule:: opendataval.metrics
    :members:
    :undoc-members:
    :show-inheritance:

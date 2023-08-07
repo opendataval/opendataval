@@ -4,18 +4,18 @@ opendataval.dataloader.datasets package
 Submodules
 ----------
 
-opendataval.dataloader.datasets.cleanlab module
------------------------------------------------
+opendataval.dataloader.datasets.challenge module
+------------------------------------------------
 
-.. automodule:: opendataval.dataloader.datasets.cleanlab
+.. automodule:: opendataval.dataloader.datasets.challenge
    :members:
    :undoc-members:
    :show-inheritance:
 
-opendataval.dataloader.datasets.challenge module
-----------------------------------------------
+opendataval.dataloader.datasets.cleanlab module
+-----------------------------------------------
 
-.. automodule:: opendataval.dataloader.datasets.challenge
+.. automodule:: opendataval.dataloader.datasets.cleanlab
    :members:
    :undoc-members:
    :show-inheritance:

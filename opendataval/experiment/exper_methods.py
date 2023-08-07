@@ -4,36 +4,41 @@ Experiments pass into :py:meth:`~opendataval.experiment.api.ExperimentMediator.e
 and :py:meth:`~opendataval.experiment.api.ExperimentMediator.plot` evaluate performance
 of one :py:class:`~opendataval.dataval.api.DataEvaluator` at a time.
 """
+from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-from sklearn.cluster import KMeans
-from sklearn.metrics import f1_score
 from torch.utils.data import Subset
 
 from opendataval.dataloader import DataFetcher
 from opendataval.dataval import DataEvaluator
+from opendataval.experiment.util import f1_score, oned_twonn_clustering
 
 
-def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str, float]:
+def noisy_detection(
+    evaluator: DataEvaluator,
+    fetcher: DataFetcher = None,
+    indices: Optional[list[int]] = None,
+) -> dict[str, float]:
     """Evaluate ability to identify noisy indices.
 
     Compute F1 score (of 2NN classifier) of the data evaluator
-    on the noisy indices. Noisy indices will be labeled 1 for the positives,
-    while non-Noisy are labeled zero. KMeans labels are random, but because
-    of the convexity the highest data point and lowest data point have different
-    labels and belong to the most valuable/least valuable group. Thus, the least
-    valuable group will be set to 1 and most valuable to zero for the F1 score.
+    on the noisy indices. KMeans labels are random, but because of the convexity of
+    KMeans, the highest data point and lowest data point have different labels and
+    belong to the most valuable/least valuable group. Thus, the least valuable group
+    will be in one group and most valuable to zero for the F1 score.
 
     Parameters
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    fetcher : DataFetcher
+    fetcher : DataFetcher, optional
         DataFetcher containing noisy indices
+    indices : list[int], optional
+        Alternatively, pass in noisy indices instead of DataFetcher, by default None
 
     Returns
     -------
@@ -44,25 +49,12 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
             corrupted, and the higher value data points as correct.
     """
     data_values = evaluator.data_values
-    noisy_train_indices = fetcher.noisy_train_indices
-
-    num_points = len(data_values)
-    sorted_indices = np.argsort(data_values)
-
-    # Computes F1 of a KMeans(k=2) classifier of the data values
-    kmeans = KMeans(n_clusters=2, n_init="auto").fit(data_values.reshape(-1, 1))
-
-    # Because of the convexity of KMeans classification, the least valuable data point
-    # will always belong to one cluster, while the most valuable will belong to another.
-    labels = (  # If the least valuable group isn't labeled as 1, flips the labels
-        kmeans.labels_ if kmeans.labels_[sorted_indices[0]] == 1 else 1 - kmeans.labels_
+    noisy_train_indices = (
+        fetcher.noisy_train_indices if isinstance(fetcher, DataFetcher) else indices
     )
 
-    # Noisy group is what we're trying to detect, which is why it's set to the positives
-    validation = np.zeros(shape=(num_points,))
-    validation[noisy_train_indices] = 1
-
-    f1_kmeans_label = f1_score(labels, validation)
+    unvaluable, _ = oned_twonn_clustering(data_values.flatten())
+    f1_kmeans_label = f1_score(unvaluable, noisy_train_indices, len(data_values))
 
     return {"kmeans_f1": f1_kmeans_label}
 
@@ -70,6 +62,7 @@ def noisy_detection(evaluator: DataEvaluator, fetcher: DataFetcher) -> dict[str,
 def remove_high_low(
     evaluator: DataEvaluator,
     fetcher: DataFetcher,
+    data: Optional[dict[str, Any]] = None,
     percentile: float = 0.05,
     plot: Optional[Axes] = None,
     metric_name: str = "accuracy",
@@ -84,8 +77,16 @@ def remove_high_low(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    fetcher : DataFetcher
-        DataFetcher containing training and valid data points
+    fetcher : DataFetcher, optional
+        DataFetcher containing training and testing data points
+    data : dict[str, Any], optional
+        Alternatively, pass in dictionary instead of a DataFetcher with the training and
+        test data with the following keys:
+
+        - **"x_train"** Training covariates
+        - **"y_train"** Training labels
+        - **"x_test"** Testing covariates
+        - **"y_test"** Testing labels
     percentile : float, optional
         Percentile of data points to remove per iteration, by default 0.05
     plot : Axes, optional
@@ -107,7 +108,12 @@ def remove_high_low(
         - **"f"remove_most_influential_first_{metric_name}""** -- Performance of model
             after removing a proportion of the data points with the highest data values
     """
-    x_train, y_train, *_, x_test, y_test = fetcher.datapoints
+    if isinstance(fetcher, DataFetcher):
+        x_train, y_train, *_, x_test, y_test = fetcher.datapoints
+    else:
+        x_train, y_train = data["x_train"], data["y_train"]
+        x_test, y_test = data["x_test"], data["y_test"]
+
     data_values = evaluator.data_values
     curr_model = evaluator.pred_model.clone()
 
@@ -175,6 +181,7 @@ def remove_high_low(
 def discover_corrupted_sample(
     evaluator: DataEvaluator,
     fetcher: DataFetcher,
+    data: Optional[dict[str, Any]] = None,
     percentile: float = 0.05,
     plot: Optional[Axes] = None,
 ) -> dict[str, list[float]]:
@@ -189,6 +196,11 @@ def discover_corrupted_sample(
         DataEvaluator to be tested
     fetcher : DataFetcher
         DataFetcher containing noisy indices
+    data : dict[str, Any], optional
+        Alternatively, pass in dictionary instead of a DataFetcher with the training and
+        test data with the following keys:
+
+        - **"x_train"** Training covariates
     percentile : float, optional
         Percentile of data points to additionally search per iteration, by default .05
     plot : Axes, optional
@@ -210,7 +222,10 @@ def discover_corrupted_sample(
             if the data points were explored randomly, we'd expect to find
             corrupted_samples in proportion to the number of corruption in the data set.
     """
-    x_train, *_ = fetcher.datapoints
+    if isinstance(fetcher, DataFetcher):
+        x_train, *_ = fetcher.datapoints
+    else:
+        x_train = data["x_train"]
     noisy_train_indices = fetcher.noisy_train_indices
     data_values = evaluator.data_values
 
@@ -258,9 +273,16 @@ def discover_corrupted_sample(
     return eval_results
 
 
-def save_dataval(evaluator: DataEvaluator, fetcher: DataFetcher, output_path: str = ""):
+def save_dataval(
+    evaluator: DataEvaluator,
+    fetcher: DataFetcher = None,
+    indices: Optional[list[int]] = None,
+    output_path: Path = Path("dataval.csv"),
+):
     """Save the indices and the respective data values of the DataEvaluator."""
-    train_indices = fetcher.train_indices
+    train_indices = (
+        fetcher.train_indices if isinstance(fetcher, DataFetcher) else indices
+    )
     data_values = evaluator.data_values
 
     data = {"indices": train_indices, "data_values": data_values}
@@ -275,7 +297,8 @@ def save_dataval(evaluator: DataEvaluator, fetcher: DataFetcher, output_path: st
 
 def increasing_bin_removal(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher,
+    fetcher: DataFetcher = None,
+    data: Optional[dict[str, Any]] = None,
     bin_size: int = 1,
     plot: Optional[Axes] = None,
     metric_name: str = "accuracy",
@@ -302,6 +325,14 @@ def increasing_bin_removal(
         DataEvaluator to be tested
     fetcher : DataFetcher
         DataFetcher containing training and valid data points
+    data : dict[str, Any], optional
+        Alternatively, pass in dictionary instead of a DataFetcher with the training and
+        test data with the following keys:
+
+        - **"x_train"** Training covariates
+        - **"y_train"** Training labels
+        - **"x_test"** Testing covariates
+        - **"y_test"** Testing labels
     bin_size : float, optional
         We look at bins of equal size and find the data values cutoffs for the x-axis,
         by default 1
@@ -327,7 +358,11 @@ def increasing_bin_removal(
     """
     data_values = evaluator.data_values
     curr_model = evaluator.pred_model
-    x_train, y_train, *_, x_test, y_test = fetcher.datapoints
+    if isinstance(fetcher, DataFetcher):
+        x_train, y_train, *_, x_test, y_test = fetcher.datapoints
+    else:
+        x_train, y_train = data["x_train"], data["y_train"]
+        x_test, y_test = data["x_test"], data["y_test"]
 
     num_points = len(data_values)
 

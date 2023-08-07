@@ -13,7 +13,7 @@ import torch
 from opendataval.dataloader.register import Register, cache
 from opendataval.dataloader.util import ListDataset
 
-MAX_DATASET_SIZE = 10000
+MAX_DATASET_SIZE = 2000
 """Data Valuation algorithms can take a long time for large data sets, thus cap size."""
 
 
