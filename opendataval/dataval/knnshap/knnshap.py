@@ -84,7 +84,7 @@ class KNNShapley(DataEvaluator, ModelLessMixin):
         y_train_sort = self.y_train[sort_indices]
 
         score = torch.zeros_like(dist)
-        score[sort_indices[m - 1], range(m)] = self.match(y_train_sort[n - 1]) / n
+        score[sort_indices[n - 1], range(m)] = self.match(y_train_sort[n - 1]) / n
 
         # fmt: off
         for i in tqdm.tqdm(range(n - 2, -1, -1)):
@@ -94,7 +94,7 @@ class KNNShapley(DataEvaluator, ModelLessMixin):
                 * (self.match(y_train_sort[i]) - self.match(y_train_sort[i + 1]))
             )
 
-        self.data_values = score.mean(axis=1)
+        self.data_values = score.mean(axis=1).detach().numpy()
 
         return self
 

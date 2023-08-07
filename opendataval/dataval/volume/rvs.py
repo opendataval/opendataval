@@ -29,9 +29,9 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
     Parameters
     ----------
-    num_models : int, optional
+    mc_epochs : int, optional
         Number of samples from TMC-Shapley, the total number of iterations will equal
-        len(x_train) * num_models, by default 1000.
+        len(x_train) * mc_epochs, by default 1000.
     robust : bool, optional
         If the robust volume measure will be used which trades off a "more refined
         representation of diversity for greater robustness to replication",
@@ -50,12 +50,12 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
     def __init__(
         self,
-        num_models: int = 1000,
+        mc_epochs: int = 1000,
         robust: bool = True,
         omega: Optional[float] = None,
         random_state: Optional[RandomState] = None,
     ):
-        self.num_models = num_models
+        self.mc_epochs = mc_epochs
         self.robust = robust
         self.omega = omega if robust and omega is not None else 0.05
 
@@ -96,9 +96,9 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
         """Trains model to predict data values.
 
         Uses TMC-Shapley sampling to find the marginal contribution to volume of each
-        data point, takes self.num_models number of samples.
+        data point, takes self.mc_epochs number of samples.
         """
-        for _ in tqdm.trange(self.num_models):
+        for _ in tqdm.trange(self.mc_epochs):
             self._calculate_marginal_volume()
 
         self.data_values = self.marginal_contrib / self.marginal_count
