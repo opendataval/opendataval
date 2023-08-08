@@ -124,7 +124,7 @@ jobs:
     - name: Commits badge
       uses: kevinfjiang/coverage-badge@v1
       with:
-          coverage: needs.write_coverage.outputs.coverage
-          color: needs.write_coverage.outputs.color
+          coverage: ${{ needs.write_coverage.outputs.coverage }}
+          color: ${{ needs.write_coverage.outputs.color }}
           ref: ${{ github.event.pull_request.merged && github.base_ref || github.head_ref }}
           change_file: ./README.md
