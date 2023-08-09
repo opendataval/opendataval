@@ -117,4 +117,6 @@ class LavaEvaluator(DataEvaluator, ModelLessMixin):
         f1k = self.dual_sol[0].squeeze()
         num_points = len(f1k) - 1
         train_gradient = f1k * (1 + 1 / (num_points)) - f1k.sum() / num_points
+        # low values should indicate detrimental data points
+        train_gradient = -1 * train_gradient
         return train_gradient.numpy(force=True)
