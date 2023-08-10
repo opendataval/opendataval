@@ -204,7 +204,6 @@ class ShapEvaluator(DataEvaluator, ABC):
             # When the cardinality of random set is 'n',
             self.marginal_contrib_sum[idx, cutoff] += curr_perf - prev_perf
             self.marginal_count[idx, cutoff] += 1
-            prev_perf = curr_perf
 
             # If a new increment is not large enough, we terminate the valuation.
             # If updates are too small then we assume it contributes 0.
@@ -215,6 +214,9 @@ class ShapEvaluator(DataEvaluator, ABC):
 
             if truncation_counter == 10:  # If enter space without changes to model
                 break
+
+            # update performance
+            prev_perf = curr_perf
 
         return marginal_increment.reshape(1, -1)
 

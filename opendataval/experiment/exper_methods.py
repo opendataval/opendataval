@@ -277,7 +277,7 @@ def save_dataval(
     evaluator: DataEvaluator,
     fetcher: DataFetcher = None,
     indices: Optional[list[int]] = None,
-    output_path: Path = Path("dataval.csv"),
+    output_path: Path = None,
 ):
     """Save the indices and the respective data values of the DataEvaluator."""
     train_indices = (
