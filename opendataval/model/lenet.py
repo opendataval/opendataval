@@ -29,7 +29,6 @@ class LeNet(TorchClassMixin, TorchPredictMixin):
     """
 
     def __init__(self, num_classes: int, gray_scale: bool = True):
-
         super().__init__()
         # 1 input image channel, 6 output channels, 5x5 kernel
         self.num_classes = num_classes

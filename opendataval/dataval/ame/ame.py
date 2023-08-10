@@ -172,7 +172,7 @@ class BaggingEvaluator(DataEvaluator):
                 Subset(self.x_train, indices=subset),
                 Subset(self.y_train, indices=subset),
                 *args,
-                **kwargs
+                **kwargs,
             )
             y_valid_hat = curr_model.predict(self.x_valid)
 

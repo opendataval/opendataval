@@ -102,7 +102,7 @@ class InfluenceFunctionEval(DataEvaluator):
                 Subset(self.x_train, indices=subset),
                 Subset(self.y_train, indices=subset),
                 *args,
-                **kwargs
+                **kwargs,
             )
             y_valid_hat = curr_model.predict(self.x_valid)
             curr_perf = self.evaluate(self.y_valid, y_valid_hat)

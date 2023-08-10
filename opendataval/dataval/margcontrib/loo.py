@@ -82,7 +82,7 @@ class LeaveOneOut(DataEvaluator):
                 Subset(self.x_train, indices=loo_coalition),
                 Subset(self.y_train, indices=loo_coalition),
                 *args,
-                **kwargs
+                **kwargs,
             )
 
             y_hat = curr_model.predict(self.x_valid)
