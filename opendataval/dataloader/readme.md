@@ -76,7 +76,7 @@ fetcher = DataFetcher.setup(
     random_state=random_state,
     train_count=train_count,
     valid_count=valid_count,
-    test_counttest_count=test_count,
+    test_count=test_count,
     add_noise=add_noise,
     noise_kwargs=noise_kwargs
 )
