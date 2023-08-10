@@ -92,7 +92,7 @@ class LavaEvaluator(DataEvaluator, ModelLessMixin):
             y_train=self.y_train,
             x_valid=x_valid,
             y_valid=self.y_valid,
-            feature_cost=feature_cost if feature_cost else None,
+            feature_cost=feature_cost if feature_cost else "euclidean",
             lam_x=1.0,
             lam_y=1.0,
             p=2,
@@ -117,6 +117,8 @@ class LavaEvaluator(DataEvaluator, ModelLessMixin):
         f1k = self.dual_sol[0].squeeze()
         num_points = len(f1k) - 1
         train_gradient = f1k * (1 + 1 / (num_points)) - f1k.sum() / num_points
-        # low values should indicate detrimental data points
+
+        # We multiply -1 to align LAVA with other data valuation algorithms
+        # Low values should indicate detrimental data points
         train_gradient = -1 * train_gradient
         return train_gradient.numpy(force=True)
