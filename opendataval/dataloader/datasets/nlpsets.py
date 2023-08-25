@@ -75,7 +75,9 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
 
         with torch.no_grad():
             pooled_embeddings = (
-                (bert_model(res.input_ids, res.attention_mask)[0]).detach().cpu()[:, 0]
+                torch.mean((bert_model(res.input_ids, res.attention_mask)[0]), dim=1)
+                .detach()
+                .cpu()
             )
 
         torch.save(pooled_embeddings.detach(), embed_path)
