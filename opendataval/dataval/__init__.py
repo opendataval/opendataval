@@ -34,6 +34,9 @@ Catalog
     ShapEvaluator
     RandomEvaluator
     RobustVolumeShapley
+    Sampler
+    TMCSampler
+    GrTMCSampler
 """
 from opendataval.dataval.ame import AME
 from opendataval.dataval.api import DataEvaluator, ModelLessMixin, ModelMixin
@@ -46,8 +49,11 @@ from opendataval.dataval.margcontrib import (
     DataBanzhaf,
     DataBanzhafMargContrib,
     DataShapley,
+    GrTMCSampler,
     LeaveOneOut,
+    Sampler,
     ShapEvaluator,
+    TMCSampler,
 )
 from opendataval.dataval.oob import DataOob
 from opendataval.dataval.random import RandomEvaluator

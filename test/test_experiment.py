@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher, Register, mix_labels
-from opendataval.dataval import DataEvaluator
+from opendataval.dataval import DataEvaluator, ModelMixin
 from opendataval.experiment import ExperimentMediator
 from opendataval.model import Model
 from opendataval.model.mlp import ClassifierMLP
@@ -29,7 +29,7 @@ class BrokenDummyModel(Model):
         return torch.ones((len(x_train), 1))
 
 
-class DummyEvaluator(DataEvaluator):
+class DummyEvaluator(DataEvaluator, ModelMixin):
     """Random data evaluator. Mainly used for testing purposes."""
 
     def __init__(self, random_state: RandomState = None):

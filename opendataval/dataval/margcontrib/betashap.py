@@ -1,10 +1,7 @@
-from typing import Optional
-
 import numpy as np
-from numpy.random import RandomState
 from scipy.special import beta
 
-from opendataval.dataval.margcontrib.shap import ShapEvaluator
+from opendataval.dataval.margcontrib.shap import Sampler, ShapEvaluator
 
 
 class BetaShapley(ShapEvaluator):
@@ -19,20 +16,10 @@ class BetaShapley(ShapEvaluator):
 
     Parameters
     ----------
-    gr_threshold : float, optional
-        Convergence threshold for the Gelman-Rubin statistic.
-        Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
-    max_mc_epochs : int, optional
-        Max number of outer iterations of MCMC sampling, by default 100
-    models_per_iteration : int, optional
-        Number of model fittings to take per iteration prior to checking GR convergence,
-        by default 100
-    mc_epochs : int, optional
-        Minimum samples before checking MCMC convergence, by default 1000
-    cache_name : str, optional
-        Unique cache_name of the model, caches marginal contributions, by default None
-    random_state : RandomState, optional
-        Random initial state, by default None
+    sampler : Sampler, optional
+        Sampler used to compute the marginal contributions. Can be found in
+        :py:mod:`~opendataval.margcontrib.sampler`, by default uses *args, **kwargs for
+        :py:class:`~opendataval.dataval.margcontrib.sampler.GrTMCSampler`.
     alpha : int, optional
         Alpha parameter for beta distribution used in the weight function, by default 4
     beta : int, optional
@@ -42,24 +29,9 @@ class BetaShapley(ShapEvaluator):
     """
 
     def __init__(
-        self,
-        gr_threshold: float = 1.05,
-        max_mc_epochs: int = 100,
-        models_per_iteration: int = 100,
-        mc_epochs: int = 1000,
-        cache_name: Optional[str] = None,
-        alpha: int = 4,
-        beta: int = 1,
-        random_state: Optional[RandomState] = None,
+        self, sampler: Sampler = None, alpha: int = 4, beta: int = 1, *args, **kwargs
     ):
-        super().__init__(
-            gr_threshold=gr_threshold,
-            max_mc_epochs=max_mc_epochs,
-            models_per_iteration=models_per_iteration,
-            mc_epochs=mc_epochs,
-            cache_name=cache_name,
-            random_state=random_state,
-        )
+        super().__init__(sampler=sampler, *args, **kwargs)
         self.alpha, self.beta = alpha, beta  # Beta distribution parameters
 
     def compute_weight(self) -> np.ndarray:
@@ -92,16 +64,3 @@ class BetaShapley(ShapEvaluator):
         ]
 
         return np.array(weight_list) / np.sum(weight_list)
-
-    def evaluate_data_values(self) -> np.ndarray:
-        """Return data values for each training data point.
-
-        Multiplies the marginal contribution with their respective weights to get
-        Beta Shapley data values.
-
-        Returns
-        -------
-        np.ndarray
-            Predicted data values/selection for every training data point
-        """
-        return np.sum(self.marginal_contribution * self.compute_weight(), axis=1)

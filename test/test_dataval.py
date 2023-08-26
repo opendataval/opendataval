@@ -23,6 +23,7 @@ from opendataval.dataval import (
     LeaveOneOut,
     RandomEvaluator,
     RobustVolumeShapley,
+    TMCSampler,
 )
 from opendataval.experiment import ExperimentMediator, discover_corrupted_sample
 from opendataval.model import Model
@@ -87,6 +88,9 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
 # Dummy evaluators used for low iteration training, for testing
 RANDOM_STATE = set_random_state(10)  # Constant random state for testing
 
+first_sampler = TMCSampler(2, cache_name="cache_preset", random_state=RANDOM_STATE)
+second_sampler = TMCSampler(2, random_state=RANDOM_STATE)
+
 dummy_evaluators = [
     AME(2, random_state=RANDOM_STATE),  # For lasso, minimum needs 5 for split
     DVRL(1, rl_epochs=1, random_state=RANDOM_STATE),
@@ -96,10 +100,10 @@ dummy_evaluators = [
     LeaveOneOut(random_state=RANDOM_STATE),
     LavaEvaluator(random_state=RANDOM_STATE),
     DataBanzhaf(num_models=1, random_state=RANDOM_STATE),
-    DataBanzhafMargContrib(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
-    BetaShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
-    DataShapley(cache_name="cache_preset", random_state=RANDOM_STATE),
-    DataShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset_other", random_state=RANDOM_STATE),
+    DataBanzhafMargContrib(max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    BetaShapley(max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    DataShapley(first_sampler),
+    DataShapley(max_mc_epochs=2, models_per_iteration=1, random_state=RANDOM_STATE),
     RandomEvaluator(random_state=RANDOM_STATE),
-    RobustVolumeShapley(5, robust=False, random_state=RANDOM_STATE)
+    RobustVolumeShapley(second_sampler, robust=False)
 ]
