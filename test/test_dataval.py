@@ -72,12 +72,7 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
             .noisify(mix_labels, noise_rate=0.2)
         )
 
-        data_val = (
-            RandomEvaluator(10)
-            .input_model(DummyModel(3, 10))
-            .input_metric(lambda *_: 1.0)  # Dummy metric
-            .input_fetcher(fetcher)
-        )
+        data_val = RandomEvaluator(10).input_fetcher(fetcher)
 
         self.assertTrue(
             np.array_equal(

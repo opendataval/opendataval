@@ -19,6 +19,8 @@ Catalog
     :toctree: generated/
 
     DataEvaluator
+    ModelMixin
+    ModelLessMixin
     AME
     DVRL
     InfluenceFunctionEval
@@ -34,7 +36,7 @@ Catalog
     RobustVolumeShapley
 """
 from opendataval.dataval.ame import AME
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelLessMixin, ModelMixin
 from opendataval.dataval.dvrl import DVRL
 from opendataval.dataval.influence import InfluenceFunctionEval
 from opendataval.dataval.knnshap import KNNShapley

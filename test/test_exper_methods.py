@@ -9,7 +9,7 @@ from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher
 from opendataval.dataloader.noisify import mix_labels
-from opendataval.dataval import DataEvaluator
+from opendataval.dataval import DataEvaluator, ModelMixin
 from opendataval.experiment.exper_methods import (
     discover_corrupted_sample,
     increasing_bin_removal,
@@ -29,7 +29,7 @@ class DummyModel(Model):
         return torch.ones((len(x_train), 1))
 
 
-class DummyEvaluator(DataEvaluator):
+class DummyEvaluator(DataEvaluator, ModelMixin):
     def __init__(self, random_state: RandomState = None):
         self.pred_model = DummyModel()
         self.random_state = check_random_state(random_state)

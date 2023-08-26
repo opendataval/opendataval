@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher
-from opendataval.dataval import DataEvaluator
+from opendataval.dataval import DataEvaluator, ModelMixin
 from opendataval.model import Model
 
 
@@ -26,7 +26,7 @@ class DummyModel(Model):
         return torch.zeros_like(x)
 
 
-class DummyDataEvaluator(DataEvaluator):
+class DummyDataEvaluator(DataEvaluator, ModelMixin):
     def __init__(self, random_state: RandomState = None):
         self.random_state = check_random_state(random_state)
         self.trained = False

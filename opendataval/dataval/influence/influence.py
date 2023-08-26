@@ -7,10 +7,10 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelMixin
 
 
-class InfluenceFunctionEval(DataEvaluator):
+class InfluenceFunctionEval(DataEvaluator, ModelMixin):
     """Influence Function Data Evaluation implementation.
 
     Compute influence of each training example on the accuracy at each test example
