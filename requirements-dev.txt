@@ -269,6 +269,8 @@ torch==2.0.1
     #   geomloss
     #   opendataval (pyproject.toml)
     #   torchvision
+torcheval==0.0.7
+    # via opendataval (pyproject.toml)
 torchvision==0.15.2
     # via opendataval (pyproject.toml)
 tqdm==4.65.0
@@ -289,6 +291,7 @@ typing-extensions==4.7.1
     #   huggingface-hub
     #   pydantic
     #   torch
+    #   torcheval
     #   typeguard
     #   typer
     #   typing-inspect

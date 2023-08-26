@@ -33,6 +33,7 @@ dependencies = [
     "scipy~=1.10",
     "scikit-learn~=1.2",
     "torch~=2.0.0",
+    "torcheval~=0.0.7",
     "torchvision~=0.15",
     "tqdm~=4.64",
     "transformers~=4.30.1",
