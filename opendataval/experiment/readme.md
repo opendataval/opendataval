@@ -16,7 +16,7 @@ df, figure = expermed.plot(discover_corrupted_sample)
 
 We pass the arguments directly into the `eval_func`. Sometimes we need to pass in the train_kwargs. This also passes in `metric_name` for graphing purposes afterwards. To do so:
 ```python
-df = expermed.evaluate(noisy_detection, include_train=True)
+df = expermed.evaluate(noisy_detection)
 ```
 
 ## Alternate constructors.

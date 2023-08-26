@@ -16,11 +16,12 @@ from torch.utils.data import Subset
 from opendataval.dataloader import DataFetcher
 from opendataval.dataval import DataEvaluator
 from opendataval.experiment.util import f1_score, oned_twonn_clustering
+from opendataval.model import Model
 
 
 def noisy_detection(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher = None,
+    fetcher: Optional[DataFetcher] = None,
     indices: Optional[list[int]] = None,
 ) -> dict[str, float]:
     """Evaluate ability to identify noisy indices.
@@ -61,7 +62,8 @@ def noisy_detection(
 
 def remove_high_low(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher,
+    fetcher: Optional[DataFetcher] = None,
+    model: Optional[Model] = None,
     data: Optional[dict[str, Any]] = None,
     percentile: float = 0.05,
     plot: Optional[Axes] = None,
@@ -78,7 +80,10 @@ def remove_high_low(
     evaluator : DataEvaluator
         DataEvaluator to be tested
     fetcher : DataFetcher, optional
-        DataFetcher containing training and testing data points
+        DataFetcher containing training and testing data points, by default None
+    model : Model, optional
+        Model which performance will be evaluated, if not defined,
+        uses evaluator's model to evaluate performance if evaluator uses a model
     data : dict[str, Any], optional
         Alternatively, pass in dictionary instead of a DataFetcher with the training and
         test data with the following keys:
@@ -115,7 +120,8 @@ def remove_high_low(
         x_test, y_test = data["x_test"], data["y_test"]
 
     data_values = evaluator.data_values
-    curr_model = evaluator.pred_model.clone()
+    model = model if model is not None else evaluator.pred_model
+    curr_model = model.clone()
 
     num_points = len(x_train)
     num_period = max(round(num_points * percentile), 5)  # Add at least 5/bin
@@ -180,7 +186,7 @@ def remove_high_low(
 
 def discover_corrupted_sample(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher,
+    fetcher: Optional[DataFetcher] = None,
     data: Optional[dict[str, Any]] = None,
     percentile: float = 0.05,
     plot: Optional[Axes] = None,
@@ -194,8 +200,8 @@ def discover_corrupted_sample(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    fetcher : DataFetcher
-        DataFetcher containing noisy indices
+    fetcher : DataFetcher, optional
+        DataFetcher containing noisy indices, by default None
     data : dict[str, Any], optional
         Alternatively, pass in dictionary instead of a DataFetcher with the training and
         test data with the following keys:
@@ -297,7 +303,8 @@ def save_dataval(
 
 def increasing_bin_removal(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher = None,
+    fetcher: Optional[DataFetcher] = None,
+    model: Optional[Model] = None,
     data: Optional[dict[str, Any]] = None,
     bin_size: int = 1,
     plot: Optional[Axes] = None,
@@ -323,8 +330,11 @@ def increasing_bin_removal(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    fetcher : DataFetcher
-        DataFetcher containing training and valid data points
+    fetcher : DataFetcher, optional
+        DataFetcher containing training and valid data points, by default None
+    model : Model, optional
+        Model which performance will be evaluated, if not defined,
+        uses evaluator's model to evaluate performance if evaluator uses a model
     data : dict[str, Any], optional
         Alternatively, pass in dictionary instead of a DataFetcher with the training and
         test data with the following keys:
@@ -357,7 +367,8 @@ def increasing_bin_removal(
             above the specified threshold are removed
     """
     data_values = evaluator.data_values
-    curr_model = evaluator.pred_model
+    model = model if model is not None else evaluator.pred_model
+    curr_model = model.clone()
     if isinstance(fetcher, DataFetcher):
         x_train, y_train, *_, x_test, y_test = fetcher.datapoints
     else:

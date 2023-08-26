@@ -150,7 +150,7 @@ class TestExperimentMediator(unittest.TestCase):
         mock_func = Mock(
             side_effect=[{"a": [1, 2], "b": [3, 4]}, {"a": [5, 6], "b": [7, 8]}]
         )
-        kwargs = {"c": 1, "d": "2"}
+        kwargs = {"c": 1, "d": "2"}  # Makes sure the undesired kwargs are filtered out
         dummies = [DummyEvaluator(1), DummyEvaluator(2)]
         experimentmediator = ExperimentMediator(
             self.fetcher, DummyModel()
@@ -158,8 +158,8 @@ class TestExperimentMediator(unittest.TestCase):
         res = experimentmediator.evaluate(exper_func=mock_func, **kwargs)
         mock_func.assert_has_calls(
             [
-                call(dummies[0], self.fetcher, **kwargs),
-                call(dummies[1], self.fetcher, **kwargs),
+                call(dummies[0], self.fetcher),
+                call(dummies[1], self.fetcher),
             ]
         )
         print(res)

@@ -15,6 +15,7 @@ from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher, mix_labels
 from opendataval.dataval import DataEvaluator
+from opendataval.experiment.util import filter_kwargs
 from opendataval.metrics import Metrics
 from opendataval.model import Model, ModelFactory
 
@@ -266,7 +267,6 @@ class ExperimentMediator:
     def evaluate(
         self,
         exper_func: Callable[[DataEvaluator, DataFetcher, ...], dict[str, Any]],
-        include_train: bool = False,
         save_output: bool = False,
         **exper_kwargs,
     ) -> pd.DataFrame:
@@ -282,9 +282,6 @@ class ExperimentMediator:
             the DataFetcher associated. Output must be a dict with results of the
             experiment. NOTE, the results must all be <= 1 dimensional but does not
             need to be the same length.
-        include_train : bool, optional
-            Whether to pass to exper_func the training kwargs defined for the
-            ExperimentMediator. If True, also passes in metric_name, by default False
         save_output : bool, optional
             Wether to save the outputs to ``self.output_dir``, by default False
         eval_kwargs : dict[str, Any], optional
@@ -298,13 +295,16 @@ class ExperimentMediator:
             DataFrame is indexed: [DataEvaluator.DataEvaluator]
         """
         data_eval_perf = {}
-        if include_train:
-            # All methods that train the underlying model track the model performance
-            exper_kwargs["train_kwargs"] = self.train_kwargs
-            exper_kwargs["metric_name"] = self.metric
+        filtered_kwargs = filter_kwargs(
+            exper_func,
+            train_kwargs=self.train_kwargs,
+            metric_name=self.metric,
+            model=self.pred_model,
+            **exper_kwargs,
+        )
 
         for data_val in self.data_evaluators:
-            eval_resp = exper_func(data_val, self.fetcher, **exper_kwargs)
+            eval_resp = exper_func(data_val, self.fetcher, **filtered_kwargs)
             data_eval_perf[str(data_val)] = eval_resp
 
         # index=[DataEvaluator.DataEvaluator]
@@ -321,7 +321,6 @@ class ExperimentMediator:
         figure: Optional[Figure] = None,
         row: Optional[int] = None,
         col: int = 2,
-        include_train: bool = False,
         save_output: bool = False,
         **exper_kwargs,
     ) -> tuple[pd.DataFrame, Figure]:
@@ -343,9 +342,6 @@ class ExperimentMediator:
             Number of rows of subplots in the plot, by default set to num_evaluators/col
         col : int, optional
             Number of columns of subplots in the plot, by default 2
-        include_train : bool, optional
-            Whether to pass to exper_func the training kwargs defined for the
-            ExperimentMediator. If True, passes in metric_name, by default False
         save_output : bool, optional
             Wether to save the outputs to ``self.output_dir``, by default False
         eval_kwargs : dict[str, Any], optional
@@ -366,14 +362,19 @@ class ExperimentMediator:
             row = math.ceil(self.num_data_eval / col)
 
         data_eval_perf = {}
-        if include_train:
-            # All methods that train the underlying model track the model performance
-            exper_kwargs["train_kwargs"] = self.train_kwargs
-            exper_kwargs["metric_name"] = self.metric
+        filtered_kwargs = filter_kwargs(
+            exper_func,
+            train_kwargs=self.train_kwargs,
+            metric_name=self.metric,
+            model=self.pred_model,
+            plot="placeholder",  # Place holder to confirm exper_func is plotable
+            **exper_kwargs,
+        )
 
         for i, data_val in enumerate(self.data_evaluators, start=1):
-            plot = figure.add_subplot(row, col, i)
-            eval_resp = exper_func(data_val, self.fetcher, plot=plot, **exper_kwargs)
+            if "plot" in filtered_kwargs:
+                filtered_kwargs["plot"] = figure.add_subplot(row, col, i)
+            eval_resp = exper_func(data_val, self.fetcher, **filtered_kwargs)
 
             data_eval_perf[str(data_val)] = eval_resp
 

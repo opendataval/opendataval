@@ -1,7 +1,28 @@
+import inspect
 from itertools import accumulate
-from typing import Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
+
+
+def filter_kwargs(func: Callable, **kwargs) -> dict[str, Any]:
+    """Filters out non-arguments of a specific function out of kwargs.
+
+    Parameters
+    ----------
+    func : Callable
+        Function with a specified signature, whose kwargs can be extracted from kwargs
+    kwargs : dict[str, Any]
+        Key word arguments passed to the function
+
+    Returns
+    -------
+    dict[str, Any]
+        Key word arguments of func that are passed in as kwargs
+    """
+    params = inspect.signature(func).parameters.values()
+    filter_keys = [p.name for p in params if p.kind == p.POSITIONAL_OR_KEYWORD]
+    return {key: kwargs[key] for key in filter_keys if key in kwargs}
 
 
 def oned_twonn_clustering(vals: Sequence[float]) -> tuple[Sequence[int], Sequence[int]]:
