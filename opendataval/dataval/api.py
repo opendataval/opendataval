@@ -4,28 +4,19 @@ from typing import Callable, ClassVar, Optional, TypeVar, Union
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Dataset
 
 from opendataval.dataloader import DataFetcher
+from opendataval.metrics import accuracy, neg_mse
 from opendataval.model import Model
-
-
-# Private default evaluation metrics
-def _acc(pred: torch.Tensor, target: torch.Tensor) -> float:
-    return (pred.argmax(dim=1) == target.argmax(dim=1)).float().mean().item()
-
-
-def _negmse(pred: torch.Tensor, target: torch.Tensor) -> float:
-    return -F.mse_loss(pred, target).item()
-
+from opendataval.util import ReprMixin
 
 Self = TypeVar("Self")
 
 
-class DataEvaluator(ABC):
+class DataEvaluator(ABC, ReprMixin):
     """Abstract class of Data Evaluators. Facilitates Data Evaluation computation.
 
     The following is an example of how the api would work:
@@ -99,7 +90,7 @@ class DataEvaluator(ABC):
     def setup(
         self,
         fetcher: DataFetcher,
-        pred_model: Model,
+        pred_model: Optional[Model] = None,
         metric: Optional[Callable[[torch.Tensor, torch.Tensor], float]] = None,
     ):
         """Inputs model, metric and data into Data Evaluator.
@@ -108,8 +99,8 @@ class DataEvaluator(ABC):
         ----------
         fetcher : DataFetcher
             DataFetcher containing the training and validation data set.
-        pred_model : Model
-            Prediction model
+        pred_model : Model, optional
+            Prediction model, not required if the DataFetcher is Model Less
         metric : Callable[[torch.Tensor, torch.Tensor], float]
             Evaluation function to determine prediction model performance,
             by default None and assigns either -MSE or ACC depending if categorical
@@ -127,11 +118,7 @@ class DataEvaluator(ABC):
 
         if isinstance(self, ModelMixin):
             if metric is None:
-                if fetcher.one_hot:
-                    metric = _acc
-                else:
-                    metric = _negmse
-
+                metric = accuracy if fetcher.one_hot else neg_mse
             self.input_model(pred_model).input_metric(metric)
         return self
 
@@ -209,18 +196,6 @@ class DataEvaluator(ABC):
         """Input data from a DataFetcher object. Alternative way of adding data."""
         x_train, y_train, x_valid, y_valid, *_ = fetcher.datapoints
         return self.input_data(x_train, y_train, x_valid, y_valid)
-
-    def __new__(cls, *args, **kwargs):
-        """Record the first 5 arguments for unique identifier of DataEvaluator."""
-        obj = object.__new__(cls)
-        obj.__inputs = [str(arg) for arg in args[:5]]
-        obj.__inputs.extend(f"{arg_name}={value}" for arg_name, value in kwargs.items())
-
-        return obj
-
-    def __repr__(self) -> str:
-        """Get unique string representation for a DataEvaluator."""
-        return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
 
 
 class ModelMixin:

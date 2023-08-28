@@ -42,6 +42,22 @@ class StrEnum(str, Enum):
         return name.lower()
 
 
+class ReprMixin:
+    """Gives unique repr of object based on class name and arguments"""
+
+    def __new__(cls, *args, **kwargs):
+        """Record the non-default arguments for unique identifier of object."""
+        obj = object.__new__(cls)
+        obj.__inputs = [str(arg) for arg in args]
+        obj.__inputs.extend(f"{arg_name}={value}" for arg_name, value in kwargs.items())
+
+        return obj
+
+    def __repr__(self) -> str:
+        """Get unique string representation for a object."""
+        return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
+
+
 X, Y = TypeVar("X"), TypeVar("Y")
 
 
