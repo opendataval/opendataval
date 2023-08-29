@@ -40,6 +40,7 @@ Catalog
 """
 from opendataval.dataval.ame import AME
 from opendataval.dataval.api import DataEvaluator, ModelLessMixin, ModelMixin
+from opendataval.dataval.csshap import ClassWiseShapley
 from opendataval.dataval.dvrl import DVRL
 from opendataval.dataval.influence import InfluenceFunctionEval
 from opendataval.dataval.knnshap import KNNShapley

@@ -15,8 +15,6 @@ from opendataval.dataval.margcontrib import Sampler, TMCSampler
 class ClassWiseShapley(DataEvaluator, ModelMixin):
     """Class-wise shapley data valuation implementation
 
-    NOTE only categorical labels is a valid input to Class-Wise Shapley.
-
     References
     ----------
     .. [1] S. Schoch, H. Xu, and Y. Ji,
@@ -93,9 +91,9 @@ class ClassWiseShapley(DataEvaluator, ModelMixin):
             y_train_out_class = Subset(self.y_train, train_out)
 
             x_valid_in_class = Subset(self.x_valid, valid_in)
-            y_valid_in_class = self.y_valid[valid_in]  # Required to be a tensor
+            y_valid_in_class = self.y_valid[valid_in]
             x_valid_out_class = Subset(self.x_valid, valid_out)
-            y_valid_out_class = self.y_valid[valid_out]  # Required to be a tensor
+            y_valid_out_class = self.y_valid[valid_out]
 
             given_utility_func = partial(
                 self._compute_class_wise_utility,

@@ -13,6 +13,7 @@ from opendataval.dataval import (
     AME,
     DVRL,
     BetaShapley,
+    ClassWiseShapley,
     DataBanzhaf,
     DataBanzhafMargContrib,
     DataOob,
@@ -49,7 +50,7 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
         random_state = set_random_state(10)
         fetcher = (
             DataFetcher("iris", random_state=random_state)
-            .split_dataset_by_count(8, 2, 2)
+            .split_dataset_by_count(16, 16, 2)
             .noisify(mix_labels, noise_rate=0.2)
         )
 
@@ -104,6 +105,7 @@ dummy_evaluators = [
     BetaShapley(max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
     DataShapley(first_sampler),
     DataShapley(max_mc_epochs=2, models_per_iteration=1, random_state=RANDOM_STATE),
+    ClassWiseShapley(mc_epochs=2, random_state=RANDOM_STATE),
     RandomEvaluator(random_state=RANDOM_STATE),
     RobustVolumeShapley(second_sampler, robust=False)
 ]
