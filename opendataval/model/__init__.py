@@ -14,6 +14,7 @@ API
     :toctree: generated/
 
     Model
+    GradientModel
     ModelFactory
 
 Torch Mixins
@@ -24,6 +25,7 @@ Torch Mixins
     TorchClassMixin
     TorchRegressMixin
     TorchPredictMixin
+    TorchGradMixin
 
 Sci-kit learn wrappers
 ----------------------
@@ -103,6 +105,7 @@ from opendataval.model.api import (
     TorchRegressMixin,
 )
 from opendataval.model.bert import BertClassifier
+from opendataval.model.grad import GradientModel, TorchGradMixin
 from opendataval.model.lenet import LeNet
 from opendataval.model.logistic_regression import LogisticRegression
 from opendataval.model.mlp import ClassifierMLP, RegressionMLP
