@@ -9,9 +9,10 @@ from opendataval.model.api import (
     TorchPredictMixin,
     TorchRegressMixin,
 )
+from opendataval.model.grad import TorchGradMixin
 
 
-class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
+class ClassifierMLP(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
     """Initializes the Multilayer Perceptron  Classifier.
 
     Parameters
@@ -72,7 +73,7 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin):
         return x
 
 
-class RegressionMLP(TorchRegressMixin, TorchPredictMixin):
+class RegressionMLP(TorchRegressMixin, TorchPredictMixin, TorchGradMixin):
     """Initializes the Multilayer Perceptron Regression.
 
     Parameters

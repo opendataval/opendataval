@@ -9,10 +9,10 @@ from sklearn.linear_model import LassoCV
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelMixin
 
 
-class AME(DataEvaluator):
+class AME(DataEvaluator, ModelMixin):
     """Implementation of Average Marginal Effect Data Valuation.
 
     References
@@ -87,7 +87,7 @@ class AME(DataEvaluator):
         return dv_ame.coef_
 
 
-class BaggingEvaluator(DataEvaluator):
+class BaggingEvaluator(DataEvaluator, ModelMixin):
     """Bagging Data Evaluator, samples data points from :math:`Bernouli(proportion)`.
 
     References

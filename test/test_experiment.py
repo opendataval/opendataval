@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher, Register, mix_labels
-from opendataval.dataval import DataEvaluator
+from opendataval.dataval import DataEvaluator, ModelMixin
 from opendataval.experiment import ExperimentMediator
 from opendataval.model import Model
 from opendataval.model.mlp import ClassifierMLP
@@ -29,7 +29,7 @@ class BrokenDummyModel(Model):
         return torch.ones((len(x_train), 1))
 
 
-class DummyEvaluator(DataEvaluator):
+class DummyEvaluator(DataEvaluator, ModelMixin):
     """Random data evaluator. Mainly used for testing purposes."""
 
     def __init__(self, random_state: RandomState = None):
@@ -150,7 +150,7 @@ class TestExperimentMediator(unittest.TestCase):
         mock_func = Mock(
             side_effect=[{"a": [1, 2], "b": [3, 4]}, {"a": [5, 6], "b": [7, 8]}]
         )
-        kwargs = {"c": 1, "d": "2"}
+        kwargs = {"c": 1, "d": "2"}  # Makes sure the undesired kwargs are filtered out
         dummies = [DummyEvaluator(1), DummyEvaluator(2)]
         experimentmediator = ExperimentMediator(
             self.fetcher, DummyModel()
@@ -158,8 +158,8 @@ class TestExperimentMediator(unittest.TestCase):
         res = experimentmediator.evaluate(exper_func=mock_func, **kwargs)
         mock_func.assert_has_calls(
             [
-                call(dummies[0], self.fetcher, **kwargs),
-                call(dummies[1], self.fetcher, **kwargs),
+                call(dummies[0], self.fetcher),
+                call(dummies[1], self.fetcher),
             ]
         )
         print(res)

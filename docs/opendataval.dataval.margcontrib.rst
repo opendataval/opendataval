@@ -36,6 +36,14 @@ opendataval.dataval.margcontrib.loo module
    :undoc-members:
    :show-inheritance:
 
+opendataval.dataval.margcontrib.sampler module
+----------------------------------------------
+
+.. automodule:: opendataval.dataval.margcontrib.sampler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 opendataval.dataval.margcontrib.shap module
 -------------------------------------------
 

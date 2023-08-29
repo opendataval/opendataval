@@ -16,11 +16,14 @@ from torch.utils.data import Subset
 from opendataval.dataloader import DataFetcher
 from opendataval.dataval import DataEvaluator
 from opendataval.experiment.util import f1_score, oned_twonn_clustering
+from opendataval.metrics import Metrics
+from opendataval.model import Model
+from opendataval.util import get_name
 
 
 def noisy_detection(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher = None,
+    fetcher: Optional[DataFetcher] = None,
     indices: Optional[list[int]] = None,
 ) -> dict[str, float]:
     """Evaluate ability to identify noisy indices.
@@ -61,11 +64,12 @@ def noisy_detection(
 
 def remove_high_low(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher,
+    fetcher: Optional[DataFetcher] = None,
+    model: Optional[Model] = None,
     data: Optional[dict[str, Any]] = None,
     percentile: float = 0.05,
     plot: Optional[Axes] = None,
-    metric_name: str = "accuracy",
+    metric: Metrics = Metrics.ACCURACY,
     train_kwargs: Optional[dict[str, Any]] = None,
 ) -> dict[str, list[float]]:
     """Evaluate performance after removing high/low points determined by data valuator.
@@ -78,7 +82,10 @@ def remove_high_low(
     evaluator : DataEvaluator
         DataEvaluator to be tested
     fetcher : DataFetcher, optional
-        DataFetcher containing training and testing data points
+        DataFetcher containing training and testing data points, by default None
+    model : Model, optional
+        Model which performance will be evaluated, if not defined,
+        uses evaluator's model to evaluate performance if evaluator uses a model
     data : dict[str, Any], optional
         Alternatively, pass in dictionary instead of a DataFetcher with the training and
         test data with the following keys:
@@ -91,8 +98,9 @@ def remove_high_low(
         Percentile of data points to remove per iteration, by default 0.05
     plot : Axes, optional
         Matplotlib Axes to plot data output, by default None
-    metric_name : str, optional
-        Name of DataEvaluator defined performance metric, by default assumed "accuracy"
+    metric : Metrics | Callable[[Tensor, Tensor], float], optional
+        Name of DataEvaluator defined performance metric which is one of the defined
+        metrics or a Callable[[Tensor, Tensor], float], by default accuracy
     train_kwargs : dict[str, Any], optional
         Training key word arguments for training the pred_model, by default None
 
@@ -103,9 +111,9 @@ def remove_high_low(
         ``(i * percentile)`` valuable/most valuable data points are removed
 
         - **"axis"** -- Proportion of data values removed currently
-        - **f"remove_least_influential_first_{metric_name}"** -- Performance of model
+        - **f"remove_least_influential_first_{metric}"** -- Performance of model
             after removing a proportion of the data points with the lowest data values
-        - **"f"remove_most_influential_first_{metric_name}""** -- Performance of model
+        - **"f"remove_most_influential_first_{metric}""** -- Performance of model
             after removing a proportion of the data points with the highest data values
     """
     if isinstance(fetcher, DataFetcher):
@@ -115,7 +123,8 @@ def remove_high_low(
         x_test, y_test = data["x_test"], data["y_test"]
 
     data_values = evaluator.data_values
-    curr_model = evaluator.pred_model.clone()
+    model = model if model is not None else evaluator.pred_model
+    curr_model = model.clone()
 
     num_points = len(x_train)
     num_period = max(round(num_points * percentile), 5)  # Add at least 5/bin
@@ -137,7 +146,7 @@ def remove_high_low(
             **train_kwargs,
         )
         y_hat_valid = valuable_model.predict(x_test)
-        valuable_score = evaluator.evaluate(y_test, y_hat_valid)
+        valuable_score = metric(y_test, y_hat_valid)
         valuable_list.append(valuable_score)
 
         # Removing most valuable samples first
@@ -151,14 +160,14 @@ def remove_high_low(
             **train_kwargs,
         )
         iy_hat_valid = unvaluable_model.predict(x_test)
-        unvaluable_score = evaluator.evaluate(y_test, iy_hat_valid)
+        unvaluable_score = metric(y_test, iy_hat_valid)
         unvaluable_list.append(unvaluable_score)
 
     x_axis = [i / num_bins for i in range(num_bins)]
 
     eval_results = {
-        f"remove_least_influential_first_{metric_name}": valuable_list,
-        f"remove_most_influential_first_{metric_name}": unvaluable_list,
+        f"remove_least_influential_first_{get_name(metric)}": valuable_list,
+        f"remove_most_influential_first_{get_name(metric)}": unvaluable_list,
         "axis": x_axis,
     }
 
@@ -169,7 +178,7 @@ def remove_high_low(
         plot.plot(x_axis, unvaluable_list[:num_bins], "x-")
 
         plot.set_xlabel("Fraction Removed")
-        plot.set_ylabel(metric_name)
+        plot.set_ylabel(get_name(metric))
         plot.legend(["Removing low value data", "Removing high value data"])
 
         plot.set_title(str(evaluator))
@@ -179,7 +188,7 @@ def remove_high_low(
 
 def discover_corrupted_sample(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher,
+    fetcher: Optional[DataFetcher] = None,
     data: Optional[dict[str, Any]] = None,
     percentile: float = 0.05,
     plot: Optional[Axes] = None,
@@ -193,8 +202,8 @@ def discover_corrupted_sample(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    fetcher : DataFetcher
-        DataFetcher containing noisy indices
+    fetcher : DataFetcher, optional
+        DataFetcher containing noisy indices, by default None
     data : dict[str, Any], optional
         Alternatively, pass in dictionary instead of a DataFetcher with the training and
         test data with the following keys:
@@ -296,11 +305,12 @@ def save_dataval(
 
 def increasing_bin_removal(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher = None,
+    fetcher: Optional[DataFetcher] = None,
+    model: Optional[Model] = None,
     data: Optional[dict[str, Any]] = None,
     bin_size: int = 1,
     plot: Optional[Axes] = None,
-    metric_name: str = "accuracy",
+    metric: Metrics = Metrics.ACCURACY,
     train_kwargs: Optional[dict[str, Any]] = None,
 ) -> dict[str, list[float]]:
     """Evaluate accuracy after removing data points with data values above threshold.
@@ -322,8 +332,11 @@ def increasing_bin_removal(
     ----------
     evaluator : DataEvaluator
         DataEvaluator to be tested
-    fetcher : DataFetcher
-        DataFetcher containing training and valid data points
+    fetcher : DataFetcher, optional
+        DataFetcher containing training and valid data points, by default None
+    model : Model, optional
+        Model which performance will be evaluated, if not defined,
+        uses evaluator's model to evaluate performance if evaluator uses a model
     data : dict[str, Any], optional
         Alternatively, pass in dictionary instead of a DataFetcher with the training and
         test data with the following keys:
@@ -337,8 +350,9 @@ def increasing_bin_removal(
         by default 1
     plot : Axes, optional
         Matplotlib Axes to plot data output, by default None
-    metric_name : str, optional
-        Name of DataEvaluator defined performance metric, by default assumed "accuracy"
+    metric : Metrics | Callable[[Tensor, Tensor], float], optional
+        Name of DataEvaluator defined performance metric which is one of the defined
+        metrics or a Callable[[Tensor, Tensor], float], by default accuracy
     train_kwargs : dict[str, Any], optional
         Training key word arguments for training the pred_model, by default None
 
@@ -352,11 +366,12 @@ def increasing_bin_removal(
             considers the subset of data points with data values below.
         - **"frac_datapoints_explored"** -- Proportion of data points with data values
             below the specified threshold
-        - **f"{metric_name}_at_datavalues"** -- Performance metric when data values
+        - **f"{metric}_at_datavalues"** -- Performance metric when data values
             above the specified threshold are removed
     """
     data_values = evaluator.data_values
-    curr_model = evaluator.pred_model
+    model = model if model is not None else evaluator.pred_model
+    curr_model = model.clone()
     if isinstance(fetcher, DataFetcher):
         x_train, y_train, *_, x_test, y_test = fetcher.datapoints
     else:
@@ -385,11 +400,11 @@ def increasing_bin_removal(
             **train_kwargs,
         )
         y_hat = new_model.predict(x_test)
-        perf.append(evaluator.evaluate(y_hat, y_test))
+        perf.append(metric(y_hat, y_test))
 
     eval_results = {
         "frac_datapoints_explored": frac_datapoints_explored,
-        f"{metric_name}_at_datavalues": perf,
+        f"{get_name(metric)}_at_datavalues": perf,
         "axis": x_axis,
     }
 
@@ -397,7 +412,7 @@ def increasing_bin_removal(
         plot.plot(x_axis, perf)
 
         plot.set_xticks([])
-        plot.set_ylabel(metric_name)
+        plot.set_ylabel(get_name(metric))
         plot.set_title(str(evaluator))
 
         divider = make_axes_locatable(plot)

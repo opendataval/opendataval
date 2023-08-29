@@ -1,48 +1,36 @@
-from typing import Optional
+from functools import partial
 
 import numpy as np
 import torch
-import tqdm
-from numpy.random import RandomState
-from sklearn.utils import check_random_state
-from torch.utils.data import Subset
 
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelMixin
+from opendataval.model import GradientModel
 
 
-class InfluenceFunctionEval(DataEvaluator):
-    """Influence Function Data Evaluation implementation.
+class InfluenceFunction(DataEvaluator, ModelMixin):
+    """Influence Function Data evaluation implementation.
 
-    Compute influence of each training example on the accuracy at each test example
-    through closely-related subsampled influence.
+    TODO it may be useful to compute gradients of the validation dataset in batches
+    to save time/space.
+    TODO H^{-1} implementation, Current implementation is for first-order gradients
 
     References
     ----------
-    .. [1] V. Feldman and C. Zhang,
-        What Neural Networks Memorize and Why: Discovering the Long Tail via
-        Influence Estimation,
-        arXiv.org, 2020. Available: https://arxiv.org/abs/2008.03703.
+    .. [1] P. W. Koh and P. Liang,
+        Understanding Black-box Predictions via Influence Functions,
+        arXiv.org, 2017. https://arxiv.org/abs/1703.04730.
 
     Parameters
     ----------
-    samples : int, optional
-        Number of models to fit to take to find data values, by default 1000
-    proportion : float, optional
-        Proportion of data points to be in each sample, cardinality of each subset is
-        :math:`(p)(num_points)`, by default 0.7 as specified by V. Feldman and C. Zhang
-    random_state : RandomState, optional
-        Random initial state, by default None
+    grad_args : tuple, optional
+        Positional arguments passed to the model.grad function
+    grad_kwargs : dict[str, Any], optional
+        Key word arguments passed to the model.grad function
     """
 
-    def __init__(
-        self,
-        num_models: int = 1000,
-        proportion: float = 0.7,
-        random_state: Optional[RandomState] = None,
-    ):
-        self.num_models = num_models
-        self.proportion = proportion
-        self.random_state = check_random_state(random_state)
+    def __init__(self, *grad_args, **grad_kwargs):
+        self.args = grad_args
+        self.kwargs = grad_kwargs
 
     def input_data(
         self,
@@ -69,21 +57,32 @@ class InfluenceFunctionEval(DataEvaluator):
         self.x_valid = x_valid
         self.y_valid = y_valid
 
-        self.num_points = len(x_train)
-        # [:, 1] represents included, [:, 0] represents excluded for following arrays
-        self.influence_matrix = np.zeros(shape=(self.num_points, 2))
-        self.sample_counts = np.zeros(shape=(self.num_points, 2))
+        self.influence = np.zeros(len(x_train))
+        return self
+
+    def input_model(self, pred_model: GradientModel):
+        """Input the prediction model with gradient.
+
+        Parameters
+        ----------
+        pred_model : GradientModel
+            Prediction model with a gradient
+        """
+        assert (  # In case model doesn't inherit but still wants the grad function
+            isinstance(pred_model, GradientModel)
+            or callable(getattr(pred_model, "grad"))
+        ), ("Model with gradient required.")
+
+        self.pred_model = pred_model.clone()
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """Trains model to predict data values.
+        """Trains model to compute influence of each data point (data values).
 
-        Trains the Influence Function Data Valuator by sampling from subsets of
-        :math:`(p)(num_points)` cardinality and computing the performance with the
-        :math:`i` data point and without the :math:`i` data point. The form of sampling
-        is similar to the shapely value when :math:`p` is :math:`0.5: (V. Feldman).
-        Likewise, if we sample not from the subsets of a specific cardinality but the
-        uniform across all subsets, it is similar to the Banzhaf value.
+        References
+        ----------
+        .. [1] Implementation inspired by `valda <https://github.com/uvanlp/valda>`_.
+            <https://github.com/uvanlp/valda/blob/main/src/valda/inf_func.py>
 
         Parameters
         ----------
@@ -92,43 +91,27 @@ class InfluenceFunctionEval(DataEvaluator):
         kwargs : dict[str, Any], optional
             Training key word arguments
         """
-        for i in tqdm.tqdm(range(self.num_models)):
-            subset = self.random_state.choice(
-                self.num_points, round(self.proportion * self.num_points), replace=False
-            )  # Random subset of cardinality `round(self.proportion * self.num_points)`
+        # Trains model on training data so we can find gradients of trained model
+        self.pred_model.fit(self.x_train, self.y_train, *args, **kwargs)
+        iter_grad = partial(self.pred_model.grad, *self.args, **self.kwargs)
 
-            curr_model = self.pred_model.clone()
-            curr_model.fit(
-                Subset(self.x_train, indices=subset),
-                Subset(self.y_train, indices=subset),
-                *args,
-                **kwargs,
-            )
-            y_valid_hat = curr_model.predict(self.x_valid)
-            curr_perf = self.evaluate(self.y_valid, y_valid_hat)
+        # Outer loop remains an iterator
+        # Inner loop pre-computes and stores gradients for speed up.
+        valid_grad_list = list(iter_grad(self.x_valid, self.y_valid))
 
-            included = (np.bincount(subset, minlength=self.num_points) != 0).astype(int)
-            self.influence_matrix[range(self.num_points), included] += curr_perf
-            self.sample_counts[range(self.num_points), included] += 1
+        for i, train_grads in enumerate(iter_grad(self.x_train, self.y_train)):
+            for valid_grads in valid_grad_list:
+                inf = sum(torch.sum(t * v) for t, v in zip(train_grads, valid_grads))
+                self.influence[i] += inf
 
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Return data values for each training data point.
-
-        Compute data values using the Influence Function data valuator. Finds
-        the difference of average performance of all sets including data point minus
-        not-including.
+        """Return influence (data values) for each training data point.
 
         Returns
         -------
         np.ndarray
-            Predicted data values/selection for every training data point
+            Predicted data values for training input data point
         """
-        msr = np.divide(
-            self.influence_matrix,
-            self.sample_counts,
-            out=np.zeros_like(self.influence_matrix),
-            where=self.sample_counts != 0,
-        )
-        return msr[:, 1] - msr[:, 0]  # Diff of subsets including/excluding i data point
+        return self.influence

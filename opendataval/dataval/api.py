@@ -4,36 +4,25 @@ from typing import Callable, ClassVar, Optional, TypeVar, Union
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Dataset
 
 from opendataval.dataloader import DataFetcher
+from opendataval.metrics import accuracy, neg_mse
 from opendataval.model import Model
-
-
-# Private default evaluation metrics
-def _acc(pred: torch.Tensor, target: torch.Tensor) -> float:
-    return (pred.argmax(dim=1) == target.argmax(dim=1)).float().mean().item()
-
-
-def _negmse(pred: torch.Tensor, target: torch.Tensor) -> float:
-    return -F.mse_loss(pred, target).item()
-
+from opendataval.util import ReprMixin
 
 Self = TypeVar("Self")
 
 
-class DataEvaluator(ABC):
+class DataEvaluator(ABC, ReprMixin):
     """Abstract class of Data Evaluators. Facilitates Data Evaluation computation.
 
     The following is an example of how the api would work:
     ::
         dataval = (
             DataEvaluator(*args, **kwargs)
-            .input_model(model)
-            .input_metric(metric)
             .input_data(x_train, y_train, x_valid, y_valid)
             .train_data_values(batch_size, epochs)
             .evaluate_data_values()
@@ -65,67 +54,6 @@ class DataEvaluator(ABC):
         """Registers DataEvaluator types, used as part of the CLI."""
         super().__init_subclass__(*args, **kwargs)
         cls.Evaluators[cls.__name__.lower()] = cls
-
-    def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor):
-        """Evaluate performance of the specified metric between label and predictions.
-
-        Moves input tensors to cpu because of certain bugs/errors that arise when the
-        tensors are not on the same device
-
-        Parameters
-        ----------
-        y : torch.Tensor
-            Labels to be evaluate performance of predictions
-        y_hat : torch.Tensor
-            Predictions of labels
-
-        Returns
-        -------
-        float
-            Performance metric
-        """
-        return self.metric(y.cpu(), y_hat.cpu())
-
-    def input_model(self, pred_model: Model):
-        """Input the prediction model and the evaluation metric.
-
-        Parameters
-        ----------
-        pred_model : Model
-            Prediction model
-        """
-        self.pred_model = pred_model.clone()
-        return self
-
-    def input_metric(self, metric: Callable[[torch.Tensor, torch.Tensor], float]):
-        """Input the evaluation metric.
-
-        Parameters
-        ----------
-        metric : Callable[[torch.Tensor, torch.Tensor], float]
-            Evaluation function to determine prediction model performance
-        """
-        self.metric = metric
-        return self
-
-    def input_model_metric(
-        self, pred_model: Model, metric: Callable[[torch.Tensor, torch.Tensor], float]
-    ):
-        """Input the prediction model and the evaluation metric.
-
-        Parameters
-        ----------
-        pred_model : Model
-            Prediction model
-        metric : Callable[[torch.Tensor, torch.Tensor], float]
-            Evaluation function to determine prediction model performance
-
-        Returns
-        -------
-        self : object
-            Returns a Data Evaluator.
-        """
-        return self.input_model(pred_model).input_metric(metric)
 
     def input_data(
         self,
@@ -162,17 +90,17 @@ class DataEvaluator(ABC):
     def setup(
         self,
         fetcher: DataFetcher,
-        pred_model: Model,
+        pred_model: Optional[Model] = None,
         metric: Optional[Callable[[torch.Tensor, torch.Tensor], float]] = None,
     ):
-        """Iputs model, metric and data into Data Evaluator.
+        """Inputs model, metric and data into Data Evaluator.
 
         Parameters
         ----------
         fetcher : DataFetcher
             DataFetcher containing the training and validation data set.
-        pred_model : Model
-            Prediction model
+        pred_model : Model, optional
+            Prediction model, not required if the DataFetcher is Model Less
         metric : Callable[[torch.Tensor, torch.Tensor], float]
             Evaluation function to determine prediction model performance,
             by default None and assigns either -MSE or ACC depending if categorical
@@ -188,13 +116,10 @@ class DataEvaluator(ABC):
         """
         self.input_fetcher(fetcher)
 
-        if metric is None:
-            if fetcher.one_hot:
-                metric = _acc
-            else:
-                metric = _negmse
-
-        self.input_model(pred_model).input_metric(metric)
+        if isinstance(self, ModelMixin):
+            if metric is None:
+                metric = accuracy if fetcher.one_hot else neg_mse
+            self.input_model(pred_model).input_metric(metric)
         return self
 
     def train(
@@ -272,17 +197,68 @@ class DataEvaluator(ABC):
         x_train, y_train, x_valid, y_valid, *_ = fetcher.datapoints
         return self.input_data(x_train, y_train, x_valid, y_valid)
 
-    def __new__(cls, *args, **kwargs):
-        """Record the first 5 arguments for unique identifier of DataEvaluator."""
-        obj = object.__new__(cls)
-        obj.__inputs = [str(arg) for arg in args[:5]]
-        obj.__inputs.extend(f"{arg_name}={value}" for arg_name, value in kwargs.items())
 
-        return obj
+class ModelMixin:
+    def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor):
+        """Evaluate performance of the specified metric between label and predictions.
 
-    def __repr__(self) -> str:
-        """Get unique string representation for a DataEvaluator."""
-        return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
+        Moves input tensors to cpu because of certain bugs/errors that arise when the
+        tensors are not on the same device
+
+        Parameters
+        ----------
+        y : torch.Tensor
+            Labels to be evaluate performance of predictions
+        y_hat : torch.Tensor
+            Predictions of labels
+
+        Returns
+        -------
+        float
+            Performance metric
+        """
+        return self.metric(y.cpu(), y_hat.cpu())
+
+    def input_model(self, pred_model: Model):
+        """Input the prediction model.
+
+        Parameters
+        ----------
+        pred_model : Model
+            Prediction model
+        """
+        self.pred_model = pred_model.clone()
+        return self
+
+    def input_metric(self, metric: Callable[[torch.Tensor, torch.Tensor], float]):
+        """Input the evaluation metric.
+
+        Parameters
+        ----------
+        metric : Callable[[torch.Tensor, torch.Tensor], float]
+            Evaluation function to determine prediction model performance
+        """
+        self.metric = metric
+        return self
+
+    def input_model_metric(
+        self, pred_model: Model, metric: Callable[[torch.Tensor, torch.Tensor], float]
+    ):
+        """Input the prediction model and the evaluation metric.
+
+        Parameters
+        ----------
+        pred_model : Model
+            Prediction model
+        metric : Callable[[torch.Tensor, torch.Tensor], float]
+            Evaluation function to determine prediction model performance
+
+        Returns
+        -------
+        self : object
+            Returns a Data Evaluator.
+        """
+        return self.input_model(pred_model).input_metric(metric)
 
 
 class ModelLessMixin:

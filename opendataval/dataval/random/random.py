@@ -22,7 +22,7 @@ class RandomEvaluator(DataEvaluator):
         self.random_state = check_random_state(random_state)
 
     def train_data_values(self, *args, **kwargs):
-        """RandomEval does not train to find the training values."""
+        """RandomEval does not train to find the data values."""
         pass
 
     def evaluate_data_values(self) -> np.ndarray:

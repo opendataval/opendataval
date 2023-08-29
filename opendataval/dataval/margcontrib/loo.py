@@ -3,10 +3,10 @@ import torch
 import tqdm
 from torch.utils.data import Subset
 
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelMixin
 
 
-class LeaveOneOut(DataEvaluator):
+class LeaveOneOut(DataEvaluator, ModelMixin):
     """Leave One Out data valuation implementation.
 
     References

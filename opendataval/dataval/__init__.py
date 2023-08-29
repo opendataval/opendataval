@@ -19,9 +19,12 @@ Catalog
     :toctree: generated/
 
     DataEvaluator
+    ModelMixin
+    ModelLessMixin
     AME
     DVRL
-    InfluenceFunctionEval
+    InfluenceFunction
+    InfluenceSubsample
     KNNShapley
     DataOob
     DataBanzhaf
@@ -32,11 +35,15 @@ Catalog
     ShapEvaluator
     RandomEvaluator
     RobustVolumeShapley
+    Sampler
+    TMCSampler
+    GrTMCSampler
 """
 from opendataval.dataval.ame import AME
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelLessMixin, ModelMixin
+from opendataval.dataval.csshap import ClassWiseShapley
 from opendataval.dataval.dvrl import DVRL
-from opendataval.dataval.influence import InfluenceFunctionEval
+from opendataval.dataval.influence import InfluenceFunction, InfluenceSubsample
 from opendataval.dataval.knnshap import KNNShapley
 from opendataval.dataval.lava import LavaEvaluator
 from opendataval.dataval.margcontrib import (
@@ -44,8 +51,11 @@ from opendataval.dataval.margcontrib import (
     DataBanzhaf,
     DataBanzhafMargContrib,
     DataShapley,
+    GrTMCSampler,
     LeaveOneOut,
+    Sampler,
     ShapEvaluator,
+    TMCSampler,
 )
 from opendataval.dataval.oob import DataOob
 from opendataval.dataval.random import RandomEvaluator

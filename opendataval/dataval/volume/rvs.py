@@ -4,19 +4,17 @@ from typing import Optional, Sequence
 
 import numpy as np
 import torch
-import tqdm
-from numpy.random import RandomState
-from sklearn.utils import check_random_state
 
 from opendataval.dataval.api import DataEvaluator, ModelLessMixin
+from opendataval.dataval.margcontrib import Sampler, TMCSampler
 
 
 class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
     """Robust Volume Shapley and Volume Shapley data valuation implementation.
 
     While the following DataEvaluator uses the same TMC-Shapley algorithm used by
-    semivalue evaluators, the following implementation does not utilize the GR statistic
-    to check for convergence. Instead a fixed number of samples is taken, which is
+    semivalue evaluators, the following implementation defaults to the non-GR statistic
+    implementation. Instead a fixed number of samples is taken, which is
     closer to the original implementation here:
     https://github.com/ZhaoxuanWu/VolumeBased-DataValuation/tree/main
 
@@ -29,9 +27,10 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
     Parameters
     ----------
-    mc_epochs : int, optional
-        Number of samples from TMC-Shapley, the total number of iterations will equal
-        len(x_train) * mc_epochs, by default 1000.
+    sampler : Sampler, optional
+        Sampler used to compute the marginal contributions. Can be found in
+        :py:mod:`~opendataval.margcontrib.sampler`, by default uses *args, **kwargs for
+        :py:class:`~opendataval.dataval.margcontrib.sampler.GrTMCSampler`.
     robust : bool, optional
         If the robust volume measure will be used which trades off a "more refined
         representation of diversity for greater robustness to replication",
@@ -39,8 +38,6 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
     omega : Optional[float], optional
         Width/discretization coefficient for x_train to be split into a set of d-cubes,
         required if `robust` is True, by default 0.05
-    random_state : Optional[RandomState], optional
-        Random initial state, by default None
 
     Mixins
     ------
@@ -50,16 +47,18 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
     def __init__(
         self,
-        mc_epochs: int = 1000,
+        sampler: Sampler = None,
         robust: bool = True,
         omega: Optional[float] = None,
-        random_state: Optional[RandomState] = None,
+        *args,
+        **kwargs
     ):
-        self.mc_epochs = mc_epochs
+        self.sampler = sampler
         self.robust = robust
         self.omega = omega if robust and omega is not None else 0.05
 
-        self.random_state = check_random_state(random_state)
+        if sampler is None:
+            self.sampler = TMCSampler(*args, **kwargs)
 
     def input_data(
         self,
@@ -84,81 +83,21 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
         self.x_train, _ = self.embeddings(x_train, x_valid)
         self.y_train, _ = y_train, y_valid
 
-        # Additional parameters
-        self.num_points = len(x_train)
-        self.marginal_contrib = np.zeros((self.num_points,))
-        self.marginal_contrib_sum = 0.0
-        self.marginal_count = np.zeros((self.num_points,)) + 1e-8
-
+        # Sampler parameters
+        self.num_points = len(self.x_train)
+        self.sampler.set_coalition(x_train)
+        self.sampler.set_evaluator(self._evaluate_volume)
         return self
 
     def train_data_values(self, *args, **kwargs):
-        """Trains model to predict data values.
-
-        Uses TMC-Shapley sampling to find the marginal contribution to volume of each
-        data point, takes self.mc_epochs number of samples.
-        """
-        for _ in tqdm.trange(self.mc_epochs):
-            self._calculate_marginal_volume()
-
-        self.data_values = self.marginal_contrib / self.marginal_count
+        self.marg_contrib = self.sampler.compute_marginal_contribution(*args, **kwargs)
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        """Return data values for each training data point.
-
-        Returns
-        -------
-        np.ndarray
-            Predicted data values/marginal contribution for every training data point
-        """
-        return self.data_values.flatten()
-
-    def _calculate_marginal_volume(self, min_cardinality: int = 5):
-        """Compute marginal volume through TMC-Shapley algorithm.
-
-        Parameters
-        ----------
-        args : tuple[Any], optional
-            Training positional args
-        min_cardinality : int, optional
-            Minimum cardinality of a training set, must be passed as kwarg, by default 5
-        kwargs : dict[str, Any], optional
-            Training key word arguments
-        """
-        # for each iteration, we use random permutation for our MCMC
-        subset = self.random_state.permutation(self.num_points)
-        coalition = list(subset[:min_cardinality])
-        truncation_counter = 0
-
-        # Baseline at minimal cardinality
-        curr_vol = self._evaluate_volume(coalition)
-        prev_vol = curr_vol
-
-        for idx in subset[min_cardinality:]:
-            # Increment the batch_size and evaluate the change compared to prev model
-            coalition.append(idx)
-            curr_vol = self._evaluate_volume(coalition)
-            marginal = curr_vol - prev_vol
-            prev_vol = curr_vol
-
-            self.marginal_contrib[idx] += marginal
-            self.marginal_contrib_sum += marginal
-            self.marginal_count[idx] += 1
-
-            # If a new increment is not large enough, we terminate the valuation.
-            # If updates are too small then we assume it contributes 0.
-            if abs(curr_vol - prev_vol) / self.marginal_contrib_sum < 1e-8:
-                truncation_counter += 1
-            else:
-                truncation_counter = 0
-
-            if truncation_counter == 10:  # If enter space without changes to model
-                break
-        return
+        return np.sum(self.marg_contrib / self.num_points, axis=1)
 
     def _evaluate_volume(self, subset: Sequence[int]):
-        x_train = self.x_train[subset]  # potential BUG with PyTorch Subsets
+        x_train = self.x_train[subset]  # TODO PyTorch Subsets
         if self.robust:
             x_tilde, cubes = compute_x_tilde_and_counts(x_train, self.omega)
             return compute_robust_volumes(x_tilde, cubes)

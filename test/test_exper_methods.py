@@ -9,7 +9,7 @@ from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher
 from opendataval.dataloader.noisify import mix_labels
-from opendataval.dataval import DataEvaluator
+from opendataval.dataval import DataEvaluator, ModelMixin
 from opendataval.experiment.exper_methods import (
     discover_corrupted_sample,
     increasing_bin_removal,
@@ -17,8 +17,9 @@ from opendataval.experiment.exper_methods import (
     remove_high_low,
     save_dataval,
 )
+from opendataval.metrics import Metrics
 from opendataval.model import Model
-from opendataval.util import set_random_state
+from opendataval.util import get_name, set_random_state
 
 
 class DummyModel(Model):
@@ -29,7 +30,7 @@ class DummyModel(Model):
         return torch.ones((len(x_train), 1))
 
 
-class DummyEvaluator(DataEvaluator):
+class DummyEvaluator(DataEvaluator, ModelMixin):
     def __init__(self, random_state: RandomState = None):
         self.pred_model = DummyModel()
         self.random_state = check_random_state(random_state)
@@ -76,18 +77,18 @@ class TestExperiment(unittest.TestCase):
         self.assertLessEqual(result["kmeans_f1"], 1.0)
 
     def test_increasing_bin_removal(self):
-        metric_name = "accuracy"
+        metric_name = Metrics.ACCURACY
         result = increasing_bin_removal(
             self.data_evaluator,
             self.fetcher,
             bin_size=1,
-            metric_name=metric_name,
+            metric=metric_name,
             plot=self.plot,
             train_kwargs=self.train_kwargs,
         )
         self.assertIn("axis", result)
         self.assertIn("frac_datapoints_explored", result)
-        self.assertIn(f"{metric_name}_at_datavalues", result)
+        self.assertIn(f"{get_name(metric_name)}_at_datavalues", result)
 
     def test_save_dataval(self):
         data_values = self.data_evaluator.evaluate_data_values()
@@ -110,18 +111,18 @@ class TestExperiment(unittest.TestCase):
             self.assertEqual(axis_len, len(result[key]), msg=f"len(axis) != len({key})")
 
     def test_remove_high_low(self):
-        metric = "accuracy"
+        metric = Metrics.ACCURACY
         result = remove_high_low(
             self.data_evaluator,
             self.fetcher,
-            metric_name=metric,
+            metric=metric,
             percentile=0.05,
             plot=self.plot,
             train_kwargs=self.train_kwargs,
         )
         keys = [
-            f"remove_least_influential_first_{metric}",
-            f"remove_most_influential_first_{metric}",
+            f"remove_least_influential_first_{get_name(metric)}",
+            f"remove_most_influential_first_{get_name(metric)}",
         ]
         self.assertIn("axis", result)
         axis_len = len(result["axis"])

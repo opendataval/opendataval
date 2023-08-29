@@ -11,10 +11,10 @@ from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader, RandomSampler
 
 from opendataval.dataloader.util import CatDataset
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelMixin
 
 
-class DVRL(DataEvaluator):
+class DVRL(DataEvaluator, ModelMixin):
     """Data valuation using reinforcement learning class, implemented with PyTorch.
 
     References

@@ -8,10 +8,10 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import Subset
 
-from opendataval.dataval.api import DataEvaluator
+from opendataval.dataval.api import DataEvaluator, ModelMixin
 
 
-class DataOob(DataEvaluator):
+class DataOob(DataEvaluator, ModelMixin):
     """Data Out-of-Bag data valuation implementation.
 
     Input evaluation metrics are valid if we compare one data point across several

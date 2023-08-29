@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from opendataval.model.api import TorchClassMixin, TorchPredictMixin
+from opendataval.model.grad import TorchGradMixin
 
 
-class LogisticRegression(TorchClassMixin, TorchPredictMixin):
+class LogisticRegression(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
     """Initialize LogisticRegression
 
     Parameters

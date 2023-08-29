@@ -15,6 +15,7 @@ from sklearn.utils import check_random_state
 
 from opendataval.dataloader import DataFetcher, mix_labels
 from opendataval.dataval import DataEvaluator
+from opendataval.experiment.util import filter_kwargs
 from opendataval.metrics import Metrics
 from opendataval.model import Model, ModelFactory
 
@@ -36,11 +37,14 @@ class ExperimentMediator:
         Prediction model for the DataEvaluators
     train_kwargs : dict[str, Any], optional
         Training key word arguments for the prediction model, by default None
-    metric_name : str, optional
+    metric_name : str | Metric | Callable[[Tensor, Tensor], float], optional
         Name of the performance metric used to evaluate the performance of the
-        prediction model, must be string for better labeling, by default "accuracy"
+        prediction model, by default accuracy
     output_dir: Union[str, pathlib.Path], optional
         Output directory of experiments
+    raises_error: bool, optional
+        Raises exception if one of the data evaluators fail, otherwise warns the user
+        but continues computation. By default, False
     """
 
     def __init__(
@@ -48,14 +52,17 @@ class ExperimentMediator:
         fetcher: DataFetcher,
         pred_model: Model,
         train_kwargs: Optional[dict[str, Any]] = None,
-        metric_name: Optional[str] = None,
+        metric_name: Optional[Union[str, Metrics, Callable]] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
+        raises_error: bool = False,
     ):
         self.fetcher = fetcher
         self.pred_model = pred_model
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
 
-        if metric_name is not None:
+        if callable(metric_name):
+            self.metric = metric_name
+        elif metric_name is not None:
             self.metric = Metrics(metric_name)
         else:
             self.metric = Metrics.ACCURACY if self.fetcher.one_hot else Metrics.NEG_MSE
@@ -64,6 +71,7 @@ class ExperimentMediator:
         if output_dir is not None:
             self.set_output_directory(output_dir)
         self.timings = {}
+        self.raise_error = raises_error
 
     @classmethod
     def setup(
@@ -79,8 +87,9 @@ class ExperimentMediator:
         random_state: Optional[RandomState] = None,
         pred_model: Optional[Model] = None,
         train_kwargs: Optional[dict[str, Any]] = None,
-        metric_name: Optional[str] = None,
+        metric_name: Optional[Union[str, Metrics, Callable]] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
+        raises_error: bool = False,
     ):
         """Create a DataFetcher from args and passes it into the init."""
         random_state = check_random_state(random_state)
@@ -104,6 +113,7 @@ class ExperimentMediator:
             train_kwargs=train_kwargs,
             metric_name=metric_name,
             output_dir=output_dir,
+            raises_error=raises_error,
         )
 
     @classmethod
@@ -121,8 +131,9 @@ class ExperimentMediator:
         model_name: Optional[str] = None,
         device: torch.device = torch.device("cpu"),
         train_kwargs: Optional[dict[str, Any]] = None,
-        metric_name: Optional[str] = None,
+        metric_name: Optional[Union[str, Metrics, Callable]] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
+        raises_error: bool = False,
     ):
         """Set up ExperimentMediator from ModelFactory using an input string.
 
@@ -167,13 +178,16 @@ class ExperimentMediator:
             by default None
         device : torch.device, optional
             Tensor device for acceleration, by default torch.device("cpu")
-        metric_name : str, optional
+        metric_name : str | Metric | Callable[[Tensor, Tensor], float], optional
             Name of the performance metric used to evaluate the performance of the
-            prediction model, must be string for better labeling, by default "accuracy"
+            prediction model, by default accuracy
         train_kwargs : dict[str, Any], optional
             Training key word arguments for the prediction model, by default None
         output_dir: Union[str, pathlib.Path]
             Output directory of experiments
+        raises_error: bool, optional
+            Raises exception if one of the data evaluators fail, otherwise warns the
+            user but continues computation. By default, False
 
         Returns
         -------
@@ -219,6 +233,7 @@ class ExperimentMediator:
             train_kwargs=train_kwargs,
             metric_name=metric_name,
             output_dir=output_dir,
+            raises_error=raises_error,
         )
 
     def compute_data_values(
@@ -249,6 +264,9 @@ class ExperimentMediator:
 
                 print(f"Elapsed time {data_val!s}: {delta}")
             except Exception as ex:
+                if self.raise_error:
+                    raise ex
+
                 warnings.warn(
                     f"""
                     An error occured during training, however training all evaluators
@@ -266,7 +284,6 @@ class ExperimentMediator:
     def evaluate(
         self,
         exper_func: Callable[[DataEvaluator, DataFetcher, ...], dict[str, Any]],
-        include_train: bool = False,
         save_output: bool = False,
         **exper_kwargs,
     ) -> pd.DataFrame:
@@ -282,9 +299,6 @@ class ExperimentMediator:
             the DataFetcher associated. Output must be a dict with results of the
             experiment. NOTE, the results must all be <= 1 dimensional but does not
             need to be the same length.
-        include_train : bool, optional
-            Whether to pass to exper_func the training kwargs defined for the
-            ExperimentMediator. If True, also passes in metric_name, by default False
         save_output : bool, optional
             Wether to save the outputs to ``self.output_dir``, by default False
         eval_kwargs : dict[str, Any], optional
@@ -298,13 +312,16 @@ class ExperimentMediator:
             DataFrame is indexed: [DataEvaluator.DataEvaluator]
         """
         data_eval_perf = {}
-        if include_train:
-            # All methods that train the underlying model track the model performance
-            exper_kwargs["train_kwargs"] = self.train_kwargs
-            exper_kwargs["metric_name"] = self.metric
+        filtered_kwargs = filter_kwargs(
+            exper_func,
+            train_kwargs=self.train_kwargs,
+            metric=self.metric,
+            model=self.pred_model,
+            **exper_kwargs,
+        )
 
         for data_val in self.data_evaluators:
-            eval_resp = exper_func(data_val, self.fetcher, **exper_kwargs)
+            eval_resp = exper_func(data_val, self.fetcher, **filtered_kwargs)
             data_eval_perf[str(data_val)] = eval_resp
 
         # index=[DataEvaluator.DataEvaluator]
@@ -321,7 +338,6 @@ class ExperimentMediator:
         figure: Optional[Figure] = None,
         row: Optional[int] = None,
         col: int = 2,
-        include_train: bool = False,
         save_output: bool = False,
         **exper_kwargs,
     ) -> tuple[pd.DataFrame, Figure]:
@@ -343,9 +359,6 @@ class ExperimentMediator:
             Number of rows of subplots in the plot, by default set to num_evaluators/col
         col : int, optional
             Number of columns of subplots in the plot, by default 2
-        include_train : bool, optional
-            Whether to pass to exper_func the training kwargs defined for the
-            ExperimentMediator. If True, passes in metric_name, by default False
         save_output : bool, optional
             Wether to save the outputs to ``self.output_dir``, by default False
         eval_kwargs : dict[str, Any], optional
@@ -366,14 +379,19 @@ class ExperimentMediator:
             row = math.ceil(self.num_data_eval / col)
 
         data_eval_perf = {}
-        if include_train:
-            # All methods that train the underlying model track the model performance
-            exper_kwargs["train_kwargs"] = self.train_kwargs
-            exper_kwargs["metric_name"] = self.metric
+        filtered_kwargs = filter_kwargs(
+            exper_func,
+            train_kwargs=self.train_kwargs,
+            metric=self.metric,
+            model=self.pred_model,
+            plot="placeholder",  # Place holder to confirm exper_func is plotable
+            **exper_kwargs,
+        )
 
         for i, data_val in enumerate(self.data_evaluators, start=1):
-            plot = figure.add_subplot(row, col, i)
-            eval_resp = exper_func(data_val, self.fetcher, plot=plot, **exper_kwargs)
+            if "plot" in filtered_kwargs:
+                filtered_kwargs["plot"] = figure.add_subplot(row, col, i)
+            eval_resp = exper_func(data_val, self.fetcher, **filtered_kwargs)
 
             data_eval_perf[str(data_val)] = eval_resp
 

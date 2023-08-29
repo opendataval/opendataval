@@ -13,23 +13,26 @@ from opendataval.dataval import (
     AME,
     DVRL,
     BetaShapley,
+    ClassWiseShapley,
     DataBanzhaf,
     DataBanzhafMargContrib,
     DataOob,
     DataShapley,
-    InfluenceFunctionEval,
+    InfluenceFunction,
+    InfluenceSubsample,
     KNNShapley,
     LavaEvaluator,
     LeaveOneOut,
     RandomEvaluator,
     RobustVolumeShapley,
+    TMCSampler,
 )
 from opendataval.experiment import ExperimentMediator, discover_corrupted_sample
-from opendataval.model import Model
+from opendataval.model import GradientModel
 from opendataval.util import set_random_state
 
 
-class DummyModel(Model):
+class DummyModel(GradientModel):
     def __init__(self, num_classes: int, random_state: RandomState = None):
         self.num_classes = num_classes
         torch.manual_seed(check_random_state(random_state).tomaxint())
@@ -40,6 +43,11 @@ class DummyModel(Model):
     def predict(self, x_train):
         return torch.rand(len(x_train), self.num_classes)
 
+    def grad(self, x_data, y_data):
+        """Dummy gradient method, returns random values for a 3 layer model."""
+        for _ in range(len(x_data)):
+            yield tuple(torch.rand((2, 3)) for _ in range(3))
+
 
 class TestDataEvaluatorDryRun(unittest.TestCase):
     """Quick dry run to ensure all data evaluators are working as intended."""
@@ -48,7 +56,7 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
         random_state = set_random_state(10)
         fetcher = (
             DataFetcher("iris", random_state=random_state)
-            .split_dataset_by_count(8, 2, 2)
+            .split_dataset_by_count(16, 16, 2)
             .noisify(mix_labels, noise_rate=0.2)
         )
 
@@ -72,12 +80,7 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
             .noisify(mix_labels, noise_rate=0.2)
         )
 
-        data_val = (
-            RandomEvaluator(10)
-            .input_model(DummyModel(3, 10))
-            .input_metric(lambda *_: 1.0)  # Dummy metric
-            .input_fetcher(fetcher)
-        )
+        data_val = RandomEvaluator(10).input_fetcher(fetcher)
 
         self.assertTrue(
             np.array_equal(
@@ -92,19 +95,24 @@ class TestDataEvaluatorDryRun(unittest.TestCase):
 # Dummy evaluators used for low iteration training, for testing
 RANDOM_STATE = set_random_state(10)  # Constant random state for testing
 
+first_sampler = TMCSampler(2, cache_name="cache_preset", random_state=RANDOM_STATE)
+second_sampler = TMCSampler(2, random_state=RANDOM_STATE)
+
 dummy_evaluators = [
     AME(2, random_state=RANDOM_STATE),  # For lasso, minimum needs 5 for split
     DVRL(1, rl_epochs=1, random_state=RANDOM_STATE),
     DataOob(1, random_state=RANDOM_STATE),
-    InfluenceFunctionEval(1, random_state=RANDOM_STATE),
+    InfluenceSubsample(1, random_state=RANDOM_STATE),
+    InfluenceFunction(),
     KNNShapley(5, random_state=RANDOM_STATE),
     LeaveOneOut(random_state=RANDOM_STATE),
     LavaEvaluator(random_state=RANDOM_STATE),
     DataBanzhaf(num_models=1, random_state=RANDOM_STATE),
-    DataBanzhafMargContrib(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
-    BetaShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
-    DataShapley(cache_name="cache_preset", random_state=RANDOM_STATE),
-    DataShapley(99, max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset_other", random_state=RANDOM_STATE),
+    DataBanzhafMargContrib(max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    BetaShapley(max_mc_epochs=2, models_per_iteration=1, cache_name="cache_preset", random_state=RANDOM_STATE),
+    DataShapley(first_sampler),
+    DataShapley(max_mc_epochs=2, models_per_iteration=1, random_state=RANDOM_STATE),
+    ClassWiseShapley(mc_epochs=2, random_state=RANDOM_STATE),
     RandomEvaluator(random_state=RANDOM_STATE),
-    RobustVolumeShapley(5, robust=False, random_state=RANDOM_STATE)
+    RobustVolumeShapley(second_sampler, robust=False)
 ]
