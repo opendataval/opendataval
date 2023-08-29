@@ -73,7 +73,7 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
         return x
 
 
-class RegressionMLP(TorchRegressMixin, TorchPredictMixin):
+class RegressionMLP(TorchRegressMixin, TorchPredictMixin, TorchGradMixin):
     """Initializes the Multilayer Perceptron Regression.
 
     Parameters
