@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from opendataval.dataval.api import DataEvaluator, ModelLessMixin
-from opendataval.dataval.margcontrib.sampler import Sampler, TMCSampler
+from opendataval.dataval.margcontrib import Sampler, TMCSampler
 
 
 class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
@@ -85,16 +85,16 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
         # Sampler parameters
         self.num_points = len(self.x_train)
-        self.sampler.set_num_points(self.num_points)
+        self.sampler.set_coalition(x_train)
         self.sampler.set_evaluator(self._evaluate_volume)
         return self
 
     def train_data_values(self, *args, **kwargs):
-        self.sampler.train_data_values(*args, **kwargs)
+        self.marg_contrib = self.sampler.compute_marginal_contribution(*args, **kwargs)
         return self
 
     def evaluate_data_values(self) -> np.ndarray:
-        return np.sum(self.sampler.marg_contrib() / self.num_points, axis=1)
+        return np.sum(self.marg_contrib / self.num_points, axis=1)
 
     def _evaluate_volume(self, subset: Sequence[int]):
         x_train = self.x_train[subset]  # potential BUG with PyTorch Subsets

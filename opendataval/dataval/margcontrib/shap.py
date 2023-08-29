@@ -63,9 +63,6 @@ class ShapEvaluator(DataEvaluator, ModelMixin, ABC):
     def compute_weight(self) -> np.ndarray:
         """Compute the weights for each cardinality of training set."""
 
-    def marg_contrib(self) -> np.ndarray:
-        return self.sampler.marg_contrib()
-
     def evaluate_data_values(self) -> np.ndarray:
         """Return data values for each training data point.
 
@@ -77,7 +74,7 @@ class ShapEvaluator(DataEvaluator, ModelMixin, ABC):
         np.ndarray
             Predicted data values/selection for every input data point
         """
-        return np.sum(self.marg_contrib() * self.compute_weight(), axis=1)
+        return np.sum(self.marg_contrib * self.compute_weight(), axis=1)
 
     def input_data(
         self,
@@ -106,13 +103,14 @@ class ShapEvaluator(DataEvaluator, ModelMixin, ABC):
 
         # Sampler specific setup
         self.num_points = len(x_train)
-        self.sampler.set_num_points(self.num_points)
+        self.sampler.set_coalition(x_train)
         self.sampler.set_evaluator(self._evaluate_model)
 
         return self
 
     def train_data_values(self, *args, **kwargs):
-        self.sampler.train_data_values(*args, **kwargs)
+        """Uses sampler to trains model to find marginal contribs and data values."""
+        self.marg_contrib = self.sampler.compute_marginal_contribution(*args, **kwargs)
         return self
 
     def _evaluate_model(self, subset: list[int], *args, **kwargs):

@@ -2,36 +2,61 @@ from abc import ABC, abstractmethod
 from typing import Callable, ClassVar, Optional, TypeVar
 
 import numpy as np
+import torch
 import tqdm
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
+from opendataval.util import ReprMixin
+
 Self = TypeVar("Self")
 
 
-class Sampler(ABC):
-    def set_evaluator(self, util_func: Callable[[list[int], ...], float]):
-        """Given a list of indices, finds the  contribution of the coalition.
+class Sampler(ABC, ReprMixin):
+    """Abstract Sampler class for marginal contribution based data evaluators.
 
-        This function sets the utility function for computing the utility of each
-        coalition, different samplers can use this utility function differently.
-        The following is an example of how the api would work:
+    Many marginal contribution based data evaluators depend on a sampling method as
+    they typically can be very computationally expensive. The Sampler class provides
+    a blue print of required methods to be used.
+    """
+
+    def set_evaluator(self, value_func: Callable[[list[int], ...], float]):
+        """Sets the evaluator function to evaluate the utility of a coalition
+
+
+        Parameters
+        ----------
+        value_func : Callable[[list[int], ...], float]
+            T his function sets the utility function  which computes the utility for a
+            given coalition of indices.
+
+        The following is an example of how the api would work in a DataEvaluator:
         ::
             self.sampler.set_evaluator(self._evaluate_model)
         """
-        self.compute_marg_contrib = util_func
+        self.compute_utility = value_func
 
     @abstractmethod
-    def train_data_values(self) -> Self:
-        """Computes the marginal contribution of each data point."""
+    def set_coalition(self, coalition: torch.Tensor) -> Self:
+        """Given the coalition, initializes data structures to compute marginal contrib.
+
+        Parameters
+        ----------
+        coalition : torch.Tensor
+            Coalition of data to compute the marginal contribution of each data point.
+        """
 
     @abstractmethod
-    def set_num_points(self, num_points: int) -> Self:
-        """Initializes storage to find marginal contribution of each data point."""
+    def compute_marginal_contribution(self, *args, **kwargs) -> np.ndarray:
+        """Given args and kwargs for the value func, computes marginal contribution.
 
-    @abstractmethod
-    def marg_contrib(self) -> np.ndarray:
-        """Gets marginal contribution of each data point."""
+        Returns
+        -------
+        np.ndarray
+            Marginal contribution array per data point for each coalition size. Dim 0 is
+            the index of the added data point, Dim 1 is the cardinality when the data
+            point is added.
+        """
 
 
 class MonteCarloSampler(Sampler):
@@ -47,7 +72,8 @@ class MonteCarloSampler(Sampler):
         Number of outer epochs of MCMC sampling, by default 1000
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
-        Unique cache_name of the model, caches marginal contributions, by default None
+        Unique cache_name of the model to  cache marginal contributions, set to None to
+        disable caching, by default "" which is set to a unique value for a object
     random_state : RandomState, optional
         Random initial state, by default None
     """
@@ -58,42 +84,42 @@ class MonteCarloSampler(Sampler):
     def __init__(
         self,
         mc_epochs: int = 1000,
-        cache_name: Optional[str] = None,
+        cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
     ):
         self.mc_epochs = mc_epochs
-        self.cache_name = cache_name or id(self)  # Unique identifier
+        self.cache_name = None if cache_name is None else (cache_name or id(self))
         self.random_state = check_random_state(random_state)
 
-    def set_num_points(self, num_points: int):
+    def set_coalition(self, coalition: torch.Tensor):
         """Initializes storage to find marginal contribution of each data point"""
-        self.num_points = num_points
+        self.num_points = len(coalition)
         self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
         self.marginal_count = np.zeros((self.num_points, self.num_points)) + 1e-8
 
         return self
 
-    def train_data_values(self, *args, **kwargs):
+    def compute_marginal_contribution(self, *args, **kwargs):
         """Trains model to predict data values.
 
-        Uses TMC-Shapley sampling to find the marginal contribution of each data point,
-        takes self.mc_epochs number of samples.
+        Uses permutation sampling to find the marginal contribution of each data point,
+        takes self.mc_epochs number of permutations.
         """
-        if (marg_contrib := TMCSampler.CACHE.get(self.cache_name)) is not None:
-            self.data_values = marg_contrib
-            return self
+        # Checks if data values have already been computed
+        if self.cache_name in self.CACHE:
+            return self.CACHE[self.cache_name]
+
+        if getattr(self, "marginal_contribution", None) is not None:
+            return self.marginal_contribution
 
         for _ in tqdm.trange(self.mc_epochs):
             self._calculate_marginal_contributions(*args, **kwargs)
 
-        self.data_values = self.marginal_contrib_sum / self.marginal_count
-        MonteCarloSampler.CACHE[self.cache_name] = self.data_values
-        return self
+        self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
 
-    def marg_contrib(self):
-        if not hasattr(self, "data_values"):
-            raise Exception("Sampler must be trained to find marginal contribution.")
-        return self.data_values
+        if self.cache_name is not None:
+            self.CACHE[self.cache_name] = self.marginal_contribution
+        return self.marginal_contribution
 
     def _calculate_marginal_contributions(self, *args, **kwargs):
         """Compute marginal contribution through MC sampling.
@@ -113,7 +139,7 @@ class MonteCarloSampler(Sampler):
         for cutoff, idx in enumerate(subset):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
-            curr_perf = self.compute_marg_contrib(coalition, *args, **kwargs)
+            curr_perf = self.compute_utility(coalition, *args, **kwargs)
 
             # When the cardinality of random set is 'n',
             self.marginal_contrib_sum[idx, cutoff] += curr_perf - prev_perf
@@ -139,7 +165,8 @@ class TMCSampler(Sampler):
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
-        Unique cache_name of the model, caches marginal contributions, by default None
+        Unique cache_name of the model to  cache marginal contributions, set to None to
+        disable caching, by default "" which is set to a unique value for a object
     random_state : RandomState, optional
         Random initial state, by default None
     """
@@ -151,43 +178,40 @@ class TMCSampler(Sampler):
         self,
         mc_epochs: int = 1000,
         min_cardinality: int = 5,
-        cache_name: Optional[str] = None,
+        cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
     ):
         self.mc_epochs = mc_epochs
         self.min_cardinality = min_cardinality
-        self.cache_name = cache_name or id(self)  # Unique identifier
         self.random_state = check_random_state(random_state)
+        self.cache_name = None if cache_name is None else (cache_name or id(self))
 
-    def set_num_points(self, num_points: int):
+    def set_coalition(self, coalition: torch.Tensor):
         """Initializes storage to find marginal contribution of each data point"""
-        self.num_points = num_points
+        self.num_points = len(coalition)
         self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
         self.marginal_count = np.zeros((self.num_points, self.num_points)) + 1e-8
 
         return self
 
-    def train_data_values(self, *args, **kwargs):
-        """Trains model to predict data values.
+    def compute_marginal_contribution(self, *args, **kwargs):
+        """Computes marginal contribution through TMC Shapley.
 
         Uses TMC-Shapley sampling to find the marginal contribution of each data point,
         takes self.mc_epochs number of samples.
         """
-        if (marg_contrib := TMCSampler.CACHE.get(self.cache_name)) is not None:
-            self.data_values = marg_contrib
-            return self
+        # Checks if data values have already been computed
+        if self.cache_name in self.CACHE:
+            return self.CACHE[self.cache_name]
 
         for _ in tqdm.trange(self.mc_epochs):
             self._calculate_marginal_contributions(*args, **kwargs)
 
-        self.data_values = self.marginal_contrib_sum / self.marginal_count
-        TMCSampler.CACHE[self.cache_name] = self.data_values
-        return self
+        self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
 
-    def marg_contrib(self):
-        if not hasattr(self, "data_values"):
-            raise Exception("Sampler must be trained to find marginal contribution.")
-        return self.data_values
+        if self.cache_name is not None:
+            self.CACHE[self.cache_name] = self.marginal_contribution
+        return self.marginal_contribution
 
     def _calculate_marginal_contributions(self, *args, **kwargs):
         """Compute marginal contribution through TMC-Shapley algorithm.
@@ -206,7 +230,7 @@ class TMCSampler(Sampler):
         truncation_counter = 0
 
         # Baseline at minimal cardinality
-        curr_perf = self.compute_marg_contrib(coalition, *args, **kwargs)
+        curr_perf = self.compute_utility(coalition, *args, **kwargs)
         prev_perf = curr_perf
 
         for cutoff, idx in enumerate(
@@ -214,7 +238,7 @@ class TMCSampler(Sampler):
         ):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
-            curr_perf = self.compute_marg_contrib(coalition, *args, **kwargs)
+            curr_perf = self.compute_utility(coalition, *args, **kwargs)
 
             # When the cardinality of random set is 'n',
             marginal_increment += curr_perf - prev_perf
@@ -264,7 +288,8 @@ class GrTMCSampler(Sampler):
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
-        Unique cache_name of the model, caches marginal contributions, by default None
+        Unique cache_name of the model to  cache marginal contributions, set to None to
+        disable caching, by default "" which is set to a unique value for a object
     random_state : RandomState, optional
         Random initial state, by default None
     """
@@ -282,7 +307,7 @@ class GrTMCSampler(Sampler):
         models_per_iteration: int = 100,
         mc_epochs: int = 1000,
         min_cardinality: int = 5,
-        cache_name: Optional[str] = None,
+        cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
     ):
         self.max_mc_epochs = max_mc_epochs
@@ -291,20 +316,20 @@ class GrTMCSampler(Sampler):
         self.mc_epochs = mc_epochs
         self.min_cardinality = min_cardinality
 
-        self.cache_name = cache_name or id(self)  # Unique identifier
+        self.cache_name = None if cache_name is None else (cache_name or id(self))
         self.random_state = check_random_state(random_state)
 
-    def set_num_points(self, num_points: int):
+    def set_coalition(self, coalition: torch.Tensor):
         """Initializes storage to find marginal contribution of each data point"""
-        self.num_points = num_points
+        self.num_points = len(coalition)
         self.marginal_contrib_sum = np.zeros((self.num_points, self.num_points))
         self.marginal_count = np.zeros((self.num_points, self.num_points)) + 1e-8
+
         # Used for computing the GR-statistic
         self.marginal_increment_array_stack = np.zeros((0, self.num_points))
-
         return self
 
-    def train_data_values(self, *args, **kwargs):
+    def compute_marginal_contribution(self, *args, **kwargs):
         """Compute the marginal contributions for semivalue based data evaluators.
 
         Computes the marginal contribution by sampling.
@@ -325,9 +350,8 @@ class GrTMCSampler(Sampler):
             Marginal increments when one data point is added.
         """
         # Checks cache if model name has been computed prior
-        if (marg_contrib := GrTMCSampler.CACHE.get(self.cache_name)) is not None:
-            self.marginal_contribution = marg_contrib
-            return self
+        if self.cache_name is not None and self.cache_name in self.CACHE:
+            return self.CACHE[self.cache_name]
 
         print("Start: marginal contribution computation", flush=True)
 
@@ -350,14 +374,10 @@ class GrTMCSampler(Sampler):
             print(f"{gr_stat=}")
 
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
-        GrTMCSampler.CACHE[self.cache_name] = self.marginal_contribution
         print("Done: marginal contribution computation", flush=True)
 
-        return self
-
-    def marg_contrib(self):  # TODO consider caching this outright
-        if not hasattr(self, "marginal_contribution"):
-            raise Exception("Sampler must be trained to find marginal contribution.")
+        if self.cache_name is not None:
+            self.CACHE[self.cache_name] = self.marginal_contribution
         return self.marginal_contribution
 
     def _calculate_marginal_contributions(self, *args, **kwargs) -> np.ndarray:
@@ -382,14 +402,14 @@ class GrTMCSampler(Sampler):
         truncation_counter = 0
 
         # Baseline at minimal cardinality
-        prev_perf = curr_perf = self.compute_marg_contrib(coalition, *args, **kwargs)
+        prev_perf = curr_perf = self.compute_utility(coalition, *args, **kwargs)
 
         for cutoff, idx in enumerate(
             subset[self.min_cardinality :], start=self.min_cardinality
         ):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
-            curr_perf = self.compute_marg_contrib(coalition, *args, **kwargs)
+            curr_perf = self.compute_utility(coalition, *args, **kwargs)
             marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',

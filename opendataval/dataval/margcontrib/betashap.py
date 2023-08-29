@@ -24,8 +24,6 @@ class BetaShapley(ShapEvaluator):
         Alpha parameter for beta distribution used in the weight function, by default 4
     beta : int, optional
         Beta parameter for beta distribution used in the weight function, by default 1
-    random_state : RandomState, optional
-        Random initial state, by default None
     """
 
     def __init__(
