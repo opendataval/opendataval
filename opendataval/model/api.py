@@ -88,12 +88,16 @@ class Model(ABC):
         return copy.deepcopy(self)
 
 
-class TorchClassMixin(Model, nn.Module):
-    """Classifier Mixin for Torch Neural Networks."""
+class TorchModel(Model, nn.Module):
+    """Torch Models have a device they belong to and shared behavior"""
 
     @property
     def device(self):
         return next(self.parameters()).device
+
+
+class TorchClassMixin(TorchModel):
+    """Classifier Mixin for Torch Neural Networks."""
 
     def fit(
         self,
@@ -155,12 +159,8 @@ class TorchClassMixin(Model, nn.Module):
         return self
 
 
-class TorchRegressMixin(Model, nn.Module):
+class TorchRegressMixin(TorchModel):
     """Regressor Mixin for Torch Neural Networks."""
-
-    @property
-    def device(self):
-        return next(self.parameters()).device
 
     def fit(
         self,
@@ -224,12 +224,8 @@ class TorchRegressMixin(Model, nn.Module):
         return self
 
 
-class TorchPredictMixin(Model, nn.Module):
+class TorchPredictMixin(TorchModel):
     """Torch ``.predict()`` method mixin for Torch Neural Networks."""
-
-    @property
-    def device(self):
-        return next(self.parameters()).device
 
     def predict(self, x: Union[torch.Tensor, Dataset]) -> torch.Tensor:
         """Predict output from input tensor/data set.
