@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 2
 
    opendataval.dataval.ame
+   opendataval.dataval.csshap
    opendataval.dataval.dvrl
    opendataval.dataval.influence
    opendataval.dataval.knnshap

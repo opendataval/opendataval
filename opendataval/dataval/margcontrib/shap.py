@@ -139,5 +139,5 @@ class ShapEvaluator(DataEvaluator, ModelMixin, ABC):
         )
         y_valid_hat = curr_model.predict(self.x_valid)
 
-        curr_perf = self.evaluate(self.y_valid, y_valid_hat)  # TODO decouple
+        curr_perf = self.evaluate(self.y_valid, y_valid_hat)
         return curr_perf

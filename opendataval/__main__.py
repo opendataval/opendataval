@@ -207,8 +207,8 @@ def run(
     exper_med.evaluate(em.save_dataval, save_output=True)
     exper_med.evaluate(em.noisy_detection, save_output=True)
     exper_med.evaluate(em.discover_corrupted_sample, save_output=True)
-    exper_med.evaluate(em.remove_high_low, include_train=True, save_output=True)
-    exper_med.evaluate(em.increasing_bin_removal, include_train=True, save_output=True)
+    exper_med.evaluate(em.remove_high_low, save_output=True)
+    exper_med.evaluate(em.increasing_bin_removal, save_output=True)
 
 if __name__ == "__main__":
     cli()

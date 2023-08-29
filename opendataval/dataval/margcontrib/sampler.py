@@ -17,7 +17,8 @@ class Sampler(ABC, ReprMixin):
 
     Many marginal contribution based data evaluators depend on a sampling method as
     they typically can be very computationally expensive. The Sampler class provides
-    a blue print of required methods to be used.
+    a blue print of required methods to be used and the following samplers provide ways
+    of caching computed marginal contributions if given a `"cache_name"`.
     """
 
     def set_evaluator(self, value_func: Callable[[list[int], ...], float]):
