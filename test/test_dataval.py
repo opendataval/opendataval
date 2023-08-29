@@ -18,7 +18,7 @@ from opendataval.dataval import (
     DataBanzhafMargContrib,
     DataOob,
     DataShapley,
-    InfluenceFunctionEval,
+    InfluenceSubsample,
     KNNShapley,
     LavaEvaluator,
     LeaveOneOut,
@@ -96,7 +96,7 @@ dummy_evaluators = [
     AME(2, random_state=RANDOM_STATE),  # For lasso, minimum needs 5 for split
     DVRL(1, rl_epochs=1, random_state=RANDOM_STATE),
     DataOob(1, random_state=RANDOM_STATE),
-    InfluenceFunctionEval(1, random_state=RANDOM_STATE),
+    InfluenceSubsample(1, random_state=RANDOM_STATE),
     KNNShapley(5, random_state=RANDOM_STATE),
     LeaveOneOut(random_state=RANDOM_STATE),
     LavaEvaluator(random_state=RANDOM_STATE),

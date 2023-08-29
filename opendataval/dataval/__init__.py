@@ -23,7 +23,7 @@ Catalog
     ModelLessMixin
     AME
     DVRL
-    InfluenceFunctionEval
+    InfluenceSubsample
     KNNShapley
     DataOob
     DataBanzhaf
@@ -42,7 +42,7 @@ from opendataval.dataval.ame import AME
 from opendataval.dataval.api import DataEvaluator, ModelLessMixin, ModelMixin
 from opendataval.dataval.csshap import ClassWiseShapley
 from opendataval.dataval.dvrl import DVRL
-from opendataval.dataval.influence import InfluenceFunctionEval
+from opendataval.dataval.influence import InfluenceSubsample
 from opendataval.dataval.knnshap import KNNShapley
 from opendataval.dataval.lava import LavaEvaluator
 from opendataval.dataval.margcontrib import (
