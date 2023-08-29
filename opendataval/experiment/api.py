@@ -42,6 +42,9 @@ class ExperimentMediator:
         prediction model, must be string for better labeling, by default "accuracy"
     output_dir: Union[str, pathlib.Path], optional
         Output directory of experiments
+    raises_error: bool, optional
+        Raises exception if one of the data evaluators fail, otherwise warns the user
+        but continues computation. By default, False
     """
 
     def __init__(
@@ -51,6 +54,7 @@ class ExperimentMediator:
         train_kwargs: Optional[dict[str, Any]] = None,
         metric_name: Optional[str] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
+        raises_error: bool = False,
     ):
         self.fetcher = fetcher
         self.pred_model = pred_model
@@ -65,6 +69,7 @@ class ExperimentMediator:
         if output_dir is not None:
             self.set_output_directory(output_dir)
         self.timings = {}
+        self.raise_error = raises_error
 
     @classmethod
     def setup(
@@ -82,6 +87,7 @@ class ExperimentMediator:
         train_kwargs: Optional[dict[str, Any]] = None,
         metric_name: Optional[str] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
+        raises_error: bool = False,
     ):
         """Create a DataFetcher from args and passes it into the init."""
         random_state = check_random_state(random_state)
@@ -105,6 +111,7 @@ class ExperimentMediator:
             train_kwargs=train_kwargs,
             metric_name=metric_name,
             output_dir=output_dir,
+            raises_error=raises_error,
         )
 
     @classmethod
@@ -124,6 +131,7 @@ class ExperimentMediator:
         train_kwargs: Optional[dict[str, Any]] = None,
         metric_name: Optional[str] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
+        raises_error: bool = False,
     ):
         """Set up ExperimentMediator from ModelFactory using an input string.
 
@@ -175,6 +183,9 @@ class ExperimentMediator:
             Training key word arguments for the prediction model, by default None
         output_dir: Union[str, pathlib.Path]
             Output directory of experiments
+        raises_error: bool, optional
+            Raises exception if one of the data evaluators fail, otherwise warns the
+            user but continues computation. By default, False
 
         Returns
         -------
@@ -220,6 +231,7 @@ class ExperimentMediator:
             train_kwargs=train_kwargs,
             metric_name=metric_name,
             output_dir=output_dir,
+            raises_error=raises_error,
         )
 
     def compute_data_values(
@@ -250,6 +262,9 @@ class ExperimentMediator:
 
                 print(f"Elapsed time {data_val!s}: {delta}")
             except Exception as ex:
+                if self.raise_error:
+                    raise ex
+
                 warnings.warn(
                     f"""
                     An error occured during training, however training all evaluators
