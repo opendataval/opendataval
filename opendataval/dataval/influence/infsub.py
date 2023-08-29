@@ -51,7 +51,7 @@ class InfluenceSubsample(DataEvaluator, ModelMixin):
         x_valid: torch.Tensor,
         y_valid: torch.Tensor,
     ):
-        """Store and transform input data for subsampled influence Data Valuation.
+        """Store and transform input data for Influence Subsample Data Valuation.
 
         Parameters
         ----------

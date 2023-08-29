@@ -18,6 +18,7 @@ from opendataval.dataval import (
     DataBanzhafMargContrib,
     DataOob,
     DataShapley,
+    InfluenceFunction,
     InfluenceSubsample,
     KNNShapley,
     LavaEvaluator,
@@ -27,11 +28,11 @@ from opendataval.dataval import (
     TMCSampler,
 )
 from opendataval.experiment import ExperimentMediator, discover_corrupted_sample
-from opendataval.model import Model
+from opendataval.model import GradientModel
 from opendataval.util import set_random_state
 
 
-class DummyModel(Model):
+class DummyModel(GradientModel):
     def __init__(self, num_classes: int, random_state: RandomState = None):
         self.num_classes = num_classes
         torch.manual_seed(check_random_state(random_state).tomaxint())
@@ -41,6 +42,11 @@ class DummyModel(Model):
 
     def predict(self, x_train):
         return torch.rand(len(x_train), self.num_classes)
+
+    def grad(self, x_data, y_data):
+        """Dummy gradient method, returns random values for a 3 layer model."""
+        for _ in range(len(x_data)):
+            yield tuple(torch.rand((2, 3)) for _ in range(3))
 
 
 class TestDataEvaluatorDryRun(unittest.TestCase):
@@ -97,6 +103,7 @@ dummy_evaluators = [
     DVRL(1, rl_epochs=1, random_state=RANDOM_STATE),
     DataOob(1, random_state=RANDOM_STATE),
     InfluenceSubsample(1, random_state=RANDOM_STATE),
+    InfluenceFunction(),
     KNNShapley(5, random_state=RANDOM_STATE),
     LeaveOneOut(random_state=RANDOM_STATE),
     LavaEvaluator(random_state=RANDOM_STATE),

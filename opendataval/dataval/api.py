@@ -220,7 +220,7 @@ class ModelMixin:
         return self.metric(y.cpu(), y_hat.cpu())
 
     def input_model(self, pred_model: Model):
-        """Input the prediction model and the evaluation metric.
+        """Input the prediction model.
 
         Parameters
         ----------
