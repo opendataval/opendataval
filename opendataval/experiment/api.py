@@ -37,9 +37,9 @@ class ExperimentMediator:
         Prediction model for the DataEvaluators
     train_kwargs : dict[str, Any], optional
         Training key word arguments for the prediction model, by default None
-    metric_name : str, optional
+    metric_name : str | Metric | Callable[[Tensor, Tensor], float], optional
         Name of the performance metric used to evaluate the performance of the
-        prediction model, must be string for better labeling, by default "accuracy"
+        prediction model, by default accuracy
     output_dir: Union[str, pathlib.Path], optional
         Output directory of experiments
     raises_error: bool, optional
@@ -52,7 +52,7 @@ class ExperimentMediator:
         fetcher: DataFetcher,
         pred_model: Model,
         train_kwargs: Optional[dict[str, Any]] = None,
-        metric_name: Optional[str] = None,
+        metric_name: Optional[Union[str, Metrics, Callable]] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
         raises_error: bool = False,
     ):
@@ -60,7 +60,9 @@ class ExperimentMediator:
         self.pred_model = pred_model
         self.train_kwargs = {} if train_kwargs is None else train_kwargs
 
-        if metric_name is not None:
+        if callable(metric_name):
+            self.metric = metric_name
+        elif metric_name is not None:
             self.metric = Metrics(metric_name)
         else:
             self.metric = Metrics.ACCURACY if self.fetcher.one_hot else Metrics.NEG_MSE
@@ -85,7 +87,7 @@ class ExperimentMediator:
         random_state: Optional[RandomState] = None,
         pred_model: Optional[Model] = None,
         train_kwargs: Optional[dict[str, Any]] = None,
-        metric_name: Optional[str] = None,
+        metric_name: Optional[Union[str, Metrics, Callable]] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
         raises_error: bool = False,
     ):
@@ -129,7 +131,7 @@ class ExperimentMediator:
         model_name: Optional[str] = None,
         device: torch.device = torch.device("cpu"),
         train_kwargs: Optional[dict[str, Any]] = None,
-        metric_name: Optional[str] = None,
+        metric_name: Optional[Union[str, Metrics, Callable]] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
         raises_error: bool = False,
     ):
@@ -176,9 +178,9 @@ class ExperimentMediator:
             by default None
         device : torch.device, optional
             Tensor device for acceleration, by default torch.device("cpu")
-        metric_name : str, optional
+        metric_name : str | Metric | Callable[[Tensor, Tensor], float], optional
             Name of the performance metric used to evaluate the performance of the
-            prediction model, must be string for better labeling, by default "accuracy"
+            prediction model, by default accuracy
         train_kwargs : dict[str, Any], optional
             Training key word arguments for the prediction model, by default None
         output_dir: Union[str, pathlib.Path]
@@ -313,7 +315,7 @@ class ExperimentMediator:
         filtered_kwargs = filter_kwargs(
             exper_func,
             train_kwargs=self.train_kwargs,
-            metric_name=self.metric,
+            metric=self.metric,
             model=self.pred_model,
             **exper_kwargs,
         )
@@ -380,7 +382,7 @@ class ExperimentMediator:
         filtered_kwargs = filter_kwargs(
             exper_func,
             train_kwargs=self.train_kwargs,
-            metric_name=self.metric,
+            metric=self.metric,
             model=self.pred_model,
             plot="placeholder",  # Place holder to confirm exper_func is plotable
             **exper_kwargs,

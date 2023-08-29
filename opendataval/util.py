@@ -89,6 +89,11 @@ class FuncEnum(StrEnum):
         return self.value(*args, **kwargs)
 
 
+def get_name(func: Callable) -> str:
+    """Gets name from function."""
+    return getattr(func, "__name__", str(func))
+
+
 class MeanStdTime:
     """Formats Mean and standard time."""
 
