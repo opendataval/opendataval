@@ -199,6 +199,8 @@ class DataEvaluator(ABC, ReprMixin):
 
 
 class ModelMixin:
+    """Mixin for data evaluators that require a model"""
+
     def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor):
         """Evaluate performance of the specified metric between label and predictions.
 
@@ -261,26 +263,21 @@ class ModelMixin:
         return self.input_model(pred_model).input_metric(metric)
 
 
-class ModelLessMixin:
-    """Mixin for DataEvaluators without a prediction model and use embeddings.
+class EmbeddingMixin:
+    """Mixin for DataEvaluators with embeddings.
 
-    Using embeddings and then predictiong the data values has been used by
-    Ruoxi Jia Group with their KNN Shapley and LAVA data evaluators.
-
-    References
-    ----------
-    .. [1] R. Jia et al.,
-        Efficient Task-Specific Data Valuation for Nearest Neighbor Algorithms,
-        arXiv.org, 2019. Available: https://arxiv.org/abs/1908.08619.
+    Using embeddings is most frequently used on model-less DataEvaluators. When
+    comparing performance for a specific model, if we want to use an embedding, we'd
+    either want the Model itself to apply the transformation or the data to already
+    be transformed. For model-less data evaluators, the ``embedding_model`` allows us
+    to still use those embeddings.
+    The Ruoxi Jia Group with their KNN Shapley and LAVA data evaluators use embeddings.
 
     Attributes
     ----------
     embedding_model : Model
         Embedding model used by model-less DataEvaluator to compute the data values for
         the embeddings and not the raw input.
-    pred_model : Model
-        The pred_model is unused for training, but to compare a series of models on
-        the same algorithim, we compare against a shared prediction algorithim.
     """
 
     def embeddings(

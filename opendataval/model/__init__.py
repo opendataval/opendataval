@@ -111,7 +111,7 @@ from opendataval.model.logistic_regression import LogisticRegression
 from opendataval.model.mlp import ClassifierMLP, RegressionMLP
 
 
-def ModelFactory(
+def ModelFactory(  # noqa: C901
     model_name: str,
     fetcher: Optional[DataFetcher] = None,
     device: torch.device = torch.device("cpu"),
@@ -151,6 +151,8 @@ def ModelFactory(
         Raises exception when model name is not matched
     """
     covar_dim, label_dim = fetcher.covar_dim, fetcher.label_dim
+    if model_name is None:
+        return None
     model_name = model_name.lower()
 
     if model_name == "logisticregression":

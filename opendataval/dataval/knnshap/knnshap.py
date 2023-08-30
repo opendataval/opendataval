@@ -7,11 +7,11 @@ from numpy.random import RandomState
 from sklearn.utils import check_random_state
 from torch.utils.data import DataLoader
 
-from opendataval.dataval.api import DataEvaluator, ModelLessMixin
+from opendataval.dataval.api import DataEvaluator, EmbeddingMixin
 from opendataval.model.api import Model
 
 
-class KNNShapley(DataEvaluator, ModelLessMixin):
+class KNNShapley(DataEvaluator, EmbeddingMixin):
     """Data valuation using KNNShapley implementation.
 
     KNN Shapley is a model-less mixin. This means we cannot specify an underlying
