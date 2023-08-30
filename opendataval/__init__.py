@@ -34,5 +34,5 @@ Utils
     ~opendataval.util.load_mediator_output
     __version__
 """
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 """Version release number."""

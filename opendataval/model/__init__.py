@@ -111,7 +111,7 @@ from opendataval.model.logistic_regression import LogisticRegression
 from opendataval.model.mlp import ClassifierMLP, RegressionMLP
 
 
-def ModelFactory(  # noqa: C901
+def ModelFactory(  # noqa: C901 model factory tries to match name with long if-else
     model_name: str,
     fetcher: Optional[DataFetcher] = None,
     device: torch.device = torch.device("cpu"),

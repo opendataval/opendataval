@@ -28,7 +28,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: "latest"
+          automatic_release_tag: "v${{ steps.tag.outputs.tag_name }}"
           draft: True
           title: "Version: ${{ steps.tag.outputs.tag_name }}"
           files: LICENSE.txt
