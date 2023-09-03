@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader, Dataset, default_collate
 
 from opendataval.dataloader.util import CatDataset
 
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound="Model")
 
 
 class Model(ABC):

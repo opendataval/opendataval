@@ -13,7 +13,7 @@ from opendataval.metrics import accuracy, neg_mse
 from opendataval.model import Model
 from opendataval.util import ReprMixin
 
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound="DataEvaluator")
 
 
 class DataEvaluator(ABC, ReprMixin):
@@ -100,7 +100,7 @@ class DataEvaluator(ABC, ReprMixin):
         fetcher : DataFetcher
             DataFetcher containing the training and validation data set.
         pred_model : Model, optional
-            Prediction model, not required if the DataFetcher is Model Less
+            Prediction model, not required if the DataFetcher is Model less
         metric : Callable[[torch.Tensor, torch.Tensor], float]
             Evaluation function to determine prediction model performance,
             by default None and assigns either -MSE or ACC depending if categorical
@@ -125,7 +125,7 @@ class DataEvaluator(ABC, ReprMixin):
     def train(
         self,
         fetcher: DataFetcher,
-        pred_model: Model,
+        pred_model: Optional[Model] = None,
         metric: Optional[Callable[[torch.Tensor, torch.Tensor], float]] = None,
         *args,
         **kwargs,
@@ -139,8 +139,8 @@ class DataEvaluator(ABC, ReprMixin):
         ----------
         fetcher : DataFetcher
             DataFetcher containing the training and validation data set.
-        pred_model : Model
-            Prediction model
+        pred_model : Model, optional
+            Prediction model, not required if the DataFetcher is Model less
         metric : Callable[[torch.Tensor, torch.Tensor], float]
             Evaluation function to determine prediction model performance,
             by default None and assigns either -MSE or ACC depending if categorical

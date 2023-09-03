@@ -11,7 +11,7 @@ import tqdm
 from torch.utils.data import Dataset
 
 DatasetFunc = Callable[..., Union[Dataset, np.ndarray, tuple[np.ndarray, np.ndarray]]]
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound="Register")
 
 
 @lru_cache()

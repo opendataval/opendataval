@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from opendataval.dataloader.register import Register
 from opendataval.dataloader.util import CatDataset
 
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound="DataFetcher")
 
 
 class DataFetcher:

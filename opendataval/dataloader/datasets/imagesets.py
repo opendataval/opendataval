@@ -28,7 +28,7 @@ from torchvision.datasets import (
 
 from opendataval.dataloader.register import Register
 
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound=Dataset)
 
 MAX_DATASET_SIZE = 50000
 

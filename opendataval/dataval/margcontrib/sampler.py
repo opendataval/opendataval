@@ -9,7 +9,7 @@ from sklearn.utils import check_random_state
 
 from opendataval.util import ReprMixin
 
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound="Sampler")
 
 
 class Sampler(ABC, ReprMixin):

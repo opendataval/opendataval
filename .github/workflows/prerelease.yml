@@ -1,9 +1,6 @@
 name: Make pre-release
 
 on:
-  push:
-    tags:
-      - v*
   workflow_dispatch:
 
 jobs:
