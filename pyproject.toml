@@ -2,6 +2,10 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# ========================================= #
+#                   PyPi                    #
+# ========================================= #
+
 [project]
 name = "opendataval"
 authors = [
@@ -63,6 +67,10 @@ test = [
     "pytest-cov~=4.0.0"
 ]
 
+# ========================================= #
+#                 Building                  #
+# ========================================= #
+
 [tool.hatch]
 packages = ["opendataval"]
 
@@ -77,6 +85,10 @@ include = [
 ]
 
 skip-excluded-dirs = true
+
+# ========================================= #
+#                  Linting                  #
+# ========================================= #
 
 [tool.black]
 line-length = 88
@@ -119,6 +131,10 @@ known-third-party = [
     "transformers",
     "typer",
 ]
+
+# ========================================= #
+#                  Testing                  #
+# ========================================= #
 
 [tool.coverage.run]
 source = ["opendataval"]
