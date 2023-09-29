@@ -15,7 +15,7 @@ Ensure the following tasks have been completed
 - [ ] ```pip-sync requirements-extra.txt```
 - [ ] ```make build```
 - [ ] ```make format```
-- [ ] ```make test```
+- [ ] ```make coverage```
 - [ ] Confirmed auto merge is valid or will solve all merge conflicts
 - [ ] Wrote Documentation, Docstrings, comments and tests.
 - [ ] Put `closes #XXXX` in your comment to auto-close issues or added the issues to the PR.

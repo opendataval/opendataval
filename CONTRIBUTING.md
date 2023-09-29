@@ -13,7 +13,7 @@ Contributing
 4. Create a feature branch ```git checkout -b my_feature```
 5. Update the branch frequently with ```git fetch origin```
 6. Develop the feature. Feel free to use ```git commit --amend``` so each commit feels like a checkpoint with detailed messages. With precommit hooks, you're forced to adhere to some style guidelines.
-7. Test your code (and write more [tests](https://github.com/opendataval/opendataval/tree/main/test)!) using ```make test```
+7. Test your code (and write more [tests](https://github.com/opendataval/opendataval/tree/main/test)!) using ```make coverage```
 8. Keep your code clean with ```make format```
 9. Send it to a remote branch with ```git push -u origin ```
 
@@ -27,7 +27,7 @@ Pull Request Checklist
 
 Quick links
 -----------
-* [Paper](TODO)
+* [Paper](https://arxiv.org/abs/2306.10577)
 * [Issues](https://github.com/opendataval/opendataval/issues)
 * [Scikit-learn docs](https://scikit-learn.org/dev/developers/contributing.html)
 

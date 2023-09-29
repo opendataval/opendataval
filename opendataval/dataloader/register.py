@@ -11,7 +11,7 @@ import tqdm
 from torch.utils.data import Dataset
 
 DatasetFunc = Callable[..., Union[Dataset, np.ndarray, tuple[np.ndarray, np.ndarray]]]
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound="Register")
 
 
 @lru_cache()
@@ -115,7 +115,7 @@ class Register:
     dataset_name : str
         Data set name
     one_hot : bool, optional
-        Whether the data set should be one hot encoded labeled, by default False
+        Whether the data set is one hot encoded labeled, by default False
     cacheable : bool, optional
         Whether data set can be downloaded and cached, by default False
     presplit : bool, optional

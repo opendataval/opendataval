@@ -5,11 +5,11 @@ from typing import Optional, Sequence
 import numpy as np
 import torch
 
-from opendataval.dataval.api import DataEvaluator, EmbeddingMixin
+from opendataval.dataval.api import DataEvaluator, ModelLessMixin
 from opendataval.dataval.margcontrib import Sampler, TMCSampler
 
 
-class RobustVolumeShapley(DataEvaluator, EmbeddingMixin):
+class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
     """Robust Volume Shapley and Volume Shapley data valuation implementation.
 
     While the following DataEvaluator uses the same TMC-Shapley algorithm used by
@@ -41,8 +41,8 @@ class RobustVolumeShapley(DataEvaluator, EmbeddingMixin):
 
     Mixins
     ------
-    EmbeddingMixin
-        Mixin for a data evaluator to use an embedding model.
+    ModelLessMixin
+        Mixin for a data evaluator that doesn't require a model or evaluation metric.
     """
 
     def __init__(
@@ -51,7 +51,7 @@ class RobustVolumeShapley(DataEvaluator, EmbeddingMixin):
         robust: bool = True,
         omega: Optional[float] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.sampler = sampler
         self.robust = robust

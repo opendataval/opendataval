@@ -16,7 +16,6 @@ registering the data set to load the data set as needed.
 """
 from opendataval.dataloader.datasets import (
     challenge,
-    cleanlab,
     datasets,
     imagesets,
     nlpsets,

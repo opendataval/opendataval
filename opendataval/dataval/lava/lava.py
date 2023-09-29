@@ -5,7 +5,7 @@ import torch
 from numpy.random import RandomState
 from sklearn.utils import check_random_state
 
-from opendataval.dataval.api import DataEvaluator, EmbeddingMixin
+from opendataval.dataval.api import DataEvaluator, ModelLessMixin
 from opendataval.dataval.lava.otdd import DatasetDistance, FeatureCost
 from opendataval.model import Model
 
@@ -22,7 +22,7 @@ def macos_fix():
         os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
-class LavaEvaluator(DataEvaluator, EmbeddingMixin):
+class LavaEvaluator(DataEvaluator, ModelLessMixin):
     """Data valuation using LAVA implementation.
 
     References
@@ -40,8 +40,8 @@ class LavaEvaluator(DataEvaluator, EmbeddingMixin):
 
     Mixins
     ------
-    EmbeddingMixin
-        Mixin for a data evaluator to possibly use an embedding model.
+    ModelLessMixin
+        Mixin for a data evaluator that doesn't require a model or evaluation metric.
     """
 
     def __init__(

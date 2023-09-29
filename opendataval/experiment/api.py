@@ -33,9 +33,8 @@ class ExperimentMediator:
     fetcher : DataFetcher
         DataFetcher for the data set used for the experiment. All `exper_func` take a
         DataFetcher as an argument to have access to all data points and noisy indices.
-    pred_model : Model, optional
-        Prediction model for the DataEvaluators, by default None meaning no
-        DataEvaluators that use a Model or exper_methods that use a model can be used.
+    pred_model : Model
+        Prediction model for the DataEvaluators
     train_kwargs : dict[str, Any], optional
         Training key word arguments for the prediction model, by default None
     metric_name : str | Metric | Callable[[Tensor, Tensor], float], optional
@@ -51,7 +50,7 @@ class ExperimentMediator:
     def __init__(
         self,
         fetcher: DataFetcher,
-        pred_model: Optional[Model] = None,
+        pred_model: Model,
         train_kwargs: Optional[dict[str, Any]] = None,
         metric_name: Optional[Union[str, Metrics, Callable]] = None,
         output_dir: Optional[Union[str, pathlib.Path]] = None,
@@ -250,14 +249,13 @@ class ExperimentMediator:
         kwargs = {**kwargs, **self.train_kwargs}
         for data_val in data_evaluators:
             try:
-                print(f"Started training for {data_val!s}")
                 start_time = time.perf_counter()
 
-                trained_eval = data_val.train(
-                    self.fetcher, self.pred_model, self.metric, *args, **kwargs
+                self.data_evaluators.append(
+                    data_val.train(
+                        self.fetcher, self.pred_model, self.metric, *args, **kwargs
+                    )
                 )
-
-                self.data_evaluators.append(trained_eval)
 
                 end_time = time.perf_counter()
                 delta = timedelta(seconds=end_time - start_time)
@@ -265,7 +263,6 @@ class ExperimentMediator:
                 self.timings[data_val] = delta
 
                 print(f"Elapsed time {data_val!s}: {delta}")
-
             except Exception as ex:
                 if self.raise_error:
                     raise ex

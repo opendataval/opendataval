@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2023 Anonymous Author 1, Anonymous Author 2, Anonymous Author 3, Anonymous Author 4
+Copyright (c) 2023 Kevin Jiang, Weixin Liang, James Zou, Yongchan Kwon
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

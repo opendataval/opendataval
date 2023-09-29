@@ -2,13 +2,17 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# ========================================= #
+#                   PyPi                    #
+# ========================================= #
+
 [project]
 name = "opendataval"
 authors = [
-    {name = "Anonymous Author 1", email = "opendataval+1@gmail.com"},
-    {name = "Anonymous Author 2", email = "opendataval+2@gmail.com"},
-    {name = "Anonymous Author 3", email = "opendataval+3@gmail.com"},
-    {name = "Anonymous Author 4", email = "opendataval+4@gmail.com"},
+    {name = "Kevin Jiang", email = "kfj2112@columbia.edu"},
+    {name = "Weixin Liang", email = "wxliang@cs.stanford.edu"},
+    {name = "James Zou", email = "jamesz@stanford.edu"},
+    {name = "Yongchan Kwon", email = "yk3012@columbia.edu"},
 ]
 description = "Transparent Data Valuation"
 readme = "README.md"
@@ -36,7 +40,7 @@ dependencies = [
     "torcheval~=0.0.7",
     "torchvision~=0.15",
     "tqdm~=4.64",
-    "transformers~=4.30.1",
+    "transformers~=4.33.3",
     "typer~=0.9",
 
 ]
@@ -54,7 +58,7 @@ dev = [
     "black~=22.10",
     "hatch~=1.7.0",
     "pip-tools~=6.13.0",
-    "pre-commit~=3.2",
+    "pre-commit~=3.4",
     "ruff~=0.0.275",
     "sphinx~=6.1"
 ]
@@ -62,6 +66,10 @@ test = [
     "pytest~=7.2.2",
     "pytest-cov~=4.0.0"
 ]
+
+# ========================================= #
+#                 Building                  #
+# ========================================= #
 
 [tool.hatch]
 packages = ["opendataval"]
@@ -77,6 +85,10 @@ include = [
 ]
 
 skip-excluded-dirs = true
+
+# ========================================= #
+#                  Linting                  #
+# ========================================= #
 
 [tool.black]
 line-length = 88
@@ -119,6 +131,10 @@ known-third-party = [
     "transformers",
     "typer",
 ]
+
+# ========================================= #
+#                  Testing                  #
+# ========================================= #
 
 [tool.coverage.run]
 source = ["opendataval"]

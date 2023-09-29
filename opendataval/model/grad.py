@@ -22,7 +22,7 @@ class GradientModel(Model):
         x_data: Union[torch.Tensor, Dataset],
         y_train: Union[torch.Tensor, Dataset],
         *args,
-        **kwargs
+        **kwargs,
     ) -> Iterator[tuple[torch.Tensor, ...]]:
         """Given input data, iterates through the computed gradients of the model.
 

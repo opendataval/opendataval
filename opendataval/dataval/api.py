@@ -13,7 +13,7 @@ from opendataval.metrics import accuracy, neg_mse
 from opendataval.model import Model
 from opendataval.util import ReprMixin
 
-Self = TypeVar("Self")
+Self = TypeVar("Self", bound="DataEvaluator")
 
 
 class DataEvaluator(ABC, ReprMixin):
@@ -100,7 +100,7 @@ class DataEvaluator(ABC, ReprMixin):
         fetcher : DataFetcher
             DataFetcher containing the training and validation data set.
         pred_model : Model, optional
-            Prediction model, not required if the DataFetcher is Model Less
+            Prediction model, not required if the DataFetcher is Model less
         metric : Callable[[torch.Tensor, torch.Tensor], float]
             Evaluation function to determine prediction model performance,
             by default None and assigns either -MSE or ACC depending if categorical
@@ -125,7 +125,7 @@ class DataEvaluator(ABC, ReprMixin):
     def train(
         self,
         fetcher: DataFetcher,
-        pred_model: Model,
+        pred_model: Optional[Model] = None,
         metric: Optional[Callable[[torch.Tensor, torch.Tensor], float]] = None,
         *args,
         **kwargs,
@@ -139,8 +139,8 @@ class DataEvaluator(ABC, ReprMixin):
         ----------
         fetcher : DataFetcher
             DataFetcher containing the training and validation data set.
-        pred_model : Model
-            Prediction model
+        pred_model : Model, optional
+            Prediction model, not required if the DataFetcher is Model less
         metric : Callable[[torch.Tensor, torch.Tensor], float]
             Evaluation function to determine prediction model performance,
             by default None and assigns either -MSE or ACC depending if categorical
@@ -199,8 +199,6 @@ class DataEvaluator(ABC, ReprMixin):
 
 
 class ModelMixin:
-    """Mixin for data evaluators that require a model"""
-
     def evaluate(self, y: torch.Tensor, y_hat: torch.Tensor):
         """Evaluate performance of the specified metric between label and predictions.
 
@@ -263,21 +261,26 @@ class ModelMixin:
         return self.input_model(pred_model).input_metric(metric)
 
 
-class EmbeddingMixin:
-    """Mixin for DataEvaluators with embeddings.
+class ModelLessMixin:
+    """Mixin for DataEvaluators without a prediction model and use embeddings.
 
-    Using embeddings is most frequently used on model-less DataEvaluators. When
-    comparing performance for a specific model, if we want to use an embedding, we'd
-    either want the Model itself to apply the transformation or the data to already
-    be transformed. For model-less data evaluators, the ``embedding_model`` allows us
-    to still use those embeddings.
-    The Ruoxi Jia Group with their KNN Shapley and LAVA data evaluators use embeddings.
+    Using embeddings and then predictiong the data values has been used by
+    Ruoxi Jia Group with their KNN Shapley and LAVA data evaluators.
+
+    References
+    ----------
+    .. [1] R. Jia et al.,
+        Efficient Task-Specific Data Valuation for Nearest Neighbor Algorithms,
+        arXiv.org, 2019. Available: https://arxiv.org/abs/1908.08619.
 
     Attributes
     ----------
     embedding_model : Model
         Embedding model used by model-less DataEvaluator to compute the data values for
         the embeddings and not the raw input.
+    pred_model : Model
+        The pred_model is unused for training, but to compare a series of models on
+        the same algorithim, we compare against a shared prediction algorithim.
     """
 
     def embeddings(

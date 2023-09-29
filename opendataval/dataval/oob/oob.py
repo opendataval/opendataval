@@ -105,7 +105,7 @@ class DataOob(DataEvaluator, ModelMixin):
                 Subset(self.x_train, indices=in_bag),
                 Subset(self.y_train, indices=in_bag),
                 *args,
-                **kwargs,
+                **kwargs
             )
 
             y_hat = curr_model.predict(Subset(self.x_train, indices=out_bag))

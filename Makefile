@@ -1,13 +1,14 @@
-.PHONY: install clean build format test
+.PHONY: install clean build format
 
 ## Install for production
 install:
 	@echo ">> Installing dependencies"
 	python -m pip install --upgrade pip
-	python -m pip install -e .
+	python -m pip install pip-tools
+	pip-sync
 
 ## Install for development
-install-dev: install
+install-dev:
 	@echo ">> Installing dev dependencies"
 	python -m pip install -e ".[dev, test]"
 	pre-commit install
@@ -29,10 +30,10 @@ format:
 	black opendataval/
 
 ## Run tests
-test:
+coverage:
 	pytest --cov=opendataval/ --cov-report xml --log-level=WARNING --disable-pytest-warnings
 
-## Build dependencies
+# Build dependencies
 build:
 	pip-compile --resolver=backtracking --output-file=requirements.txt pyproject.toml
 	pip-compile --resolver=backtracking --extra=dev --extra=test --output-file=requirements-dev.txt pyproject.toml
@@ -62,8 +63,7 @@ build:
 # semicolon; see <http://stackoverflow.com/a/11799865/1968>
 .PHONY: help
 help:
-	@echo "$$(tput bold)Available rules:$$(tput sgr0)"
-	@echo
+	@echo "$$(tput bold)Available commands:$$(tput sgr0)"
 	@sed -n -e "/^## / { \
 		h; \
 		s/.*//; \
@@ -78,7 +78,6 @@ help:
 		s/\\n/ /g; \
 		p; \
 	}" ${MAKEFILE_LIST} \
-	| LC_ALL='C' sort --ignore-case \
 	| awk -F '---' \
 		-v ncol=$$(tput cols) \
 		-v indent=19 \
@@ -98,4 +97,4 @@ help:
 		} \
 		printf "\n"; \
 	}' \
-	| more $(shell test $(shell uname) == Darwin && echo '--no-init --raw-control-chars')
+	| more $(shell test $(shell uname) = Darwin && echo '--no-init --raw-control-chars

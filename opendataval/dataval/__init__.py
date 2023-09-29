@@ -20,7 +20,7 @@ Catalog
 
     DataEvaluator
     ModelMixin
-    EmbeddingMixin
+    ModelLessMixin
     AME
     DVRL
     InfluenceFunction
@@ -40,7 +40,7 @@ Catalog
     GrTMCSampler
 """
 from opendataval.dataval.ame import AME
-from opendataval.dataval.api import DataEvaluator, EmbeddingMixin, ModelMixin
+from opendataval.dataval.api import DataEvaluator, ModelLessMixin, ModelMixin
 from opendataval.dataval.csshap import ClassWiseShapley
 from opendataval.dataval.dvrl import DVRL
 from opendataval.dataval.influence import InfluenceFunction, InfluenceSubsample

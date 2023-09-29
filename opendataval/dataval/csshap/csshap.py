@@ -141,7 +141,7 @@ class ClassWiseShapley(DataEvaluator, ModelMixin):
         y_valid_in_class: Tensor,
         x_valid_out_class: Tensor,
         y_valid_out_class: Tensor,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Computes the utility given a subset of the in-class training data.
 
