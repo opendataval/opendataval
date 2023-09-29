@@ -48,7 +48,7 @@ dynamic = ["version"]
 
 [project.urls]
 Documentation = "https://opendataval.github.io"
-"Source code" = "https://github.com/kevinfjiang/opendataval"
+"Source code" = "https://github.com/opendataval/opendataval"
 
 [project.scripts]
 opendataval = "opendataval.__main__:cli"

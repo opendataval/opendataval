@@ -14,4 +14,4 @@ We offer a comprehensive collection of user-friendly notebook examples that grea
 | regression | wave_energy | Gradient Boosting | Tabular, feature noise |
 | regression | stock | Multi-Layer Perceptron | Tabular, feature noise |
 
-Are you interested in sharing your data analysis? Please see our [Contribution page](https://github.com/kevinfjiang/opendataval/blob/main/CONTRIBUTING.md).
+Are you interested in sharing your data analysis? Please see our [Contribution page](https://github.com/opendataval/opendataval/blob/main/CONTRIBUTING.md).

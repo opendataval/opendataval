@@ -3,11 +3,11 @@
 <!-- PROJECT LOGO -->
 
 <div width="175" align="right">
-<a href="https://github.com/kevinfjiang/opendataval">
+<a href="https://github.com/opendataval/opendataval">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/kevinfjiang/opendataval/blob/main/docs/_static/logo-dark-mode.png">
-      <source media="(prefers-color-scheme: light)" srcset="https://github.com/kevinfjiang/opendataval/blob/main/docs/_static/logo-light-mode.png">
-      <img alt="Logo toggles light and dark mode" src="https://github.com/kevinfjiang/opendataval/blob/main/docs/_static/logo-light-mode.png"  width="300" align="right">
+      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/opendataval/opendataval/blob/main/docs/_static/logo-dark-mode.png">
+      <source media="(prefers-color-scheme: light)" srcset="https://github.com/opendataval/opendataval/blob/main/docs/_static/logo-light-mode.png">
+      <img alt="Logo toggles light and dark mode" src="https://github.com/opendataval/opendataval/blob/main/docs/_static/logo-light-mode.png"  width="300" align="right">
     </picture>
 </a>
 </div>
@@ -31,20 +31,20 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
 |**CI/CD**|[![Build][test-shield]][test-url] ![Coverage][coverage_badge] |
 |**Issues**| [![Issues][issues-shield]][issues-url] |
 |**License**|[![MIT License][license-shield]][license-url]|
-<!-- |**Releases**|[![Releases][release-shield]][release-url]| -->
+|**Releases**|[![Releases][release-shield]][release-url]|
+|**Citation**| [![Citation][citation-shield]][citation-url] |
 <!-- |**Contributors**|[![Contributors][contributors-shield]][contributors-url]| -->
-<!-- |**Citation**| TODO | -->
 ## :sparkles: Features
 ----
 
 | Feature | Status | Links | Notes |
 |---------|--------|-------|-------|
-| **[Datasets](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataloader/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataloader.datasets.html#opendataval-dataloader-datasets-package) | Embeddings available for image/NLP datasets |
-| **[Models](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/model/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.model.html#module-opendataval.model) | Support available for sk-learn models |
-| **[Data Evaluators](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataval/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataval.html#module-opendataval.dataval) | |
-| **[Experiments](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/experiment/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.experiment.html#module-opendataval.experiment) | |
-| **[Examples](https://github.com/kevinfjiang/opendataval/tree/main/examples/readme.md)** | Stable | | |
-| **[CLI](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/__main__.py)** | Experimental | `opendataval --help` | No support for null values |
+| **[Datasets](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataloader.datasets.html#opendataval-dataloader-datasets-package) | Embeddings available for image/NLP datasets |
+| **[Models](https://github.com/opendataval/opendataval/tree/main/opendataval/model/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.model.html#module-opendataval.model) | Support available for sk-learn models |
+| **[Data Evaluators](https://github.com/opendataval/opendataval/tree/main/opendataval/dataval/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.dataval.html#module-opendataval.dataval) | |
+| **[Experiments](https://github.com/opendataval/opendataval/tree/main/opendataval/experiment/readme.md)** | Stable | [Docs](https://opendataval.github.io/opendataval.experiment.html#module-opendataval.experiment) | |
+| **[Examples](https://github.com/opendataval/opendataval/tree/main/examples/readme.md)** | Stable | | |
+| **[CLI](https://github.com/opendataval/opendataval/tree/main/opendataval/__main__.py)** | Experimental | `opendataval --help` | No support for null values |
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -55,10 +55,10 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
     ```
 2. Clone the repo and install
    ```sh
-   git clone https://github.com/kevinfjiang/opendataval.git
+   git clone https://github.com/opendataval/opendataval.git
    make install
    ```
-    a. Install optional dependencies if you're [contributing](https://github.com/kevinfjiang/opendataval/blob/main/CONTRIBUTING.md)
+    a. Install optional dependencies if you're [contributing](https://github.com/opendataval/opendataval/blob/main/CONTRIBUTING.md)
     ```sh
     make install-dev
     ```
@@ -94,7 +94,7 @@ data = eval_method.evaluate(noisy_detection)
 ```
 
 ### :computer: CLI
-`opendataval` comes with a quick [CLI](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/__main__.py) tool, The tool is under development and the template for a csv input is found at [`cli.csv`](https://github.com/kevinfjiang/opendataval/tree/main/cli.csv). Note that for kwarg arguments, the input must be valid json.
+`opendataval` comes with a quick [CLI](https://github.com/opendataval/opendataval/tree/main/opendataval/__main__.py) tool, The tool is under development and the template for a csv input is found at [`cli.csv`](https://github.com/opendataval/opendataval/tree/main/cli.csv). Note that for kwarg arguments, the input must be valid json.
 
 To use run the following command if installed with make-install:
 ```sh
@@ -116,8 +116,8 @@ Here are the 4 interacting parts of opendataval
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`DataFetcher`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataloader/readme.md)
-The DataFetcher takes the name of a [`Register`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataloader/readme.md#register-datasets) dataset and loads, transforms, splits, and adds noise to the data set.
+#### [`DataFetcher`](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md)
+The DataFetcher takes the name of a [`Register`](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/readme.md#register-datasets) dataset and loads, transforms, splits, and adds noise to the data set.
 ```python
 from opendataval.dataloader import DataFetcher
 
@@ -132,7 +132,7 @@ x_train, y_train, x_valid, y_valid, x_test, y_test = fetcher.datapoints
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`Model`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/model/readme.md)
+#### [`Model`](https://github.com/opendataval/opendataval/tree/main/opendataval/model/readme.md)
 `Model` is the predictive model for Data Evaluators.
 
 ```python
@@ -147,7 +147,7 @@ model.predict(x)
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`DataEvaluator`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataval/readme.md)
+#### [`DataEvaluator`](https://github.com/opendataval/opendataval/tree/main/opendataval/dataval/readme.md)
 We have a catalog of `DataEvaluator` to run experiments. To do so, input the `Model`, `DataFetcher`, and an evaluation metric (such as accuracy).
 
 ```python
@@ -164,7 +164,7 @@ data_values = dataval.evaluate_data_values()  # Recomputed values
 ```
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
-#### [`ExperimentMediator`](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/experiment/readme.md)
+#### [`ExperimentMediator`](https://github.com/opendataval/opendataval/tree/main/opendataval/experiment/readme.md)
 `ExperimentMediator` is helps make a cohesive and controlled experiment. NOTE Warnings are raised if errors occur in a specific `DataEvaluator`.
 ```python
 expermed = ExperimentrMediator(fetcher, model, train_kwargs, metric_name).compute_data_values(data_evaluators)
@@ -183,7 +183,7 @@ For more examples, please refer to the [Documentation](https://opendataval.githu
 ## :medal_sports: opendataval Leaderboards
 For datasets that start with the prefix challenge, we provide [leaderboards](https://opendataval.github.io/leaderboards). Compute the data values with an `ExperimentMediator` and use the `save_dataval` function to save a csv. Upload it to [here](https://opendataval.github.io/leaderboards)! Uploading will allow us to systematically compare your `DataEvaluator` against others in the field.
 
-The [available challenges](https://github.com/kevinfjiang/opendataval/tree/main/opendataval/dataloader/datasets/challenge.py) are currently:
+The [available challenges](https://github.com/opendataval/opendataval/tree/main/opendataval/dataloader/datasets/challenge.py) are currently:
 1. `challenge-iris`
 
 ```python
@@ -200,7 +200,7 @@ exper_med.compute_data_values([custom_data_evaluator]).evaluate(save_dataval, sa
 ## :wave: Contributing
 
 If you have a quick suggestion, reccomendation, bug-fixes please open an [issue][issues-url].
-If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](https://github.com/kevinfjiang/opendataval/blob/main/CONTRIBUTING.md).
+If you want to contribute to the project, either through data sets, experiments, presets, or fix stuff, please see our [Contribution page](https://github.com/opendataval/opendataval/blob/main/CONTRIBUTING.md).
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -224,29 +224,47 @@ Distributed under the MIT License. See [`LICENSE.txt`][license-url] for more inf
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
+## Cite Us
+
+If you found the library or the paper useful, please cite us!
+```
+@article{
+    jiang2023opendataval,
+    title={OpenDataVal: a Unified Benchmark for Data Valuation},
+    author={Kevin Fu Jiang and Weixin Liang and James Zou and Yongchan Kwon},
+    booktitle={Thirty-seventh Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+    year={2023},
+    url={https://openreview.net/forum?id=eEK99egXeB}
+}
+```
+
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/kevinfjiang/opendataval.svg?style=for-the-badge
-[contributors-url]: https://github.com/kevinfjiang/opendataval/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/kevinfjiang/opendataval.svg?style=for-the-badge
-[forks-url]: https://github.com/kevinfjiang/opendataval/network/members
-[stars-shield]: https://img.shields.io/github/stars/kevinfjiang/opendataval.svg?style=for-the-badge
-[stars-url]: https://github.com/kevinfjiang/opendataval/stargazers
-[issues-shield]: https://img.shields.io/github/issues/kevinfjiang/opendataval.svg?style=for-the-badge
-[issues-url]: https://github.com/kevinfjiang/opendataval/issues
-[license-shield]: https://img.shields.io/github/license/kevinfjiang/opendataval.svg?style=for-the-badge
-[license-url]: https://github.com/kevinfjiang/opendataval/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/opendataval/opendataval.svg?style=for-the-badge
+[contributors-url]: https://github.com/opendataval/opendataval/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/opendataval/opendataval.svg?style=for-the-badge
+[forks-url]: https://github.com/opendataval/opendataval/network/members
+[stars-shield]: https://img.shields.io/github/stars/opendataval/opendataval.svg?style=for-the-badge
+[stars-url]: https://github.com/opendataval/opendataval/stargazers
+[issues-shield]: https://img.shields.io/github/issues/opendataval/opendataval.svg?style=for-the-badge
+[issues-url]: https://github.com/opendataval/opendataval/issues
+[license-shield]: https://img.shields.io/github/license/opendataval/opendataval.svg?style=for-the-badge
+[license-url]: https://github.com/opendataval/opendataval/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[test-url]: https://github.com/kevinfjiang/opendataval/actions/workflows/test.yml
-[test-shield]: https://img.shields.io/github/actions/workflow/status/kevinfjiang/opendataval/test.yml?style=for-the-badge
+[test-url]: https://github.com/opendataval/opendataval/actions/workflows/test.yml
+[test-shield]: https://img.shields.io/github/actions/workflow/status/opendataval/opendataval/test.yml?style=for-the-badge
 [PyTorch-shield]: https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white
 [PyTorch-url]: https://pytorch.org/
 [scikit-learn-shield]: https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white
 [scikit-learn-url]: https://scikit-learn.org/stable/
 [numpy-url]: https://numpy.org/
-[numpy-shield]: https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white\
-[release-shield]: https://img.shields.io/github/v/release/kevinfjiang/opendataval?style=for-the-badge
-[release-url]: https://github.com/kevinfjiang/opendataval/releases
+[numpy-shield]: https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white
+[release-shield]: https://img.shields.io/github/v/release/opendataval/opendataval?style=for-the-badge
+[release-url]: https://github.com/opendataval/opendataval/releases
+[citation-shield]:https://img.shields.io/badge/Cite-Us-blue.svg?style=for-the-badge
+[citation-url]: #cite-us
 <!-- Coverage Comment:Begin -->
 [coverage_badge]: https://img.shields.io/badge/Coverage-81%25-green.svg?style=for-the-badge
 <!-- Coverage Comment:End -->
