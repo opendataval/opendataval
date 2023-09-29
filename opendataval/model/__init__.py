@@ -151,6 +151,8 @@ def ModelFactory(  # noqa: C901 model factory tries to match name with long if-e
         Raises exception when model name is not matched
     """
     covar_dim, label_dim = fetcher.covar_dim, fetcher.label_dim
+    if model_name is None:
+        return None
     model_name = model_name.lower()
 
     if model_name == "logisticregression":
