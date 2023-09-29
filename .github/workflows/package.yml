@@ -27,7 +27,7 @@ jobs:
         make install-dev
         hatch build
     - name: Run unit tests
-      run: make test
+      run: make coverage
     - uses: actions/upload-artifact@v3
       with:
         name: opendataval-dist

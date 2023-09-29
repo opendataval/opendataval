@@ -40,7 +40,7 @@ dependencies = [
     "torcheval~=0.0.7",
     "torchvision~=0.15",
     "tqdm~=4.64",
-    "transformers~=4.30.1",
+    "transformers~=4.33.3",
     "typer~=0.9",
 
 ]
@@ -58,7 +58,7 @@ dev = [
     "black~=22.10",
     "hatch~=1.7.0",
     "pip-tools~=6.13.0",
-    "pre-commit~=3.2",
+    "pre-commit~=3.4",
     "ruff~=0.0.275",
     "sphinx~=6.1"
 ]

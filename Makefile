@@ -30,7 +30,7 @@ format:
 	black opendataval/
 
 ## Run tests
-test:
+coverage:
 	pytest --cov=opendataval/ --cov-report xml --log-level=WARNING --disable-pytest-warnings
 
 # Build dependencies
