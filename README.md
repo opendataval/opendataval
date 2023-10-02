@@ -18,13 +18,14 @@
 
 Assessing the quality of individual data points is critical for improving model performance and mitigating biases. However, there is no way to systematically benchmark different algorithims.
 
-**OpenDataVal** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a few lines of code.
+**OpenDataVal** is an open-source initiative that with a diverse array of datasets/models (image, NLP, and tabular), data valuation algorithims, and evaluation tasks using just a few lines of code. 
 
 **OpenDataVal** also provides a leaderboards for data evaluation tasks. We've curated and added
-artificial noise to some datasets. Create your own `DataEvaluator` to top the [leaderboards](https://opendataval.github.io/leaderboards).
+artificial noise to some datasets. Create your own `DataEvaluator` to top the [leaderboards](https://opendataval.github.io/leaderboards). **OpenDataVal** is accepted at NeurIPS 2023 Trank on Datasets and Benchmarks.
 
 | Overview | |
 |----------|-|
+|**Paper**| [Paper link](https://arxiv.org/abs/2306.10577) |
 |**Python**|[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)|
 |**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black) |
 |**Documentation**| [![Github Pages](https://img.shields.io/badge/github%20pages-121013?style=for-the-badge&logo=github&logoColor=white)](https://opendataval.github.io) |
