@@ -71,6 +71,7 @@ class MonteCarloSampler(Sampler):
     ----------
     mc_epochs : int, optional
         Number of outer epochs of MCMC sampling, by default 1000
+    min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
         Unique cache_name of the model to  cache marginal contributions, set to None to
@@ -85,10 +86,12 @@ class MonteCarloSampler(Sampler):
     def __init__(
         self,
         mc_epochs: int = 1000,
+        min_cardinality: int = 5,
         cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
     ):
         self.mc_epochs = mc_epochs
+        self.min_cardinality = min_cardinality
         self.cache_name = None if cache_name is None else (cache_name or id(self))
         self.random_state = check_random_state(random_state)
 
@@ -134,17 +137,42 @@ class MonteCarloSampler(Sampler):
         """
         # for each iteration, we use random permutation for our MCMC
         subset = self.random_state.permutation(self.num_points)
-        coalition = []
-        curr_perf = prev_perf = 0
+        marginal_increment = np.zeros(self.num_points) + 1e-8  # Prevents overflow
+        coalition = list(subset[: self.min_cardinality])
+        truncation_counter = 0
 
-        for cutoff, idx in enumerate(subset):
+        # Baseline at minimal cardinality
+        prev_perf = curr_perf = self.compute_utility(coalition, *args, **kwargs)
+
+        for cutoff, idx in enumerate(
+            subset[self.min_cardinality :], start=self.min_cardinality
+        ):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
             curr_perf = self.compute_utility(coalition, *args, **kwargs)
+            marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
             self.marginal_contrib_sum[idx, cutoff] += curr_perf - prev_perf
             self.marginal_count[idx, cutoff] += 1
+
+            # If a new increment is not large enough, we terminate the valuation.
+            # If updates are too small then we assume it contributes 0.
+            if abs(curr_perf - prev_perf) / np.sum(marginal_increment) < 1e-8:
+                truncation_counter += 1
+            else:
+                truncation_counter = 0
+
+            if truncation_counter == 10:  # If enter space without changes to model
+                # to consider additional zero contributions
+                self.marginal_count[
+                    subset[(cutoff + 1) :], np.arange(cutoff + 1, len(subset))
+                ] += 1
+                break
+
+            # update performance
+            prev_perf = curr_perf
+
         return
 
 
@@ -226,13 +254,12 @@ class TMCSampler(Sampler):
         """
         # for each iteration, we use random permutation for our MCMC
         subset = self.random_state.permutation(self.num_points)
+        marginal_increment = np.zeros(self.num_points) + 1e-8  # Prevents overflow
         coalition = list(subset[: self.min_cardinality])
-        marginal_increment = 1e-8
         truncation_counter = 0
 
         # Baseline at minimal cardinality
-        curr_perf = self.compute_utility(coalition, *args, **kwargs)
-        prev_perf = curr_perf
+        prev_perf = curr_perf = self.compute_utility(coalition, *args, **kwargs)
 
         for cutoff, idx in enumerate(
             subset[self.min_cardinality :], start=self.min_cardinality
@@ -240,21 +267,29 @@ class TMCSampler(Sampler):
             # Increment the batch_size and evaluate the change compared to prev model
             coalition.append(idx)
             curr_perf = self.compute_utility(coalition, *args, **kwargs)
+            marginal_increment[idx] = curr_perf - prev_perf
 
             # When the cardinality of random set is 'n',
-            marginal_increment += curr_perf - prev_perf
             self.marginal_contrib_sum[idx, cutoff] += curr_perf - prev_perf
             self.marginal_count[idx, cutoff] += 1
 
             # If a new increment is not large enough, we terminate the valuation.
             # If updates are too small then we assume it contributes 0.
-            if abs(curr_perf - prev_perf) / marginal_increment < 1e-8:
+            if abs(curr_perf - prev_perf) / np.sum(marginal_increment) < 1e-8:
                 truncation_counter += 1
             else:
                 truncation_counter = 0
 
             if truncation_counter == 10:  # If enter space without changes to model
+                # to consider additional zero contributions
+                self.marginal_count[
+                    subset[(cutoff + 1) :], np.arange(cutoff + 1, len(subset))
+                ] += 1
                 break
+
+            # update performance
+            prev_perf = curr_perf
+
         return
 
 
@@ -281,10 +316,10 @@ class GrTMCSampler(Sampler):
         Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
     max_mc_epochs : int, optional
         Max number of outer epochs of MCMC sampling, by default 100
-    models_per_iteration : int, optional
-        Number of model fittings to take per iteration prior to checking GR convergence,
+    models_per_epoch : int, optional
+        Number of model fittings to take per epoch prior to checking GR convergence,
         by default 100
-    mc_epochs : int, optional
+    min_models : int, optional
         Minimum samples before checking MCMC convergence, by default 1000
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
@@ -305,16 +340,16 @@ class GrTMCSampler(Sampler):
         self,
         gr_threshold: float = 1.05,
         max_mc_epochs: int = 100,
-        models_per_iteration: int = 100,
-        mc_epochs: int = 1000,
+        models_per_epoch: int = 100,
+        min_models: int = 1000,
         min_cardinality: int = 5,
         cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
     ):
         self.max_mc_epochs = max_mc_epochs
         self.gr_threshold = gr_threshold
-        self.models_per_iteration = models_per_iteration
-        self.mc_epochs = mc_epochs
+        self.models_per_epoch = models_per_epoch
+        self.min_models = min_models
         self.min_cardinality = min_cardinality
 
         self.cache_name = None if cache_name is None else (cache_name or id(self))
@@ -364,7 +399,7 @@ class GrTMCSampler(Sampler):
             # we terminate iteration if Shapley value is converged.
             samples_array = [
                 self._calculate_marginal_contributions(*args, **kwargs)
-                for _ in tqdm.tqdm(range(self.models_per_iteration))
+                for _ in tqdm.tqdm(range(self.models_per_epoch))
             ]
             self.marginal_increment_array_stack = np.vstack(
                 [self.marginal_increment_array_stack, *samples_array],
@@ -425,6 +460,10 @@ class GrTMCSampler(Sampler):
                 truncation_counter = 0
 
             if truncation_counter == 10:  # If enter space without changes to model
+                # to consider additional zero contributions
+                self.marginal_count[
+                    subset[(cutoff + 1) :], np.arange(cutoff + 1, len(subset))
+                ] += 1
                 break
 
             # update performance
@@ -458,7 +497,7 @@ class GrTMCSampler(Sampler):
         float
             Gelman-Rubin statistic
         """
-        if len(samples) < self.mc_epochs:
+        if len(samples) < self.min_models:
             return GrTMCSampler.GR_MAX  # If not burn-in, returns a high GR value
 
         # Set up
