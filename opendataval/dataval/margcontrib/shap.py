@@ -40,15 +40,16 @@ class ShapEvaluator(DataEvaluator, ModelMixin, ABC):
         Shapley values are NP-hard so we resort to MCMC sampling, by default 1.05
     max_mc_epochs : int, optional
         Max number of outer epochs of MCMC sampling, by default 100
-    models_per_iteration : int, optional
-        Number of model fittings to take per iteration prior to checking GR convergence,
+    models_per_epoch : int, optional
+        Number of model fittings to take per epoch prior to checking GR convergence,
         by default 100
-    mc_epochs : int, optional
+    min_models : int, optional
         Minimum samples before checking MCMC convergence, by default 1000
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
-        Unique cache_name of the model, caches marginal contributions, by default None
+        Unique cache_name of the model to  cache marginal contributions, set to None to
+        disable caching, by default "" which is set to a unique value for a object
     random_state : RandomState, optional
         Random initial state, by default None
     """
