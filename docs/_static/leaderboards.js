@@ -95,12 +95,12 @@ function buildHtmlTable(data, table) {
 
     data.forEach((row) => {
         var tr = _tr_.cloneNode(false);
-        tr.appendChild(dataevalFormat((row[0])))
+        tr.appendChild(dataevalFormat((row.dataeval)))
 
         columns.forEach((col, i) => {
             if (i != 0){
                 var td = _td_.cloneNode(false);
-                var cellValue = escapeHtml(row[1][col]);
+                var cellValue = escapeHtml(row.data[col]);
                 td.appendChild(document.createTextNode(cellValue));
                 tr.appendChild(td);
             }
@@ -113,7 +113,7 @@ function buildHtmlTable(data, table) {
 function dataevalFormat(data) {
     var td = _td_.cloneNode(false);
     var sp = document.createElement("span")
-    sp.classList.add('custom-tooltip')
+    sp.classList.add('custom-tooltip');
     sp.innerHTML = `
     <span class="custom-tooltip">
         ${escapeHtml(data["name"])}

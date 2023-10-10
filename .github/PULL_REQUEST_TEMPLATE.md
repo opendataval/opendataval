@@ -12,7 +12,7 @@ Quick summary
 ### Checks
 Ensure the following tasks have been completed
 - [ ] ```make install-dev```
-- [ ] ```pip-sync requirements-extra.txt```
+- [ ] ```pip-sync requirements-dev.txt```
 - [ ] ```make build```
 - [ ] ```make format```
 - [ ] ```make coverage```

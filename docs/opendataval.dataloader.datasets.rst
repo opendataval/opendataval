@@ -12,14 +12,6 @@ opendataval.dataloader.datasets.challenge module
    :undoc-members:
    :show-inheritance:
 
-opendataval.dataloader.datasets.cleanlab module
------------------------------------------------
-
-.. automodule:: opendataval.dataloader.datasets.cleanlab
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 opendataval.dataloader.datasets.datasets module
 -----------------------------------------------
 
