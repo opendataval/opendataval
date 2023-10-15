@@ -99,11 +99,11 @@ data = eval_method.evaluate(noisy_detection)
 
 To use run the following command if installed with make-install:
 ```sh
-opendataval --file cli.csv -n [job_id] -o [path/to/file/]
+opendataval --file cli.csv -n [job_id] -o [path/to/output/]
 ```
 To run without installing the script:
 ```
-python opendataval --file cli.csv -n [job_id] -o [path/to/file/]
+python opendataval --file cli.csv -n [job_id] -o [path/to/output/]
 ```
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
