@@ -116,7 +116,7 @@ def setup(
             test=int(row.get(JobModel.test_count, 25)),
             device=row.get(JobModel.device),
             random_state=row.get(JobModel.random_state),
-            output_dir=output_dir / job_id
+            output_dir=output_dir / str(job_id)
         )
 
 @cli.command("run")
