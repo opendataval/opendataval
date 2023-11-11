@@ -68,11 +68,13 @@ class ReprMixin:
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
 
 
-X, Y = TypeVar("X"), TypeVar("Y")
+X, Y = ParamSpec("X"), TypeVar("Y")
 
 
 class wrapper(str, Generic[X, Y]):
-    def __new__(cls, function: Callable[[X, ...], Y], name: Optional[str] = None):
+    """Wraps a function and treats as a string, used as a Enum"""
+
+    def __new__(cls, function: Callable[X, Y], name: Optional[str] = None):
         """Wrapper is a walks and talks like a str but can be called with the func."""
         out = str.__new__(cls, function.__name__ if name is None else name)
         out.function = function
@@ -86,11 +88,17 @@ class wrapper(str, Generic[X, Y]):
         return self
 
 
-class FuncEnum(StrEnum):
+class FuncEnum(wrapper[X, Y], Enum):
     """Creating a Enum of functions identifiable by a string."""
 
+    def __new__(cls, val):
+        "Values must already be of convertable to type `str`"
+        member = str.__new__(cls, str(val))
+        member._value_ = val
+        return member
+
     @staticmethod
-    def wrap(func: Callable[[X, ...], Y], name: Optional[str] = None) -> wrapper[X, Y]:
+    def wrap(func: Callable[X, Y], name: Optional[str] = None) -> wrapper[X, Y]:
         """Function wrapper: class functions are seen as methods and str conversion."""
         return wrapper(func, name)
 

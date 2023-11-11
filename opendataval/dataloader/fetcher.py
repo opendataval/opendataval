@@ -98,6 +98,7 @@ class DataFetcher:
             self._add_data(*self.dataset.load_data(cache_dir, force_download))
 
         self.random_state = check_random_state(random_state)
+        self.noisy_train_indices = np.array([])
 
     def _presplit_data(self, x_train, x_valid, x_test, y_train, y_valid, y_test):
         if not len(x_train) == len(y_train):
@@ -436,7 +437,7 @@ class DataFetcher:
 
     def noisify(
         self,
-        add_noise: Union[Callable[[Self, Any, ...], dict[str, Any]], str, None] = None,
+        add_noise: Union[Callable[[Self, Any, ...], Self], str, None] = None,
         *noise_args,
         **noise_kwargs,
     ):
@@ -451,17 +452,7 @@ class DataFetcher:
         ----------
         add_noise : Callable
             If None, no changes are made. Takes as argument required arguments
-            DataFetcher and adds noise to those the data points of DataFetcher as
-            needed. Returns dict[str, np.ndarray] that has the updated np.ndarray in a
-            dict to update the data loader with the following keys:
-
-            - **"x_train"** -- Updated training covariates with noise, optional
-            - **"y_train"** -- Updated training labels with noise, optional
-            - **"x_valid"** -- Updated validation covariates with noise, optional
-            - **"y_valid"** -- Updated validation labels with noise, optional
-            - **"x_test"** -- Updated testing covariates with noise, optional
-            - **"y_test"** -- Updated testing labels with noise, optional
-            - **"noisy_train_indices"** -- Indices of training data set with noise.
+            DataFetcher modifies the DataFetcher in place with updated parameters.
         args : tuple[Any]
             Additional positional arguments passed to ``add_noise``
         kwargs: dict[str, Any]
@@ -479,18 +470,8 @@ class DataFetcher:
 
             add_noise = NoiseFunc(add_noise)
 
-        # Passes the DataFetcher to the noise_func, has access to all instance variables
-        noisy_data = add_noise(fetcher=self, *noise_args, **noise_kwargs)
-
-        self.x_train = noisy_data.get("x_train", self.x_train)
-        self.y_train = noisy_data.get("y_train", self.y_train)
-        self.x_valid = noisy_data.get("x_valid", self.x_valid)
-        self.y_valid = noisy_data.get("y_valid", self.y_valid)
-        self.x_test = noisy_data.get("x_test", self.x_test)
-        self.y_test = noisy_data.get("y_test", self.y_test)
-        self.noisy_train_indices = noisy_data.get("noisy_train_indices", np.array([]))
-
-        return self
+        # Passes the DataFetcher to the noise_func, updates DataFetcher in-place
+        return add_noise(fetcher=self, *noise_args, **noise_kwargs)
 
     def export_dataset(
         self,

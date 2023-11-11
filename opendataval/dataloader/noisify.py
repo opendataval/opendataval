@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 import torch
 from sklearn.utils import check_random_state
@@ -10,8 +8,8 @@ from opendataval.dataloader.util import IndexTransformDataset
 from opendataval.util import FuncEnum
 
 
-def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.ndarray]:
-    """Mixes y_train labels of a DataFetcher, adding noise to data.
+def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> DataFetcher:
+    """Mixes y_train labels of a DataFetcher in-place, adding noise to data.
 
     For a given set of unique labels, we shift the label forward up to n-1 steps. This
     prevents selecting the same label when noise is added.
@@ -25,12 +23,12 @@ def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.nd
 
     Returns
     -------
-    dict[str, np.ndarray]
-        dictionary of updated data points
+    DataFetcher
+        Updated DataFetcher with following attributes changed
 
-        - **"y_train"** -- Updated training labels mixed
-        - **"y_valid"** -- Updated validation labels mixed
-        - **"noisy_train_indices"** -- Indices of training data set with mixed labels
+        - **y_train** -- Updated training labels mixed
+        - **y_valid** -- Updated validation labels mixed
+        - **noisy_train_indices** -- Indices of training data set with mixed labels
     """
     rs = check_random_state(fetcher.random_state)
 
@@ -55,17 +53,17 @@ def mix_labels(fetcher: DataFetcher, noise_rate: float = 0.2) -> dict[str, np.nd
     y_train[train_replace] = train_classes[train_noise]
     y_valid[valid_replace] = valid_classes[valid_noise]
 
-    return {
-        "y_train": y_train,
-        "y_valid": y_valid,
-        "noisy_train_indices": train_replace,
-    }
+    fetcher.y_train = y_train
+    fetcher.y_valid = y_valid
+    fetcher.noisy_train_indices = train_replace
+
+    return fetcher
 
 
 def add_gauss_noise(
     fetcher: DataFetcher, noise_rate: float = 0.2, mu: float = 0.0, sigma: float = 1.0
-) -> dict[str, Union[Dataset, np.ndarray]]:
-    """Add gaussian noise to covariates.
+) -> DataFetcher:
+    """Add gaussian noise to covariates in-place.
 
     Parameters
     ----------
@@ -80,11 +78,12 @@ def add_gauss_noise(
 
     Returns
     -------
-    dict[str, np.ndarray]
-        dictionary of updated data points
+    DataFetcher
+        Updated DataFetcher with following attributes changed
 
-        - **"x_train"** -- Updated training covariates with added gaussian noise
-        - **"noisy_train_indices"** -- Indices of training data set with mixed labels
+        - **x_train** -- Updated training covariates with added gaussian noise
+        - **x_valid** -- Updated validation covariates with added gaussian noise
+        - **noisy_train_indices** -- Indices of training data set with mixed labels
     """
     rs = check_random_state(fetcher.random_state)
 
@@ -123,13 +122,15 @@ def add_gauss_noise(
         x_train[noisy_train_idx] = x_train[noisy_train_idx] + noise_train
         x_valid[noisy_valid_idx] = x_valid[noisy_valid_idx] + noise_valid
 
-    return {
-        "x_train": x_train,
-        "x_valid": x_valid,
-        "noisy_train_indices": noisy_train_idx,
-    }
+    fetcher.x_train = x_train
+    fetcher.x_valid = x_valid
+    fetcher.noisy_train_indices = noisy_train_idx
+
+    return fetcher
 
 
 class NoiseFunc(FuncEnum):
+    """Adds noise to DataFetcher in-place"""
+
     MIX_LABELS = FuncEnum.wrap(mix_labels)
     ADD_GAUSS_NOISE = FuncEnum.wrap(add_gauss_noise)
