@@ -15,7 +15,7 @@ import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 import tqdm
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets import (
     CIFAR10,
     CIFAR100,
@@ -27,14 +27,15 @@ from torchvision.datasets import (
 )
 
 from opendataval.dataloader.register import Register
+from opendataval.dataloader.util import FolderDataset
 
 Self = TypeVar("Self", bound=Dataset)
 
-MAX_DATASET_SIZE = 50000
-
 
 def ResnetEmbeding(
-    dataset_class: type[VisionDataset], size: tuple[int, int] = (224, 224)
+    dataset_class: type[VisionDataset],
+    size: tuple[int, int] = (224, 224),
+    batch_size: int = 128,
 ):
     """Convert PIL color Images into embeddings with ResNet50 model.
 
@@ -80,31 +81,19 @@ def ResnetEmbeding(
             ]
         )
         cache_dir = Path(cache_dir)
-        embed_file_name = f"{dataset_class.__name__}_{MAX_DATASET_SIZE}_embed.pt"
-        embed_path = cache_dir / embed_file_name
+        embed_path = cache_dir / f"{dataset_class.__name__}_embed/"
 
         # Resnet inputs expect `img2vec_transforms`ed images as input
-        dataset = dataset_class(
+        data = dataset_class(
             root=cache_dir,
             download=force_download or not cache_dir.exists(),
             transform=img2vec_transforms,
             *args,
             **kwargs,
         )
-        subset = np.random.RandomState(10).permutation(len(dataset))
 
-        if embed_path.exists():
-            image_embeddings = torch.load(embed_path)
-            return (
-                image_embeddings,
-                np.fromiter(
-                    (dataset.targets[i] for i in subset),
-                    count=len(image_embeddings),
-                    dtype=int,
-                ),
-            )
-
-        dataset = Subset(dataset, subset[:MAX_DATASET_SIZE])
+        if FolderDataset.exists(embed_path):
+            return FolderDataset.load(embed_path), data.targets
 
         # Slow down on gpu vs cpu is quite substantial, uses gpu accel if available
         device = torch.device(
@@ -118,24 +107,23 @@ def ResnetEmbeding(
         # Gets the avgpool layer, the outputs of this layer are our embeddings
         embedder = resnet50(weights=ResNet50_Weights.DEFAULT).to(device)
         embedder.fc = nn.Identity()
+        folder_dataset = FolderDataset(embed_path)
 
         # We will register a hook to extract the ouput of avgpool layers.
-        image_embeddings = torch.zeros(0, 2048)
         labels_list = []
 
         with torch.no_grad():  # Passes through model, and our hook extracts outputs
-            for img, labels in tqdm.tqdm(
-                DataLoader(dataset, 256, pin_memory=True, num_workers=4)
+            for batch_num, (img, labels) in tqdm.tqdm(
+                enumerate(DataLoader(data, batch_size, pin_memory=True, num_workers=4))
             ):
                 img = img.to(device)
                 embedding = embedder(img).detach().cpu()
-                image_embeddings = torch.cat((image_embeddings, embedding), dim=0)
                 labels_list.extend(labels)
 
-        image_embeddings = image_embeddings.detach()
-        embed_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(image_embeddings, embed_path)
-        return image_embeddings, np.array(labels_list)
+                folder_dataset.write(batch_num, embedding)
+
+        folder_dataset.save()
+        return folder_dataset, np.array(labels_list)
 
     return wrapper
 

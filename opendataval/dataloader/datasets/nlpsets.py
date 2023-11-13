@@ -4,20 +4,21 @@ Uses HuggingFace
 `transformers <https://huggingface.co/docs/transformers/index>`_. as dependency.
 """
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Sequence
 
 import numpy as np
 import pandas as pd
 import torch
+from tqdm import tqdm
 
 from opendataval.dataloader.register import Register, cache
-from opendataval.dataloader.util import ListDataset
-
-MAX_DATASET_SIZE = 2000
-"""Data Valuation algorithms can take a long time for large data sets, thus cap size."""
+from opendataval.dataloader.util import FolderDataset, ListDataset
+from opendataval.util import batched
 
 
-def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
+def BertEmbeddings(
+    func: Callable[[str, bool], tuple[Sequence[str], np.ndarray]], batch_size: int = 128
+):
     """Convert text data into pooled embeddings with DistilBERT model.
 
     Given a data set with a list of string, such as NLP data set function (see below),
@@ -44,18 +45,12 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
         BERT_PRETRAINED_NAME = "distilbert-base-uncased"  # TODO update this
 
         cache_dir = Path(cache_dir)
-        embed_file_name = f"{func.__name__}_{MAX_DATASET_SIZE}_embed.pt"
-        embed_path = cache_dir / embed_file_name
+        embed_path = cache_dir / f"{func.__name__}_embed"
 
         dataset, labels = func(cache_dir, force_download, *args, **kwargs)
-        subset = np.random.RandomState(10).permutation(len(dataset))
 
-        if embed_path.exists():
-            nlp_embeddings = torch.load(embed_path)
-            return nlp_embeddings, labels[subset[: len(nlp_embeddings)]]
-
-        labels = labels[subset[:MAX_DATASET_SIZE]]
-        entries = [entry for entry in dataset[subset[:MAX_DATASET_SIZE]]]
+        if FolderDataset.exists(embed_path):
+            return FolderDataset.load(embed_path), labels
 
         # Slow down on gpu vs cpu is quite substantial, uses gpu accel if available
         device = torch.device(
@@ -68,18 +63,26 @@ def BertEmbeddings(func: Callable[[str, bool], tuple[ListDataset, np.ndarray]]):
 
         tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_PRETRAINED_NAME)
         bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME).to(device)
+        folder_dataset = FolderDataset(embed_path)
 
-        res = tokenizer.__call__(
-            entries, max_length=200, padding=True, truncation=True, return_tensors="pt"
-        ).to(device)
+        for batch_num, batch in enumerate(tqdm(batched(dataset, n=batch_size))):
+            bert_inputs = tokenizer.__call__(
+                batch,
+                max_length=200,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+            ).to(device)
+            bert_inputs = {inp: bert_inputs[inp] for inp in tokenizer.model_input_names}
 
-        with torch.no_grad():
-            pooled_embeddings = (
-                (bert_model(res.input_ids, res.attention_mask)[0]).detach().cpu()[:, 0]
-            )
+            with torch.no_grad():
+                pool_embed = bert_model(**bert_inputs)[0]
+                word_embeddings = pool_embed.detach().cpu()[:, 0]
 
-        torch.save(pooled_embeddings.detach(), embed_path)
-        return pooled_embeddings, np.array(labels)
+            folder_dataset.write(batch_num, word_embeddings)
+
+        folder_dataset.save()
+        return folder_dataset, np.array(labels)
 
     return wrapper
 
