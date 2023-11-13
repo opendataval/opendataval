@@ -1,5 +1,10 @@
+import pickle
+from bisect import bisect_right
+from functools import cached_property, lru_cache
+from pathlib import Path
 from typing import Any, Callable, Optional, Sequence, TypeVar
 
+import torch
 from torch.utils.data import Dataset
 
 T_co = TypeVar("T_co", covariant=True)
@@ -101,3 +106,76 @@ class ListDataset(Dataset[T_co]):
 
     def __getitem__(self, index) -> list[T_co]:
         return self.data[index]
+
+
+def load_tensor(tensor_path: Path) -> torch.Tensor:
+    with torch.no_grad():
+        return torch.load(tensor_path, map_location="cpu").detach()
+
+
+class FolderDataset(Dataset):
+    """Dataset for tensors within a folder."""
+
+    BATCH_CACHE = 5
+
+    def __init__(self, folder_path: Path, sizes: Optional[list[int]] = None):
+        self.folder_path = Path(folder_path)
+        self.folder_path.mkdir(exist_ok=True, parents=True)
+        self.sizes = sizes or [0]
+
+    @cached_property
+    def shape(self) -> tuple[int, ...]:
+        batch_size, *shape = self.get_batch(0).shape
+
+        assert (
+            batch_size == self.sizes[1] - self.sizes[0]
+        ), f"Unexpected batch size, {batch_size=} != {self.sizes[1] - self.sizes[0]}"
+
+        return (len(self), *shape)
+
+    def __len__(self) -> int:
+        return self.sizes[-1]
+
+    def format_batch_path(self, batch_index: int) -> str:
+        return self.folder_path / f"{batch_index:03}.pt"
+
+    @lru_cache(BATCH_CACHE)
+    def get_batch(self, batch_index: int) -> torch.Tensor:
+        if batch_index < 0:
+            raise ValueError(f"Batch {batch_index} must be greater than 0")
+        elif not batch_index < len(self.sizes):
+            raise KeyError(f"Batch {batch_index} is not in range {len(self.sizes)}")
+        return load_tensor(self.format_batch_path(batch_index))
+
+    def __getitem__(self, i: int) -> torch.Tensor:
+        batch_index = bisect_right(self.sizes, i) - 1
+        if not (0 <= batch_index < len(self.sizes) - 1):
+            raise KeyError(f"Index {i} is not within range [0, {self.sizes[-1]})")
+        displace = i - self.sizes[batch_index]
+        return self.get_batch(batch_index)[displace]
+
+    def write(self, batch_number: int, data: torch.Tensor):
+        self.sizes.append(self.sizes[-1] + len(data))
+        torch.save(data.detach(), self.format_batch_path(batch_number))
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        """Important metadata defining a GradientDataset, used for loading."""
+        return {"folder_path": self.folder_path, "sizes": self.sizes}
+
+    def save(self):
+        """Saves metadata to disk, allows us to load GradientDataset as needed."""
+        with open(self.folder_path / ".metadata.pkl", "wb") as f:
+            pickle.dump(self.metadata, f)
+
+    @classmethod
+    def load(cls, path: Path):
+        """Loads existing gradient dataset metadata from path/.metadata.pkl"""
+        with open(Path(path) / ".metadata.pkl", "rb") as f:
+            metadata = pickle.load(f)
+        # If errors are raised, error with pickling
+        return cls(**metadata)
+
+    @staticmethod
+    def exists(path: Path):
+        return (Path(path) / ".metadata.pkl").exists()

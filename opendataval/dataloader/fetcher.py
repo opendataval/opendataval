@@ -51,6 +51,10 @@ class DataFetcher:
         The indices of the original data set used to make the training data set.
     noisy_train_indices : np.ndarray[int]
         The indices of training data points with noise added to them.
+    covar : Dataset | np.ndarray
+        Covariate dataset a dataset function
+    lables : np.ndarray
+        Corresponding labels for covariates from a dataset function
     [x/y]_[train/valid/test] : np.ndarray
         Access to the raw split of the [covariate/label] [train/valid/test] data set
         prior being transformed into a tensor. Useful for adding noise to functions.
