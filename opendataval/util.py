@@ -1,7 +1,9 @@
+import inspect
 import itertools
+import sys
 import time
 from datetime import timedelta
-from enum import Enum
+from enum import Enum, EnumMeta, _EnumDict
 from functools import update_wrapper
 from itertools import islice
 from typing import Callable, Generic, Optional, TypeVar
@@ -68,45 +70,6 @@ class ReprMixin:
         return f"{self.__class__.__name__}({', '.join(self.__inputs)})"
 
 
-X, Y = ParamSpec("X"), TypeVar("Y")
-
-
-class wrapper(str, Generic[X, Y]):
-    """Wraps a function and treats as a string, used as a Enum"""
-
-    def __new__(cls, function: Callable[X, Y], name: Optional[str] = None):
-        """Wrapper is a walks and talks like a str but can be called with the func."""
-        out = str.__new__(cls, function.__name__ if name is None else name)
-        out.function = function
-        update_wrapper(out, function)
-        return out
-
-    def __call__(self, *args, **kwargs) -> Y:
-        return self.function(*args, **kwargs)
-
-    def __repr__(self):
-        return self
-
-
-class FuncEnum(wrapper[X, Y], Enum):
-    """Creating a Enum of functions identifiable by a string."""
-
-    def __new__(cls, val):
-        "Values must already be of convertable to type `str`"
-        member = str.__new__(cls, str(val))
-        member._value_ = val
-        return member
-
-    @staticmethod
-    def wrap(func: Callable[X, Y], name: Optional[str] = None) -> wrapper[X, Y]:
-        """Function wrapper: class functions are seen as methods and str conversion."""
-        return wrapper(func, name)
-
-    def __call__(self, *args, **kwargs) -> Y:
-        """Redirecting the function call."""
-        return self.value(*args, **kwargs)
-
-
 def get_name(func: Callable) -> str:
     """Gets name from function."""
     return getattr(func, "__name__", str(func))
@@ -158,3 +121,126 @@ class ParamSweep:
         keys = kwarg_list.keys()
         for instance in itertools.product(*kwarg_list.values()):
             yield dict(zip(keys, instance))
+
+
+"""FuncEnum allows us to create enums that map a str -> Callable[X, Y]. This is
+used so we have more strict restrictions on FuncEnum types and that there is finite
+number of functions of a FuncEnum."""
+if sys.version_info < (3, 10):
+    X, Y = TypeVar("X"), TypeVar("Y")
+else:
+    from typing import ParamSpec
+
+    X, Y = ParamSpec("X"), TypeVar("Y")
+
+X, Y = TypeVar("X"), TypeVar("Y")  # Not entirely accurate, ParamSpec comes 3.10
+
+
+class wrapper(str, Generic[X, Y]):
+    """Wraps a function and treats as a string, used as a member for an Enum
+
+    This is necessary to update the function wrapper and to make the enum realize
+    it's not a staticmethod but instead a member value.
+    """
+
+    def __new__(cls, function: Callable[X, Y], name: Optional[str] = None):
+        """Wrapper is a walks and talks like a str but can be called with the func."""
+        out = str.__new__(cls, function.__name__ if name is None else name)
+        out.function = function
+        update_wrapper(out, function)  # Updates docs
+        return out
+
+    def __call__(self, *args, **kwargs) -> Y:
+        return self.function(*args, **kwargs)
+
+    def __repr__(self):
+        return self
+
+
+class GenericFuncEnumMeta(EnumMeta):
+    """Autowraps class-level functions to be used with enums allows generic enums
+
+    WHY? Class level function assignments are though to be member functions. This is not
+    the case if we want Function Enums. This metaclass autowraps funtions and lambdas
+
+    This is a pretty dangerous hack, the original author describes this as "open-heart
+    surgery". As Enum changes, there is a chance this could break.
+
+    Here's how to remedy it:
+        1. Remove GenericFuncEnumMeta from the metaclass of FuncEnum
+        2. De-parameterize every child-class of FuncEnum
+        3. Wrap every function value of a FuncEnum child with the wrapper class
+    """
+
+    def __new__(metacls, cls: str, bases, classdict: _EnumDict, **kwds):
+        non_members = set(classdict).difference(classdict._member_names)
+        inval_types = (classmethod, staticmethod)
+
+        for k in non_members:
+            # we probably don't want to add dunder, class, or static methods
+            if k.startswith("_") or isinstance(classdict[k], inval_types):  # fmt: skip
+                continue
+            # we also don't want any instance methods, in fact we consider this an error
+            if "self" in inspect.signature(classdict[k]).parameters:
+                raise TypeError(
+                    f"Enum instance methods not allowed, found {classdict[k]} in {cls}"
+                )
+
+            # After all the input validation, we can finally wrap the function
+            callable_val = wrapper(classdict[k], k.lower())
+
+            # TODO It is likely code below here will need to update with later versions
+            if sys.version_info < (3, 10):  # enum changed post 3.10
+                classdict.pop(k)
+                classdict[k] = callable_val
+
+            else:
+                # We have to use del since _EnumDict doesn't allow overwriting
+                del classdict[k]
+                classdict[k] = callable_val
+
+                classdict._member_names[k] = None
+
+        return super().__new__(metacls, cls, bases, classdict, **kwds)
+        # boundary=boundary, _simple=_simple,)
+
+    def __getitem__(cls, params):
+        """Necessary getitem redirect because EnumMeta overrides class getitem."""
+        if isinstance(params, str):  # This is an Enum getitem, get value
+            return EnumMeta.__getitem__(params)
+        elif sys.version_info < (3, 10) and isinstance(params[0], list):
+            # hack cause no ParamSpec in 3.9, TODO remove once 3.9 support is dropped
+            return cls.__class_getitem__((params[0][0], params[1]))
+        return cls.__class_getitem__(params)  # Generic parameterization, with types
+
+
+class FuncEnum(str, Generic[X, Y], Enum, metaclass=GenericFuncEnumMeta):
+    """Creating a Enum of functions identifiable by a string.
+
+    The internals can be incredibly confusing. Should it be break, it is advised to
+    follow these steps instead of trying to debug:
+        1. Remove GenericFuncEnumMeta from the metaclass of FuncEnum
+        2. De-parameterize every child-class of FuncEnum
+        3. Wrap every function value of a FuncEnum child with the wrapper class
+
+    Here's How to use FuncEnum:
+    ::
+        class OpEnum(FuncEnum[[int, int], int]):
+            ADD = lambda a, b: a+b
+            SUB = lambda a, b: a-b
+
+        >>> assert OpEnum.ADD(1, 2) == 3
+        >>> assert OpEnum.SUB(2, 1) == 1
+        >>> assert OpEnum("sub")(2, 1) == 1
+    >>>
+    """
+
+    def __new__(cls, val):
+        """Values must already be of convertable to type `str`"""
+        member = str.__new__(cls, str(val))
+        member._value_ = val
+        return member
+
+    def __call__(self, *args, **kwargs) -> Y:
+        """Redirecting the function call."""
+        return self.value(*args, **kwargs)

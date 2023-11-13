@@ -17,7 +17,7 @@ def neg_mse(a: torch.Tensor, b: torch.Tensor):
     return -F.mse_loss(a, b).item()
 
 
-class Metrics(FuncEnum):
-    ACCURACY = FuncEnum.wrap(accuracy)
-    NEG_L2 = FuncEnum.wrap(neg_l2)
-    NEG_MSE = FuncEnum.wrap(neg_mse)
+class Metrics(FuncEnum[[torch.Tensor, torch.Tensor], float]):
+    ACCURACY = accuracy
+    NEG_L2 = neg_l2
+    NEG_MSE = neg_mse

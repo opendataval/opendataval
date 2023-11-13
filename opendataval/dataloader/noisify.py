@@ -129,8 +129,8 @@ def add_gauss_noise(
     return fetcher
 
 
-class NoiseFunc(FuncEnum):
+class NoiseFunc(FuncEnum[[DataFetcher, ...], DataFetcher]):
     """Adds noise to DataFetcher in-place"""
 
-    MIX_LABELS = FuncEnum.wrap(mix_labels)
-    ADD_GAUSS_NOISE = FuncEnum.wrap(add_gauss_noise)
+    MIX_LABELS = mix_labels
+    ADD_GAUSS_NOISE = add_gauss_noise
