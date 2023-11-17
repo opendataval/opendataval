@@ -32,7 +32,7 @@ class Model(ABC):
         y_train: Union[torch.Tensor, Dataset],
         *args,
         sample_weights: Optional[torch.Tensor] = None,
-        **kwargs
+        **kwargs,
     ) -> Self:
         """Fits the model on the training data.
 
@@ -281,7 +281,7 @@ class ClassifierSkLearnWrapper(Model):
         y_train: Union[torch.Tensor, Dataset],
         *args,
         sample_weight: Optional[torch.Tensor] = None,
-        **kwargs
+        **kwargs,
     ):
         """Fits the model on the training data.
 
@@ -382,7 +382,7 @@ class ClassifierUnweightedSkLearnWrapper(ClassifierSkLearnWrapper):
         y_train: Union[torch.Tensor, Dataset],
         *args,
         sample_weight: Optional[torch.Tensor] = None,
-        **kwargs
+        **kwargs,
     ):
         """Fits the model on the training data.
 
@@ -463,7 +463,7 @@ class RegressionSkLearnWrapper(Model):
         y_train: Union[torch.Tensor, Dataset],
         *args,
         sample_weight: Optional[torch.Tensor] = None,
-        **kwargs
+        **kwargs,
     ):
         """Fits the model on the training data.
 

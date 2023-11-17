@@ -73,25 +73,28 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
 To set up an experiment on DataEvaluators. Feel free to change the source code as needed for a project.
 
 ```python
+import opendataval
 from opendataval.experiment import ExperimentMediator
+from opendataval.dataval import DataOob
+from opendataval.experiment import discover_corrupted_sample, noisy_detection
 
 exper_med = ExperimentMediator.model_factory_setup(
     dataset_name='iris',
     force_download=False,
-    train_count=100,
+    train_count=50,
     valid_count=50,
     test_count=50,
     model_name='ClassifierMLP',
     train_kwargs={'epochs': 5, 'batch_size': 20},
 )
-list_of_data_evaluators = [ChildEvaluator(), ...]  # Define evaluators here
+list_of_data_evaluators = [DataOob()]  # Define evaluators here
 eval_med = exper_med.compute_data_values(list_of_data_evaluators)
 
 # Runs a discover the noisy data experiment for each DataEvaluator and plots
 data, fig = eval_med.plot(discover_corrupted_sample)
 
 # Runs non-plottable experiment
-data = eval_method.evaluate(noisy_detection)
+data = eval_med.evaluate(noisy_detection)
 ```
 
 ### :computer: CLI

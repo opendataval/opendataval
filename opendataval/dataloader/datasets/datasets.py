@@ -199,6 +199,7 @@ Register("gaussian_classifier_high_dim", one_hot=True).from_covar_label_func(
 )
 """Registers gaussian classifier, but the input_dim is changed."""
 
+
 # Regression data sets.
 @Register("diabetes")
 def download_diabetes():

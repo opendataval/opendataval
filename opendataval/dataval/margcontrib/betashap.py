@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from scipy.special import beta
 
@@ -27,7 +29,12 @@ class BetaShapley(ShapEvaluator):
     """
 
     def __init__(
-        self, sampler: Sampler = None, alpha: int = 4, beta: int = 1, *args, **kwargs
+        self,
+        sampler: Optional[Sampler] = None,
+        alpha: int = 4,
+        beta: int = 1,
+        *args,
+        **kwargs,
     ):
         super().__init__(sampler=sampler, *args, **kwargs)
         self.alpha, self.beta = alpha, beta  # Beta distribution parameters
