@@ -135,7 +135,6 @@ def remove_high_low(
     train_kwargs = train_kwargs if train_kwargs is not None else {}
 
     for bin_index in range(0, num_points, num_period):
-
         # Removing least valuable samples first
         most_valuable_indices = sorted_value_list[bin_index:]
 
@@ -284,7 +283,7 @@ def discover_corrupted_sample(
 
 def save_dataval(
     evaluator: DataEvaluator,
-    fetcher: DataFetcher = None,
+    fetcher: Optional[DataFetcher] = None,
     indices: Optional[list[int]] = None,
     output_path: Optional[Path] = None,
 ):

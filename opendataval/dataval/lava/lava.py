@@ -48,7 +48,7 @@ class LavaEvaluator(DataEvaluator, ModelLessMixin):
         self,
         device: torch.device = torch.device("cpu"),
         embedding_model: Optional[Model] = None,
-        random_state: RandomState = None,
+        random_state: Optional[RandomState] = None,
     ):
         macos_fix()
         torch.manual_seed(check_random_state(random_state).tomaxint())

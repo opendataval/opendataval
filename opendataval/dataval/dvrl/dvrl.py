@@ -260,7 +260,6 @@ class DVRL(DataEvaluator, ModelMixin):
 
         # Estimates data value
         with torch.no_grad():  # No dropout layers so no need to set to eval
-
             data = CatDataset(self.x_train, self.y_train, y_hat)
             for x_batch, y_batch, y_hat_batch in DataLoader(
                 data, batch_size=self.rl_batch_size, shuffle=False

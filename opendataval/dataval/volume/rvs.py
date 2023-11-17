@@ -47,7 +47,7 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
 
     def __init__(
         self,
-        sampler: Sampler = None,
+        sampler: Optional[Sampler] = None,
         robust: bool = True,
         omega: Optional[float] = None,
         *args,

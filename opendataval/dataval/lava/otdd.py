@@ -320,8 +320,8 @@ def extract_dataset(
 def pwdist_exact(
     X1: torch.Tensor,
     Y1: torch.Tensor,
-    X2: torch.Tensor = None,
-    Y2: torch.Tensor = None,
+    X2: Optional[torch.Tensor] = None,
+    Y2: Optional[torch.Tensor] = None,
     symmetric: bool = False,
     loss: str = "sinkhorn",
     cost_function: Union[
@@ -414,7 +414,7 @@ def pwdist_exact(
 def batch_augmented_cost(
     Z1: torch.Tensor,
     Z2: torch.Tensor,
-    W: torch.Tensor = None,
+    W: Optional[torch.Tensor] = None,
     feature_cost: Optional[str] = None,
     p: int = 2,
     lam_x: float = 1.0,

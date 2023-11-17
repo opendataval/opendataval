@@ -1,7 +1,7 @@
 import math
 import warnings
 from functools import partial
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 import torch
@@ -33,7 +33,7 @@ class ClassWiseShapley(DataEvaluator, ModelMixin):
         cache.
     """
 
-    def __init__(self, sampler: Sampler = None, *args, **kwargs):
+    def __init__(self, sampler: Optional[Sampler] = None, *args, **kwargs):
         self.sampler = sampler
         if getattr(self.sampler, "cache_name", None) is not None:
             warnings.warn("Samplers passed into CS Shap should disable caching!")

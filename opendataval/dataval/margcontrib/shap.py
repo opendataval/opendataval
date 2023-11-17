@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 import torch
@@ -54,7 +55,7 @@ class ShapEvaluator(DataEvaluator, ModelMixin, ABC):
         Random initial state, by default None
     """
 
-    def __init__(self, sampler: Sampler = None, *args, **kwargs):
+    def __init__(self, sampler: Optional[Sampler] = None, *args, **kwargs):
         self.sampler = sampler
 
         if self.sampler is None:
