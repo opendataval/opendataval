@@ -50,6 +50,7 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 ## :hourglass_flowing_sand: Installation options
+It is highly reccomended to use a virtual environment for `opendataval`. Check out [conda](https://docs.conda.io/en/latest/)!
 1. Install with pip
     ```sh
     pip install opendataval
