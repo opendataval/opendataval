@@ -70,7 +70,7 @@ class MonteCarloSampler(Sampler):
     Parameters
     ----------
     mc_epochs : int, optional
-        Number of outer epochs of MCMC sampling, by default 1000
+        Number of outer epochs of MCMC sampling, by default 100
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
@@ -85,7 +85,7 @@ class MonteCarloSampler(Sampler):
 
     def __init__(
         self,
-        mc_epochs: int = 1000,
+        mc_epochs: int = 100,
         min_cardinality: int = 5,
         cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
@@ -106,8 +106,10 @@ class MonteCarloSampler(Sampler):
     def compute_marginal_contribution(self, *args, **kwargs):
         """Trains model to predict data values.
 
-        Uses permutation sampling to find the marginal contribution of each data point,
-        takes self.mc_epochs number of permutations.
+        Uses permutation sampling to find the marginal contribution of each data
+        point, takes self.mc_epochs number of permutations. NOTE It does not
+        check the convergence of marginal contributions, causing unnecessary
+        iterations. We recommend using GrTMCSampler.
         """
         # Checks if data values have already been computed
         if self.cache_name in self.CACHE:
@@ -190,7 +192,7 @@ class TMCSampler(Sampler):
     Parameters
     ----------
     mc_epochs : int, optional
-        Number of outer epochs of MCMC sampling, by default 1000
+        Number of outer epochs of MCMC sampling, by default 100
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
@@ -205,7 +207,7 @@ class TMCSampler(Sampler):
 
     def __init__(
         self,
-        mc_epochs: int = 1000,
+        mc_epochs: int = 100,
         min_cardinality: int = 5,
         cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
@@ -226,8 +228,10 @@ class TMCSampler(Sampler):
     def compute_marginal_contribution(self, *args, **kwargs):
         """Computes marginal contribution through TMC Shapley.
 
-        Uses TMC-Shapley sampling to find the marginal contribution of each data point,
-        takes self.mc_epochs number of samples.
+        Uses TMC-Shapley sampling to find the marginal contribution of each data
+        point, takes self.mc_epochs number of samples. NOTE It does not check
+        the convergence of marginal contributions, causing unnecessary
+        iterations. We recommend using GrTMCSampler.
         """
         # Checks if data values have already been computed
         if self.cache_name in self.CACHE:
@@ -320,7 +324,7 @@ class GrTMCSampler(Sampler):
         Number of model fittings to take per epoch prior to checking GR convergence,
         by default 100
     min_models : int, optional
-        Minimum samples before checking MCMC convergence, by default 1000
+        Minimum samples before checking MCMC convergence, by default 500
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
@@ -341,7 +345,7 @@ class GrTMCSampler(Sampler):
         gr_threshold: float = 1.05,
         max_mc_epochs: int = 100,
         models_per_epoch: int = 100,
-        min_models: int = 1000,
+        min_models: int = 500,
         min_cardinality: int = 5,
         cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
@@ -393,7 +397,7 @@ class GrTMCSampler(Sampler):
 
         gr_stat = GrTMCSampler.GR_MAX  # Converges when < gr_threshold
         iteration = 0  # Iteration wise terminator, in case MCMC goes on for too long
-
+        self.n_model=0
         while iteration < self.max_mc_epochs and gr_stat > self.gr_threshold:
             # we check the convergence every 100 random samples.
             # we terminate iteration if Shapley value is converged.
@@ -410,6 +414,8 @@ class GrTMCSampler(Sampler):
             print(f"{gr_stat=}")
 
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
+        print(f"""Total number of trained models to estimate marginal
+               contributions: {self.n_model}""")
         print("Done: marginal contribution computation", flush=True)
 
         if self.cache_name is not None:
@@ -458,7 +464,7 @@ class GrTMCSampler(Sampler):
                 truncation_counter += 1
             else:
                 truncation_counter = 0
-
+            self.n_model+=1
             if truncation_counter == 10:  # If enter space without changes to model
                 # to consider additional zero contributions
                 self.marginal_count[

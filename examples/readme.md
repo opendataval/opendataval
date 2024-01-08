@@ -4,6 +4,7 @@ We offer a comprehensive collection of user-friendly notebook examples that grea
 | Task | Datasets | Prediction Model | Notes |
 |---------|--------|-------|-------|
 | classification | adult | LogisticRegression | Tabular, label noise |
+| classification | nomao | LogisticRegression | Tabular, label noise |
 | classification | synthetic | RandomForest | Custom Tabular Dataset, label noise |
 | classification | pol | Gradient Boosting | Tabular Dataset, label noise, custom model paramters |
 | classification | BBC-embeddings | DistilBertModel + LogisticRegression | Text, feature noise |

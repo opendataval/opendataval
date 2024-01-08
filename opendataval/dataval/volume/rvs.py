@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from opendataval.dataval.api import DataEvaluator, ModelLessMixin
-from opendataval.dataval.margcontrib import Sampler, TMCSampler
+from opendataval.dataval.margcontrib import GrTMCSampler, Sampler
 
 
 class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
@@ -58,7 +58,7 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
         self.omega = omega if robust and omega is not None else 0.05
 
         if sampler is None:
-            self.sampler = TMCSampler(*args, **kwargs)
+            self.sampler = GrTMCSampler(*args, **kwargs)
 
     def input_data(
         self,
