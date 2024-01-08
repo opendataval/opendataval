@@ -70,7 +70,7 @@ class MonteCarloSampler(Sampler):
     Parameters
     ----------
     mc_epochs : int, optional
-        Number of outer epochs of MCMC sampling, by default 1000
+        Number of outer epochs of MCMC sampling, by default 100
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
@@ -85,7 +85,7 @@ class MonteCarloSampler(Sampler):
 
     def __init__(
         self,
-        mc_epochs: int = 1000,
+        mc_epochs: int = 100,
         min_cardinality: int = 5,
         cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
@@ -106,8 +106,10 @@ class MonteCarloSampler(Sampler):
     def compute_marginal_contribution(self, *args, **kwargs):
         """Trains model to predict data values.
 
-        Uses permutation sampling to find the marginal contribution of each data point,
-        takes self.mc_epochs number of permutations.
+        Uses permutation sampling to find the marginal contribution of each data
+        point, takes self.mc_epochs number of permutations. NOTE It does not
+        check the convergence of marginal contributions, causing unnecessary
+        iterations. We recommend using GrTMCSampler.
         """
         # Checks if data values have already been computed
         if self.cache_name in self.CACHE:
@@ -190,7 +192,7 @@ class TMCSampler(Sampler):
     Parameters
     ----------
     mc_epochs : int, optional
-        Number of outer epochs of MCMC sampling, by default 1000
+        Number of outer epochs of MCMC sampling, by default 100
     min_cardinality : int, optional
         Minimum cardinality of a training set, must be passed as kwarg, by default 5
     cache_name : str, optional
@@ -205,7 +207,7 @@ class TMCSampler(Sampler):
 
     def __init__(
         self,
-        mc_epochs: int = 1000,
+        mc_epochs: int = 100,
         min_cardinality: int = 5,
         cache_name: Optional[str] = "",
         random_state: Optional[RandomState] = None,
@@ -226,8 +228,10 @@ class TMCSampler(Sampler):
     def compute_marginal_contribution(self, *args, **kwargs):
         """Computes marginal contribution through TMC Shapley.
 
-        Uses TMC-Shapley sampling to find the marginal contribution of each data point,
-        takes self.mc_epochs number of samples.
+        Uses TMC-Shapley sampling to find the marginal contribution of each data
+        point, takes self.mc_epochs number of samples. NOTE It does not check
+        the convergence of marginal contributions, causing unnecessary
+        iterations. We recommend using GrTMCSampler.
         """
         # Checks if data values have already been computed
         if self.cache_name in self.CACHE:
