@@ -145,7 +145,7 @@ def remove_high_low(
             Subset(y_train, most_valuable_indices),
             **train_kwargs,
         )
-        y_hat_valid = valuable_model.predict(x_test)
+        y_hat_valid = valuable_model.predict(x_test).to("cpu")
         valuable_score = metric(y_test, y_hat_valid)
         valuable_list.append(valuable_score)
 
@@ -159,7 +159,7 @@ def remove_high_low(
             Subset(y_train, least_valuable_indices),
             **train_kwargs,
         )
-        iy_hat_valid = unvaluable_model.predict(x_test)
+        iy_hat_valid = unvaluable_model.predict(x_test).to("cpu")
         unvaluable_score = metric(y_test, iy_hat_valid)
         unvaluable_list.append(unvaluable_score)
 

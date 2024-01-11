@@ -9,11 +9,11 @@ from typing import Callable, Sequence
 import numpy as np
 import pandas as pd
 import torch
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from opendataval.dataloader.register import Register, cache
 from opendataval.dataloader.util import FolderDataset, ListDataset
-from opendataval.util import batched
 
 
 def BertEmbeddings(
@@ -65,7 +65,9 @@ def BertEmbeddings(
         bert_model = DistilBertModel.from_pretrained(BERT_PRETRAINED_NAME).to(device)
         folder_dataset = FolderDataset(embed_path)
 
-        for batch_num, batch in enumerate(tqdm(batched(dataset, n=batch_size))):
+        for batch_num, batch in tqdm(
+            enumerate(DataLoader(dataset, batch_size, pin_memory=True, num_workers=4))
+        ):
             bert_inputs = tokenizer.__call__(
                 batch,
                 max_length=200,
@@ -77,8 +79,7 @@ def BertEmbeddings(
 
             with torch.no_grad():
                 pool_embed = bert_model(**bert_inputs)[0]
-                word_embeddings = pool_embed.detach().cpu()[:, 0]
-
+                word_embeddings = torch.mean(pool_embed, axis=1).detach().cpu()
             folder_dataset.write(batch_num, word_embeddings)
 
         folder_dataset.save()

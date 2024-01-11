@@ -397,7 +397,7 @@ class GrTMCSampler(Sampler):
 
         gr_stat = GrTMCSampler.GR_MAX  # Converges when < gr_threshold
         iteration = 0  # Iteration wise terminator, in case MCMC goes on for too long
-        self.n_model=0
+        self.n_model = 0
         while iteration < self.max_mc_epochs and gr_stat > self.gr_threshold:
             # we check the convergence every 100 random samples.
             # we terminate iteration if Shapley value is converged.
@@ -414,8 +414,10 @@ class GrTMCSampler(Sampler):
             print(f"{gr_stat=}")
 
         self.marginal_contribution = self.marginal_contrib_sum / self.marginal_count
-        print(f"""Total number of trained models to estimate marginal
-               contributions: {self.n_model}""")
+        print(
+            f"""Total number of trained models to estimate marginal
+               contributions: {self.n_model}"""
+        )
         print("Done: marginal contribution computation", flush=True)
 
         if self.cache_name is not None:
@@ -464,7 +466,7 @@ class GrTMCSampler(Sampler):
                 truncation_counter += 1
             else:
                 truncation_counter = 0
-            self.n_model+=1
+            self.n_model += 1
             if truncation_counter == 10:  # If enter space without changes to model
                 # to consider additional zero contributions
                 self.marginal_count[

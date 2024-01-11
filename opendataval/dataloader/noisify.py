@@ -90,7 +90,8 @@ def add_gauss_noise(
 
     x_train = np.array(fetcher.x_train, dtype=np.float64)
     x_valid = np.array(fetcher.x_valid, dtype=np.float64)
-    num_train, num_valid = len(x_train), len(x_valid)
+    x_test = np.array(fetcher.x_test, dtype=np.float64)
+    num_train, num_valid, _ = len(x_train), len(x_valid), len(x_test)
     feature_dim = fetcher.covar_dim
 
     noisy_train_idx = rs.choice(num_train, round(num_train * noise_rate), replace=False)
@@ -126,6 +127,7 @@ def add_gauss_noise(
     return {
         "x_train": x_train,
         "x_valid": x_valid,
+        "x_test": x_test,  # just to keep numpy structure
         "noisy_train_indices": noisy_train_idx,
     }
 
