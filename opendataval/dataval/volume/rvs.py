@@ -93,11 +93,12 @@ class RobustVolumeShapley(DataEvaluator, ModelLessMixin):
         self.marg_contrib = self.sampler.compute_marginal_contribution(*args, **kwargs)
         return self
 
-    def evaluate_data_values(self) -> np.ndarray:
+    def evaluate_data_values(self, *args, **kwargs) -> np.ndarray:
         return np.sum(self.marg_contrib / self.num_points, axis=1)
 
-    def _evaluate_volume(self, subset: Sequence[int]):
-        x_train = self.x_train[subset]  # TODO PyTorch Subsets
+    def _evaluate_volume(self, subset: Sequence[int], *args, **kwargs):
+        x_train = self.x_train[subset] # TODO PyTorch Subsets
+
         if self.robust:
             x_tilde, cubes = compute_x_tilde_and_counts(x_train, self.omega)
             return compute_robust_volumes(x_tilde, cubes)
