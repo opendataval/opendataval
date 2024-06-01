@@ -18,7 +18,7 @@ def load_openml(data_id: int, is_classification=True):
     dataset = fetch_openml(data_id=data_id, as_frame=False)
     category_list = list(dataset["categories"].keys())
     if len(category_list) > 0:
-        category_indices = [dataset["feature_names"].index(x) for x in category_list]
+        category_indices = [dataset["feature_names"].index(x) for x in category_list  if x in dataset["feature_names"]]
         noncategory_indices = [
             i for i in range(len(dataset["feature_names"])) if i not in category_indices
         ]
