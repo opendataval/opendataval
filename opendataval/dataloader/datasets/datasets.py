@@ -30,9 +30,9 @@ def load_openml(data_id: int, is_classification=True):
     if is_classification is True:
         list_of_classes, y = np.unique(y, return_inverse=True)
     else:
-        y = (y - np.mean(y)) / (np.std(y) + 1e-8)
+        y = (y - np.mean(y)) / (np.std(y.astype(float)) + 1e-8)
 
-    X = (X - np.mean(X, axis=0)) / (np.std(X, axis=0) + 1e-8)  # standardization
+    X = (X - np.mean(X, axis=0)) / (np.std(X.astype(float), axis=0) + 1e-8)  # standardization
     return X, y
 
 
