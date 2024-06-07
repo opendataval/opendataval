@@ -32,7 +32,11 @@ def load_openml(data_id: int, is_classification=True):
     else:
         y = (y - np.mean(y)) / (np.std(y.astype(float)) + 1e-8)
 
-    X = (X - np.mean(X, axis=0)) / (np.std(X.astype(float), axis=0) + 1e-8)  # standardization
+    # When X is not float or int, transform it to float
+    if not np.issubdtype(X.dtype, np.number):
+        X = X.astype(float)
+
+    X = (X - np.mean(X, axis=0)) / (np.std(X, axis=0) + 1e-8)  # standardization
     return X, y
 
 
