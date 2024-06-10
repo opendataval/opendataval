@@ -18,7 +18,11 @@ def load_openml(data_id: int, is_classification=True):
     dataset = fetch_openml(data_id=data_id, as_frame=False)
     category_list = list(dataset["categories"].keys())
     if len(category_list) > 0:
-        category_indices = [dataset["feature_names"].index(x) for x in category_list  if x in dataset["feature_names"]]
+        category_indices = [
+            dataset["feature_names"].index(x)
+            for x in category_list
+            if x in dataset["feature_names"]
+        ]
         noncategory_indices = [
             i for i in range(len(dataset["feature_names"])) if i not in category_indices
         ]
@@ -30,7 +34,11 @@ def load_openml(data_id: int, is_classification=True):
     if is_classification is True:
         list_of_classes, y = np.unique(y, return_inverse=True)
     else:
-        y = (y - np.mean(y)) / (np.std(y) + 1e-8)
+        y = (y - np.mean(y)) / (np.std(y.astype(float)) + 1e-8)
+
+    # When X is not float or int, transform it to float
+    if not np.issubdtype(X.dtype, np.number):
+        X = X.astype(float)
 
     X = (X - np.mean(X, axis=0)) / (np.std(X, axis=0) + 1e-8)  # standardization
     return X, y
