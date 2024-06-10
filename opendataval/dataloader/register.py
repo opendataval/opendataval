@@ -79,8 +79,8 @@ def one_hot_encode(data: np.ndarray) -> np.ndarray:
     ValueError
         When the input array is not of shape (N,), (N,1), (N,1,1)...
     """
-    if not isinstance(data,np.ndarray):
-        data=np.array(data)
+    if not isinstance(data, np.ndarray):
+        data = np.array(data)
     data = data.reshape(len(data))  # Reduces shape to (N,) array
     num_values = np.max(data) + 1
     return np.eye(num_values)[data]
