@@ -30,6 +30,7 @@ Utils
     one_hot_encode
     CatDataset
 """
+
 from opendataval.dataloader import datasets
 from opendataval.dataloader.fetcher import DataFetcher
 from opendataval.dataloader.noisify import NoiseFunc, add_gauss_noise, mix_labels

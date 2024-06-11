@@ -22,6 +22,7 @@ Legacy notation:
     D1, D2: (feature) dimension of the datasets
     C1, C2: number of classes in the datasets
 """
+
 ## Local Imports
 import itertools
 from functools import partial

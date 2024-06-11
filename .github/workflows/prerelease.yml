@@ -11,7 +11,7 @@ jobs:
         tag_name: ${{ steps.tag.outputs.tag_name }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 

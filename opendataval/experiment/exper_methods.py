@@ -4,6 +4,7 @@ Experiments pass into :py:meth:`~opendataval.experiment.api.ExperimentMediator.e
 and :py:meth:`~opendataval.experiment.api.ExperimentMediator.plot` evaluate performance
 of one :py:class:`~opendataval.dataval.api.DataEvaluator` at a time.
 """
+
 from pathlib import Path
 from typing import Any, Optional
 

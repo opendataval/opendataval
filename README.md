@@ -27,7 +27,7 @@ artificial noise to some datasets. Create your own `DataEvaluator` to top the [l
 |----------|-|
 |**Paper**| **[Paper link](https://arxiv.org/abs/2306.10577)** |
 |**Python**|[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue?style=for-the-badge)](https://www.python.org/)|
-|**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=appveyor)](https://github.com/psf/black) |
+|**Dependencies**|[![Pytorch][PyTorch-shield]][PyTorch-url] [![scikit-learn][scikit-learn-shield]][scikit-learn-url] [![numpy][numpy-shield]][numpy-url] |
 |**Documentation**| [![Github Pages](https://img.shields.io/badge/github%20pages-121013?style=for-the-badge&logo=github&logoColor=white)](https://opendataval.github.io) |
 |**CI/CD**|[![Build][test-shield]][test-url] ![Coverage][coverage_badge] |
 |**Issues**| [![Issues][issues-shield]][issues-url] |
