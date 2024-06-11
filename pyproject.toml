@@ -28,7 +28,7 @@ classifiers = [
 ]
 dependencies = [  # versioning rules: https://peps.python.org/pep-0440/#version-specifiers
     # Dependencies that we cap due to google colab compatibiity
-    "numpy<=1.26.4",
+    "numpy~=1.26.4",
     "pandas>=1.5.3,<2",
     # Dependencies we only want bug updates, due to centrality to opendataval
     "geomloss~=0.2.6",
@@ -57,12 +57,11 @@ opendataval = "opendataval.__main__:cli"
 
 [project.optional-dependencies]
 dev = [
-    # Deve dependencies, only want that should be updated is ruff
-    "black~=23.11.0",
-    "hatch~=1.7.0",
-    "pip-tools~=7.3.0",
-    "pre-commit~=3.5.0",
-    "ruff~=0.1.5",
+    # Dev dependencies, only want that should be updated is ruff
+    "hatch~=1.8",
+    "pip-tools~=7.3",
+    "pre-commit~=3.7.1",
+    "ruff~=0.4.5",
     "sphinx~=7.3.7"
 ]
 test = [
@@ -118,15 +117,17 @@ exclude = [
     "venv",
 ]
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "C90", "RUF"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403", "E501"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["opendataval"]
 known-third-party = [
     "numpy",
@@ -143,7 +144,7 @@ known-third-party = [
     "typer",
 ]
 
-[tool.ruff.pycodestyle]
+[tool.ruff.lint.pycodestyle]
 ignore-overlong-task-comments = true
 
 # ========================================= #

@@ -71,7 +71,7 @@ class InfluenceFunction(DataEvaluator, ModelMixin):
         assert (  # In case model doesn't inherit but still wants the grad function
             isinstance(pred_model, GradientModel)
             or callable(getattr(pred_model, "grad"))
-        ), ("Model with gradient required.")
+        ), "Model with gradient required."
 
         self.pred_model = pred_model.clone()
         return self

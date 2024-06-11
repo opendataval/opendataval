@@ -85,6 +85,7 @@ Default Hyperparameters
     \hline
     \end{array}
 """
+
 # Model Factory imports
 from typing import Optional
 

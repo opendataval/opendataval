@@ -3,6 +3,7 @@
 Uses HuggingFace
 `transformers <https://huggingface.co/docs/transformers/index>`_. as dependency.
 """
+
 from pathlib import Path
 from typing import Callable, Sequence
 

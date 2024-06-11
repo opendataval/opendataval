@@ -26,8 +26,8 @@ clean:
 	rm -rf dist
 
 format:
-	ruff --fix --exit-non-zero-on-fix opendataval/
-	black opendataval/
+	ruff check --fix --exit-non-zero-on-fix opendataval/
+	ruff format opendataval/
 
 ## Run tests
 coverage:
