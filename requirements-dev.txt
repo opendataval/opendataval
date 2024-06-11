@@ -6,22 +6,26 @@
 #
 alabaster==0.7.16
     # via sphinx
-anyio==4.0.0
-    # via httpcore
-attrs==23.1.0
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.4.0
+    # via httpx
+attrs==23.2.0
     # via pytest
-babel==2.13.0
+babel==2.15.0
     # via sphinx
-build==1.0.3
+backports-tarfile==1.2.0
+    # via jaraco-context
+build==1.2.1
     # via pip-tools
-certifi==2023.7.22
+certifi==2024.6.2
     # via
     #   httpcore
     #   httpx
     #   requests
 cfgv==3.4.0
     # via pre-commit
-charset-normalizer==3.3.0
+charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
@@ -29,29 +33,27 @@ click==8.1.7
     #   pip-tools
     #   typer
     #   userpath
-contourpy==1.1.1
+contourpy==1.2.1
     # via matplotlib
-coverage[toml]==7.3.2
+coverage[toml]==7.5.3
     # via
     #   coverage
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-distlib==0.3.7
+distlib==0.3.8
     # via virtualenv
-docutils==0.19
+docutils==0.21.2
     # via sphinx
-editables==0.5
-    # via hatchling
-filelock==3.12.4
+filelock==3.14.0
     # via
     #   huggingface-hub
     #   torch
     #   transformers
     #   virtualenv
-fonttools==4.43.1
+fonttools==4.53.0
     # via matplotlib
-fsspec==2023.9.2
+fsspec==2024.6.0
     # via
     #   huggingface-hub
     #   torch
@@ -59,13 +61,13 @@ geomloss==0.2.6
     # via opendataval (pyproject.toml)
 h11==0.14.0
     # via httpcore
-hatch==1.9.7
+hatch==1.12.0
     # via opendataval (pyproject.toml)
-hatchling==1.18.0
+hatchling==1.24.2
     # via hatch
-httpcore==0.18.0
+httpcore==1.0.5
     # via httpx
-httpx==0.25.0
+httpx==0.27.0
     # via hatch
 huggingface-hub==0.23.3
     # via
@@ -73,9 +75,9 @@ huggingface-hub==0.23.3
     #   transformers
 hyperlink==21.0.0
     # via hatch
-identify==2.5.30
+identify==2.5.36
     # via pre-commit
-idna==3.4
+idna==3.7
     # via
     #   anyio
     #   httpx
@@ -83,43 +85,49 @@ idna==3.4
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.8.0
+importlib-metadata==7.1.0
     # via keyring
 iniconfig==2.0.0
     # via pytest
-jaraco-classes==3.3.0
+jaraco-classes==3.4.0
     # via keyring
-jinja2==3.1.2
+jaraco-context==5.3.0
+    # via keyring
+jaraco-functools==4.0.1
+    # via keyring
+jinja2==3.1.4
     # via
     #   sphinx
     #   torch
-joblib==1.3.2
+joblib==1.4.2
     # via scikit-learn
 keopscore==2.1.2
     # via pykeops
-keyring==24.2.0
+keyring==25.2.1
     # via hatch
 kiwisolver==1.4.5
     # via matplotlib
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.3
+markupsafe==2.1.5
     # via jinja2
 matplotlib==3.9.0
     # via opendataval (pyproject.toml)
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.1.0
-    # via jaraco-classes
+more-itertools==10.3.0
+    # via
+    #   jaraco-classes
+    #   jaraco-functools
 mpmath==1.3.0
     # via sympy
 multimethod==1.10
     # via pandera
 mypy-extensions==1.0.0
     # via typing-inspect
-networkx==3.1
+networkx==3.3
     # via torch
-nodeenv==1.8.0
+nodeenv==1.9.1
     # via pre-commit
 numpy==1.26.4
     # via
@@ -134,7 +142,7 @@ numpy==1.26.4
     #   scipy
     #   torchvision
     #   transformers
-packaging==23.2
+packaging==24.1
     # via
     #   build
     #   hatch
@@ -151,21 +159,21 @@ pandas==1.5.3
     #   pandera
 pandera==0.19.3
     # via opendataval (pyproject.toml)
-pathspec==0.11.2
+pathspec==0.12.1
     # via hatchling
-pexpect==4.8.0
+pexpect==4.9.0
     # via hatch
-pillow==10.0.1
+pillow==10.3.0
     # via
     #   matplotlib
     #   torchvision
-pip-tools==7.3.0
+pip-tools==7.4.1
     # via opendataval (pyproject.toml)
-platformdirs==3.11.0
+platformdirs==4.2.2
     # via
     #   hatch
     #   virtualenv
-pluggy==1.3.0
+pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
@@ -173,38 +181,42 @@ pre-commit==3.7.1
     # via opendataval (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
-pybind11==2.11.1
+pybind11==2.12.0
     # via pykeops
-pydantic==1.10.13
+pydantic==2.7.3
     # via pandera
-pygments==2.16.1
+pydantic-core==2.18.4
+    # via pydantic
+pygments==2.18.0
     # via
     #   rich
     #   sphinx
 pykeops==2.1.2
     # via opendataval (pyproject.toml)
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via matplotlib
-pyproject-hooks==1.0.0
-    # via build
+pyproject-hooks==1.1.0
+    # via
+    #   build
+    #   pip-tools
 pytest==7.2.2
     # via
     #   opendataval (pyproject.toml)
     #   pytest-cov
 pytest-cov==4.0.0
     # via opendataval (pyproject.toml)
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   matplotlib
     #   pandas
-pytz==2023.3.post1
+pytz==2024.1
     # via pandas
 pyyaml==6.0.1
     # via
     #   huggingface-hub
     #   pre-commit
     #   transformers
-regex==2023.10.3
+regex==2024.5.15
     # via transformers
 requests==2.32.3
     # via
@@ -212,58 +224,51 @@ requests==2.32.3
     #   opendataval (pyproject.toml)
     #   sphinx
     #   transformers
-rich==13.6.0
+rich==13.7.1
     # via hatch
 ruff==0.4.8
     # via opendataval (pyproject.toml)
 safetensors==0.4.3
     # via transformers
-scikit-learn==1.3.1
+scikit-learn==1.5.0
     # via opendataval (pyproject.toml)
-scipy==1.11.3
+scipy==1.13.1
     # via
     #   opendataval (pyproject.toml)
     #   scikit-learn
-shellingham==1.5.3
+shellingham==1.5.4
     # via hatch
 six==1.16.0
     # via python-dateutil
-sniffio==1.3.0
+sniffio==1.3.1
     # via
     #   anyio
-    #   httpcore
     #   httpx
 snowballstemmer==2.2.0
     # via sphinx
 sphinx==7.3.7
-    # via
-    #   opendataval (pyproject.toml)
-    #   sphinxcontrib-applehelp
-    #   sphinxcontrib-devhelp
-    #   sphinxcontrib-htmlhelp
-    #   sphinxcontrib-qthelp
-    #   sphinxcontrib-serializinghtml
-sphinxcontrib-applehelp==1.0.7
+    # via opendataval (pyproject.toml)
+sphinxcontrib-applehelp==1.0.8
     # via sphinx
-sphinxcontrib-devhelp==1.0.5
+sphinxcontrib-devhelp==1.0.6
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.4
+sphinxcontrib-htmlhelp==2.0.5
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.6
+sphinxcontrib-qthelp==1.0.7
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.9
+sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
-sympy==1.12
+sympy==1.12.1
     # via torch
-threadpoolctl==3.2.0
+threadpoolctl==3.5.0
     # via scikit-learn
 tokenizers==0.19.1
     # via transformers
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.12.1
+tomlkit==0.12.5
     # via hatch
 torch==2.2.2
     # via
@@ -281,16 +286,17 @@ tqdm==4.66.4
     #   transformers
 transformers==4.41.2
     # via opendataval (pyproject.toml)
-trove-classifiers==2023.9.19
+trove-classifiers==2024.5.22
     # via hatchling
-typeguard==4.1.5
+typeguard==4.3.0
     # via pandera
-typer==0.9.0
+typer==0.9.4
     # via opendataval (pyproject.toml)
-typing-extensions==4.8.0
+typing-extensions==4.12.2
     # via
     #   huggingface-hub
     #   pydantic
+    #   pydantic-core
     #   torch
     #   torcheval
     #   typeguard
@@ -298,19 +304,21 @@ typing-extensions==4.8.0
     #   typing-inspect
 typing-inspect==0.9.0
     # via pandera
-urllib3==2.0.6
+urllib3==2.2.1
     # via requests
-userpath==1.9.1
+userpath==1.9.2
     # via hatch
-virtualenv==20.24.5
+uv==0.2.10
+    # via hatch
+virtualenv==20.26.2
     # via
     #   hatch
     #   pre-commit
-wheel==0.41.2
+wheel==0.43.0
     # via pip-tools
-wrapt==1.15.0
+wrapt==1.16.0
     # via pandera
-zipp==3.17.0
+zipp==3.19.2
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

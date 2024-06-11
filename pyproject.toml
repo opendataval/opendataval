@@ -34,9 +34,9 @@ dependencies = [  # versioning rules: https://peps.python.org/pep-0440/#version-
     "geomloss~=0.2.6",
     "pandera~=0.19.3",
     "pykeops~=2.1.2",
-    "torch~=2.2.0",
+    "torch~=2.2.2",
     "torcheval~=0.0.7",
-    "torchvision~=0.17.0",
+    "torchvision~=0.17.2",
     "typer~=0.9.0",
     "tqdm~=4.66.3",
     # Less central and allows for more flexibility
