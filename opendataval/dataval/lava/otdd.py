@@ -332,7 +332,7 @@ def pwdist_exact(
     entreg: float = 1e-1,
     device: torch.device = torch.device("cpu"),
 ):
-    """Computation of pairwise Wasserstein distances.
+    r"""Computation of pairwise Wasserstein distances.
 
     Efficient computation of pairwise label-to-label Wasserstein distances
     between multiple distributions, without using Gaussian assumption.
