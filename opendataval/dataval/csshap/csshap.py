@@ -126,7 +126,7 @@ class ClassWiseShapley(DataEvaluator, ModelMixin):
             (self.train_classes == label).nonzero(as_tuple=True)[0],
             (self.train_classes != label).nonzero(as_tuple=True)[0],
             (self.valid_classes == label).nonzero(as_tuple=True)[0],
-            (self.train_classes != label).nonzero(as_tuple=True)[0],
+            (self.valid_classes != label).nonzero(as_tuple=True)[0],
         )
 
     def _compute_class_wise_utility(
