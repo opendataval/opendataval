@@ -146,7 +146,7 @@ def remove_high_low(
             **train_kwargs,
         )
         y_hat_valid = valuable_model.predict(x_test).to("cpu")
-        valuable_score = metric(y_test, y_hat_valid)
+        valuable_score = metric(y_test.to("cpu"), y_hat_valid)
         valuable_list.append(valuable_score)
 
         # Removing most valuable samples first
