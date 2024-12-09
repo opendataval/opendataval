@@ -39,5 +39,9 @@ class LogisticRegression(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
             Output Tensor of logistic regression
         """
         x = self.linear(x)
-        x = F.sigmoid(x)
+        if self.num_classes <= 2:
+            x = F.sigmoid(x)
+        else:
+            # Equivalent to sigmoid for classes of size 2.
+            x = F.softmax(x, dim=1)
         return x
