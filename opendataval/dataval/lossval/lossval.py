@@ -231,7 +231,8 @@ class LossValEvaluator(DataEvaluator, ModelMixin):
 
         # We need the info about the data to instantiate the MLP for LossVal
         self.pred_model = LossValMLP(input_dim=x_train.shape[1], training_set_size=self.num_points,
-                                     is_classification=self.is_classification, **self.mlp_args)
+                                     num_classes=y_train.shape[1], is_classification=self.is_classification,
+                                     **self.mlp_args)
 
         return self
 

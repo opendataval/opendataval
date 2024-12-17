@@ -1,1 +1,1 @@
-from lossval import LossValEvaluator
+from opendataval.dataval.lossval.lossval import LossValEvaluator
