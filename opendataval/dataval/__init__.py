@@ -61,3 +61,4 @@ from opendataval.dataval.margcontrib import (
 from opendataval.dataval.oob import DataOob
 from opendataval.dataval.random import RandomEvaluator
 from opendataval.dataval.volume import RobustVolumeShapley
+from opendataval.dataval.lossval import LossValEvaluator
