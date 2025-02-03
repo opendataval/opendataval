@@ -271,5 +271,5 @@ If you found the library or the paper useful, please cite us!
 [citation-shield]:https://img.shields.io/badge/Cite-Us-blue.svg?style=for-the-badge
 [citation-url]: #cite-us
 <!-- Coverage Comment:Begin -->
-[coverage_badge]: https://img.shields.io/badge/Coverage-79%25-yellow.svg?style=for-the-badge
+[coverage_badge]: https://img.shields.io/badge/Coverage-75%25-yellow.svg?style=for-the-badge
 <!-- Coverage Comment:End -->
