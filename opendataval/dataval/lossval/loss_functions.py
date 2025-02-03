@@ -1,4 +1,5 @@
-""" Implements the loss functions that are needed for LossVal. """
+"""Implements the loss functions that are needed for LossVal."""
+
 import torch
 from geomloss import SamplesLoss
 

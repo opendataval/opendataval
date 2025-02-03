@@ -117,7 +117,7 @@ class MeanStdTime:
         return (
             f"mean: {self.mean} | std: {self.std} | "
             f"average_time: {timedelta(seconds=self.avg_time)} | "
-            f"1e5 time: {timedelta(seconds=1e5*self.avg_time)}"
+            f"1e5 time: {timedelta(seconds=1e5 * self.avg_time)}"
         )
 
 

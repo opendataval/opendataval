@@ -41,7 +41,7 @@ dependencies = [  # versioning rules: https://peps.python.org/pep-0440/#version-
     "tqdm~=4.66.3",
     # Less central and allows for more flexibility
     "matplotlib~=3.9",
-    "requests~=2.32",
+    "requests~=2.32.3",
     "scipy~=1.11",
     "scikit-learn~=1.3",
     "transformers~=4.38"  # Transformers updates so fast so this is fine
@@ -58,11 +58,11 @@ opendataval = "opendataval.__main__:cli"
 [project.optional-dependencies]
 dev = [
     # Dev dependencies, only want that should be updated is ruff
-    "hatch~=1.8",
-    "pip-tools~=7.3",
-    "pre-commit~=3.7.1",
-    "ruff~=0.4.5",
-    "sphinx~=7.3.7"
+    "hatch~=1.14",
+    "pip-tools~=7.4",
+    "pre-commit~=4.1",
+    "ruff~=0.9.4",
+    "sphinx~=7.3"
 ]
 test = [
     "pytest~=7.2.2",

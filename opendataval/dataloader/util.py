@@ -127,9 +127,9 @@ class FolderDataset(Dataset):
     def shape(self) -> tuple[int, ...]:
         batch_size, *shape = self.get_batch(0).shape
 
-        assert (
-            batch_size == self.sizes[1] - self.sizes[0]
-        ), f"Unexpected batch size, {batch_size=} != {self.sizes[1] - self.sizes[0]}"
+        assert batch_size == self.sizes[1] - self.sizes[0], (
+            f"Unexpected batch size, {batch_size=} != {self.sizes[1] - self.sizes[0]}"
+        )
 
         return (len(self), *shape)
 
