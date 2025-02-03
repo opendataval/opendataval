@@ -47,6 +47,7 @@ from opendataval.dataval.dvrl import DVRL
 from opendataval.dataval.influence import InfluenceFunction, InfluenceSubsample
 from opendataval.dataval.knnshap import KNNShapley
 from opendataval.dataval.lava import LavaEvaluator
+from opendataval.dataval.lossval import LossValEvaluator
 from opendataval.dataval.margcontrib import (
     BetaShapley,
     DataBanzhaf,
@@ -61,4 +62,3 @@ from opendataval.dataval.margcontrib import (
 from opendataval.dataval.oob import DataOob
 from opendataval.dataval.random import RandomEvaluator
 from opendataval.dataval.volume import RobustVolumeShapley
-from opendataval.dataval.lossval import LossValEvaluator
