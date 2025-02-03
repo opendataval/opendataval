@@ -334,11 +334,11 @@ class DataValueEstimatorRL(nn.Module):
         mlp_layers["input_acti"] = nn.ReLU()
 
         for i in range(int(layer_number - 3)):
-            mlp_layers[f"{i+1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
-            mlp_layers[f"{i+1}_acti"] = nn.ReLU()
+            mlp_layers[f"{i + 1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
+            mlp_layers[f"{i + 1}_acti"] = nn.ReLU()
 
-        mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, comb_dim)
-        mlp_layers[f"{i+1}_out_acti"] = nn.ReLU()
+        mlp_layers[f"{i + 1}_out_lin"] = nn.Linear(hidden_dim, comb_dim)
+        mlp_layers[f"{i + 1}_out_acti"] = nn.ReLU()
 
         self.mlp = nn.Sequential(mlp_layers)
 

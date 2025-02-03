@@ -31,7 +31,7 @@ def download_drive(name: str, drive_id: str, cache_dir: Path, force_download: bo
         try:
             return cache(download_url, cache_dir, name, force_download)
         except requests.HTTPError as ex:
-            print(f"Attempt {i+1} failed: {ex}, retrying in 10 seconds")
+            print(f"Attempt {i + 1} failed: {ex}, retrying in 10 seconds")
             time.sleep(10)
     else:  # Means we've exhausted all our retries
         raise TimeoutError(

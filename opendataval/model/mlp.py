@@ -48,10 +48,10 @@ class ClassifierMLP(TorchClassMixin, TorchPredictMixin, TorchGradMixin):
         mlp_layers["input_acti"] = act_fn
 
         for i in range(int(layers - 2)):
-            mlp_layers[f"{i+1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
-            mlp_layers[f"{i+1}_acti"] = act_fn
+            mlp_layers[f"{i + 1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
+            mlp_layers[f"{i + 1}_acti"] = act_fn
 
-        mlp_layers[f"{i+1}_out_lin"] = nn.Linear(hidden_dim, num_classes)
+        mlp_layers[f"{i + 1}_out_lin"] = nn.Linear(hidden_dim, num_classes)
         mlp_layers["output"] = nn.Softmax(-1)
 
         self.mlp = nn.Sequential(mlp_layers)
@@ -108,8 +108,8 @@ class RegressionMLP(TorchRegressMixin, TorchPredictMixin, TorchGradMixin):
         mlp_layers["input_acti"] = act_fn
 
         for i in range(int(layers - 2)):
-            mlp_layers[f"{i+1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
-            mlp_layers[f"{i+1}_acti"] = act_fn
+            mlp_layers[f"{i + 1}_lin"] = nn.Linear(hidden_dim, hidden_dim)
+            mlp_layers[f"{i + 1}_acti"] = act_fn
 
         mlp_layers["output"] = nn.Linear(hidden_dim, num_classes)
         self.mlp = nn.Sequential(mlp_layers)
