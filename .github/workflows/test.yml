@@ -43,7 +43,7 @@ jobs:
         echo ${{ matrix.python-version }}
         make coverage
     - name: Archive code coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{(matrix.os == 'ubuntu-latest')  &&  (matrix.python-version == '3.11')}}
       with:
         name: code-coverage-report
@@ -74,7 +74,7 @@ jobs:
       run: |
         make coverage
     - name: Archive code coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: code-coverage-report
         path: coverage.xml
